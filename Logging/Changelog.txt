@@ -1,0 +1,3 @@
+1.0.0: Initial Release with helper methods.
+1.0.1: Complete Javadoc documentation.
+1.1.0: Made log handlers more general by making it customizable (both for debug log path and writing to file option).

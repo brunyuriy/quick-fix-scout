@@ -1,0 +1,31 @@
+0.6.0: 	Initial release.
+0.7.0: 	Implemented parser for that reads the usage logs.
+0.7.1:	Implemented preference page for observer plug-in.
+		Implemented activation/deactivation and let the user to select this.
+0.7.2:	Changed plug-in identifier from 'usage' to 'observation' to be more consistent with speculation plug-in.
+0.7.3:	Minor bug fix that was causing some of the proposals selected in the quick fix not to be recorded. 
+		The reason was I was comparing the string equality of a change.getName() and correctionProposal.getDescription(). Now I do this and also compare the changes whenever possible.
+0.7.4:	Minor performance bug fix: When the plug-in was deactivated, the ObserverGrabber was still creating a ObservationCompilationErrorLogger though there is no need for it (and it cannot work).
+0.8.0:	Implementation of easy e-mail. Two options for sending email is added. 
+		The user can either choose to send e-mailing the logs periodically (every-time Eclipse is opened) or send it going through the preference page and clicking on the button.
+0.8.1:	Implementation for showing the user the paths for the most recent logs in Observer Preference Page.
+0.8.2:	Added version number to the preference page.
+0.8.3:	Initial implementation of bridge between the speculator and observer. Implementation does not contain the settings for 3 different functionalities yet.
+0.8.4:	Improvements on Preference Page implementation.
+0.8.5:	Sending failure e-mail in case the logs cannot be sent.
+0.8.6:	Added version logging.
+0.8.7:	Added logging for delay time.
+0.8.8:	Updated parser to consider delay time logs.
+0.9.0:	Version update for the new release (and a possible fix in refactorings).
+		Updated the preference page information.
+0.9.1:	Added 'check version' button to the preference page. Updated external version numbers.
+0.9.2:	Added automated version checking at the beginning when plug-in loads.
+0.10.0:	Added internal check before logging number of compilation errors (when user clicks on quick fix).
+		If the synchronizer finds inconsistency between projects, current quick fix session is violated, and not logged.
+0.10.1:	Added an error popup dialog when the logs cannot be sent due to zip file being too big.
+0.10.2:	Added logging information for 'Observation' communications.
+0.10.3:	Updated logging information for 'LogSender'.
+0.10.4:	Updated the log sending algorithm so that it won't try to send logs if the zip file is not created.
+0.10.5: Updated logging so that it will also log if the analysis is running or not.
+0.10.6:	Added support for getting local analysis completion time and global speculation completion time from Speculator plug-in.
+0.10.7:	Now using Timer library instead of TimeUtility.

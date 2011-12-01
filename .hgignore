@@ -1,0 +1,10 @@
+syntax: glob
+*.class
+QFLogAnalyzer
+QFSpeculation/icons/sample.gif
+QFSpeculation/Export-all.xml
+QFSpeculation/QuickFixSpeculation.target
+QFUsageObserver/sample_logs
+syntax: regexp
+.*/doc/.*
+.*/javadoc\.xml

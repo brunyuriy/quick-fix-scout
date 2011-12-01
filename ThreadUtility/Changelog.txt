@@ -1,0 +1,2 @@
+1.0.0: 	Initial Release by extracting edu.washington.cs.util.sync package from EclipseUtility plug-in.
+1.1.0:	Changed unnecessary synchronization with volatile keyword. Added support for giving threads names (for debugging).

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project default="plugin_export" name="build">
+	<target name="plugin_export">
+		<pde.exportPlugins destination="/Users/kivanc/Desktop/Kivanc/Projects/Java Projects/Eclipse_QF_Speculation/WS_Quick_Fix_Speculation" exportSource="true" exportType="directory" plugins="edu.washington.cs.speculation" useJARFormat="true"/>
+	</target>
+</project>

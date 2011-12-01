@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+   <extension
+         point="org.eclipse.jdt.ui.quickFixProcessors">
+      <quickFixProcessor
+            class="edu.washington.cs.quickfix.speculation.calc.SpeculationProcessor"
+            id="quickFixSpeculationProcessor"
+            name="Quick Fix Speculation Processor">
+      </quickFixProcessor>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="edu.washington.cs.quickfix.speculation.gui.SpeculationPreferencePage"
+            id="quickFixSpeculator"
+            name="Quick Fix Scout">
+      </page>
+   </extension>
+   <extension
+         point="edu.washington.cs.quickfix.speculation.hack.correctionProposalPopupSpeculationHack">
+      <hack
+            handlerClass="edu.washington.cs.quickfix.speculation.hack.CompletionProposalPopupSpeculationExecutor"
+            id="correctionProposalPopupSpeculationExecutor">
+      </hack>
+   </extension>
+   <extension
+         point="org.eclipse.ui.startup">
+      <startup
+            class="edu.washington.cs.quickfix.speculation.SpeculationStarter">
+      </startup>
+   </extension>
+   <extension
+         point="edu.washington.cs.quickfix.bridge.speculatorObserverBridge">
+      <bridge
+            handlerClass="edu.washington.cs.quickfix.speculation.bridge.SpeculatorObserverBridge"
+            id="speculatorObserverBridgeExecutor">
+      </bridge>
+   </extension>
+
+</plugin>

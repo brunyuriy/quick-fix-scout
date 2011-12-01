@@ -1,0 +1,3 @@
+1.0.0: Initial release.
+1.0.1: Added functionality so that we can learn if the speculative analysis is running or not.
+1.1.0: Added functionality for getting local and global analysis completion times from Speculator to Observer.

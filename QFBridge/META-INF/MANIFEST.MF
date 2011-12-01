@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: QFBridge
+Bundle-SymbolicName: edu.washington.cs.quickfix.bridge;singleton:=true
+Bundle-Version: 1.0.0
+Bundle-Vendor: Kivanc Muslu
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Require-Bundle: edu.washington.cs.hack;bundle-version="1.0.0",
+ edu.washington.cs.logging;bundle-version="1.0.1",
+ org.eclipse.jdt.ui;bundle-version="3.6.1"
+Export-Package: edu.washington.cs.quickfix.bridge
