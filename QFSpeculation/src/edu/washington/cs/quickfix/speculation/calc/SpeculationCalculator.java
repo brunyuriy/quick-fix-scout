@@ -234,39 +234,44 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     @Override
     protected void doWork() throws InterruptedException
     {
-        activationRecord_ = new ActivationRecord();
-        if (isDead())
-            return;
-        TaskWorker currentWorker = synchronizer_.getTaskWorker();
-        currentWorker.block();
-        /*
-         * Stop the current synchronizer thread, and calculate the quick fixes and their results in the shadow project.
-         */
-        logger.fine("Waiting until sync thread is done.");
-        currentWorker.waitUntilSynchronization();
-        doAnalysisPreparations();
-        Timer.startSession();
-        try
+        int limit = 20;
+        for (int a = 0; a < limit; a++)
         {
-            doSpeculativeAnalysis();
-            activationRecord_.deactivate();
+            activationRecord_ = new ActivationRecord();
+            if (isDead())
+                return;
+            TaskWorker currentWorker = synchronizer_.getTaskWorker();
+            currentWorker.block();
+            /*
+             * Stop the current synchronizer thread, and calculate the quick fixes and their results in the shadow project.
+             */
+            logger.fine("Waiting until sync thread is done.");
+            currentWorker.waitUntilSynchronization();
+            doAnalysisPreparations();
+            Timer.startSession();
+            try
+            {
+                doSpeculativeAnalysis();
+                activationRecord_.deactivate();
+            }
+            catch (InvalidatedException e)
+            {
+                activationRecord_.activate();
+                logger.info("Speculative analysis is invalidated in the middle.");
+            }
+            currentWorker.unblock();
+            Timer.completeSession();
+            logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
+            stopWorking();
+            // need to map proposals gained from shadow project to the original project!
+            if (activationRecord_.isValid())
+            {
+                CompletionProposalPopupCoordinator.getCoordinator().setBestProposals(bestProposals_);
+                signalSpeculativeAnalysisComplete();
+            }
+            logger.info("");
+            
         }
-        catch (InvalidatedException e)
-        {
-            activationRecord_.activate();
-            logger.info("Speculative analysis is invalidated in the middle.");
-        }
-        currentWorker.unblock();
-        Timer.completeSession();
-        logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
-        stopWorking();
-        // need to map proposals gained from shadow project to the original project!
-        if (activationRecord_.isValid())
-        {
-            CompletionProposalPopupCoordinator.getCoordinator().setBestProposals(bestProposals_);
-            signalSpeculativeAnalysisComplete();
-        }
-        logger.info("");
     }
 
     private void doAnalysisPreparations()
