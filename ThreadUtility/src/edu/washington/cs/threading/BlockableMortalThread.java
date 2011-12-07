@@ -99,6 +99,7 @@ public abstract class BlockableMortalThread extends MortalThread
      * <p>
      * The synchronization point for a task worker is reached whenever it is not working and its task list is empty.
      */
+    // TODO Why do I need isBlocked() to be true to get in sync?
     @Override
     protected boolean isSynched()
     {
