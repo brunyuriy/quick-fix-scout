@@ -47,7 +47,7 @@ import edu.washington.cs.util.eclipse.model.CompilationError;
 public class SpeculationCalculator extends MortalThread implements ProjectModificationListener,
         SpeculativeAnalysisNotifier
 {
-    private CompilationError [] shadowCompilationError_;
+    private CompilationError [] shadowCompilationErrors_;
     private Map <CompilationError, IJavaCompletionProposal []> shadowProposalsMap_;
     private ReentrantLock shadowProposalsLock_;
     /**
@@ -176,12 +176,12 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     {
         if (shadowCompilationErrors == null)
             return;
-        shadowCompilationError_ = shadowCompilationErrors;
+        shadowCompilationErrors_ = shadowCompilationErrors;
     }
 
     private synchronized CompilationError [] getShadowCompilationErrors()
     {
-        return shadowCompilationError_;
+        return shadowCompilationErrors_;
     }
 
     private ArrayList <CompilationError> getShadowCompilationErrorsAsList()
@@ -814,9 +814,9 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
      */
     private synchronized int getNumberOfErrors()
     {
-        if (shadowCompilationError_ == null)
+        if (shadowCompilationErrors_ == null)
             return 0;
-        return shadowCompilationError_.length;
+        return shadowCompilationErrors_.length;
     }
 
     /**
