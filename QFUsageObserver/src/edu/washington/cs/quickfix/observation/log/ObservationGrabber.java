@@ -11,8 +11,6 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.ui.text.java.IInvocationContext;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
 
-import com.kivancmuslu.www.zip.Zipper;
-
 import edu.washington.cs.quickfix.observation.Observer;
 import edu.washington.cs.quickfix.observation.gui.ObservationPreferencePage;
 import edu.washington.cs.quickfix.observation.log.ObservationCompilationErrorLogger.Type;
@@ -100,17 +98,15 @@ public class ObservationGrabber extends Thread
             // check if snapshotting is activated, and if it is snapshot the shadow project.
             if (ObservationPreferencePage.getInstance().isSnapshotActivated())
             {
-                IProject shadowProject = Observer.getUsageObserver().getCurrentShadowProject();
-                if (shadowProject != null)
+                ProjectSynchronizer synchronizer = Observer.getUsageObserver().getCurrentSynchronizer();
+                if (synchronizer != null)
                 {
                     IProject originalProject = Observer.getUsageObserver().getCurrentProject();
-                    Zipper zipper = new Zipper(new File(SharedConstants.DEBUG_LOG_DIR),
-                            originalProject.getName() + "_" + SharedConstants.UNIQUE_TIME_STAMP + "_snapshot_"
-                                    + counter + ".zip");
-                    zipper.addFolder(new File(shadowProject.getLocation().toString()));
-                    zipper.close();
+                    File zipDir = new File(SharedConstants.DEBUG_LOG_DIR);
+                    String zipName = originalProject.getName() + "_" + SharedConstants.UNIQUE_TIME_STAMP + "_snapshot_"
+                            + counter + ".zip";
+                    synchronizer.snapshotShadow(zipDir, zipName);
                     counter++;
-                    logger.info("Created snapshot with success.");
                 }
             }
         }

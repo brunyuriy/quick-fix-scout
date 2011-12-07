@@ -1,5 +1,6 @@
 package edu.washington.cs.synchronization;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,12 +22,14 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.JavaCore;
 
 import com.kivancmuslu.www.timer.Timer;
+import com.kivancmuslu.www.zip.Zipper;
 
 import edu.washington.cs.synchronization.sync.SynchronizerBufferChangedListener;
 import edu.washington.cs.synchronization.sync.SynchronizerPartListener;
 import edu.washington.cs.synchronization.sync.SynchronizerResourceChangeListener;
 import edu.washington.cs.synchronization.sync.task.internal.TaskWorker;
 import edu.washington.cs.util.eclipse.ResourceUtility;
+import edu.washington.cs.util.eclipse.SharedConstants;
 
 /**
  * Project synchronizer is an implementation that will make sure that two projects are always in sync with the lowest
@@ -460,6 +463,17 @@ public class ProjectSynchronizer
     public void syncFiles(IFile original, IFile shadow)
     {
         syncFiles(original, shadow, true);
+    }
+    
+    public void snapshotShadow(File directory, String zipName)
+    {
+        if (shadow_ != null)
+        {
+            Zipper zipper = new Zipper(directory, zipName);
+            zipper.addFolder(new File(shadow_.getLocation().toString()));
+            zipper.close();
+            logger.info("Created snapshot with success.");
+        }
     }
     
     private boolean shouldSkip(IFolder folder)
