@@ -1,10 +1,14 @@
 package edu.washington.cs.quickfix.speculation.calc;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -47,6 +51,57 @@ import edu.washington.cs.util.eclipse.model.CompilationError;
 public class SpeculationCalculator extends MortalThread implements ProjectModificationListener,
         SpeculativeAnalysisNotifier
 {
+    
+    // Profiling starts here.
+    static boolean PROFILE = false;
+    static Formatter profiler_;
+    static
+    {
+        Calendar calendar = Calendar.getInstance();
+        String day = calendar.get(Calendar.YEAR) + "." + calendar.get(Calendar.MONTH + 1) + "." + calendar.get(Calendar.DAY_OF_MONTH) + "-" + 
+                calendar.get(Calendar.HOUR_OF_DAY) + "." +  calendar.get(Calendar.MINUTE) + calendar.get(Calendar.SECOND);
+        String fs = File.separator;
+        File profile = new File(System.getProperty("user.home") + fs + "profile-sa_" + day + ".txt");
+        try
+        {
+            if (PROFILE)
+            {
+                profiler_ = new Formatter(profile);
+                profiler_.format("%s%n", "P ID\t\tC Time\t\tH Time\t\tShadow Project\t# of Proposals");
+            }
+        }
+        catch (FileNotFoundException e)
+        {
+            e.printStackTrace();
+        }
+    }
+    
+    private static int shadowBuild_ = 0;
+    private static int originalBuild_ = 0;
+    private static int shadowCERetrieval_ = 0;
+    private static int originalCERetrieval_ = 0;
+    
+    private static long shadowBuildTime_ = 0;
+    private static long originalBuildTime_ = 0;
+    private static long shadowCERetrievalTime_ = 0;
+    private static long originalCERetrievalTime_ = 0;
+    
+    private static void newRun()
+    {
+        shadowBuild_ = 0;
+        originalBuild_ = 0;
+        shadowCERetrieval_ = 0;
+        originalCERetrieval_ = 0;
+        
+        shadowBuildTime_ = 0;
+        originalBuildTime_ = 0;
+        shadowCERetrievalTime_ = 0;
+        originalCERetrievalTime_ = 0;
+        
+    }
+    
+    // Profiling ends here.
+    
     private CompilationError [] shadowCompilationErrors_;
     private Map <CompilationError, IJavaCompletionProposal []> shadowProposalsMap_;
     private ReentrantLock shadowProposalsLock_;
@@ -234,52 +289,78 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     @Override
     protected void doWork() throws InterruptedException
     {
-        if (isDead())
-            return;
-        Timer.startSession();
-        activationRecord_ = new ActivationRecord();
-        TaskWorker currentWorker = synchronizer_.getTaskWorker();
-        currentWorker.block();
-        /*
-         * Stop the current synchronizer thread, and calculate the quick fixes and their results in the shadow project.
-         */
-        logger.fine("Waiting until sync thread is done.");
-        currentWorker.waitUntilSynchronization();
-        doAnalysisPreparations();
-        try
+        int limit = 20;
+        for (int a = 0; a < limit; a++)
         {
-            doSpeculativeAnalysis();
-            activationRecord_.deactivate();
+            if (isDead())
+                return;
+            Timer.startSession();
+            activationRecord_ = new ActivationRecord();
+            TaskWorker currentWorker = synchronizer_.getTaskWorker();
+            currentWorker.block();
+            /*
+             * Stop the current synchronizer thread, and calculate the quick fixes and their results in the shadow project.
+             */
+            logger.fine("Waiting until sync thread is done.");
+            currentWorker.waitUntilSynchronization();
+            doAnalysisPreparations();
+            try
+            {
+                doSpeculativeAnalysis();
+                activationRecord_.deactivate();
+            }
+            catch (InvalidatedException e)
+            {
+                activationRecord_.activate();
+                logger.info("Speculative analysis is invalidated in the middle.");
+            }
+            currentWorker.unblock();
+            stopWorking();
+            // need to map proposals gained from shadow project to the original project!
+            if (activationRecord_.isValid())
+            {
+                CompletionProposalPopupCoordinator.getCoordinator().setBestProposals(bestProposals_);
+                signalSpeculativeAnalysisComplete();
+            }
+            logger.info("");
+            Timer.completeSession();
+            logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
         }
-        catch (InvalidatedException e)
-        {
-            activationRecord_.activate();
-            logger.info("Speculative analysis is invalidated in the middle.");
-        }
-        currentWorker.unblock();
-        stopWorking();
-        // need to map proposals gained from shadow project to the original project!
-        if (activationRecord_.isValid())
-        {
-            CompletionProposalPopupCoordinator.getCoordinator().setBestProposals(bestProposals_);
-            signalSpeculativeAnalysisComplete();
-        }
-        logger.info("");
-        Timer.completeSession();
-        logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
     }
 
     private void doAnalysisPreparations()
     {
-        buildShadowProject();
+        long start = System.nanoTime();
+        BuilderUtility.build(shadowProject_);
+        long end = System.nanoTime();
+        shadowBuild_ ++;
+        shadowBuildTime_ += (end - start);
+        
         CompilationError [] shadowCompilationErrors = null;
         try
         {
-            shadowCompilationErrors = getShadowCEs();
+            start = System.nanoTime();
+            shadowCompilationErrors = BuilderUtility.calculateCompilationErrors(shadowProject_);
+            end = System.nanoTime();
+            shadowCERetrieval_ ++;
+            shadowCERetrievalTime_ += (end - start);
+            
             shadowToOriginalCompilationErrors_.clear();
             EclipseUIUtility.saveAllEditors(false);
-            buildOriginalProject();
-            CompilationError [] originalCompilationErrors = getOriginalCEs();
+            
+            start = System.nanoTime();
+            BuilderUtility.build(synchronizer_.getProject());
+            end = System.nanoTime();
+            originalBuild_ ++;
+            originalBuildTime_ += (end - start);
+
+            start = System.nanoTime();
+            CompilationError [] originalCompilationErrors = BuilderUtility.calculateCompilationErrors(synchronizer_
+                    .getProject());
+            end = System.nanoTime();
+            originalCERetrieval_ ++;
+            originalCERetrievalTime_ += (end - start);
+            
             boolean found;
             for (CompilationError shadowCompilationError: shadowCompilationErrors)
             {
@@ -486,7 +567,13 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                     errorsAfter = processProposal(shadowProposal);
                     cachedProposals_.put(displayString, errorsAfter);
                     if (errorsAfter == CompilationError.UNKNOWN)
-                        errorsAfter = getShadowCEs();
+                    {
+                        long start = System.nanoTime();
+                        errorsAfter = BuilderUtility.calculateCompilationErrors(shadowProject_);
+                        long end = System.nanoTime();
+                        shadowCERetrieval_ ++;
+                        shadowCERetrievalTime_ += (end - start);
+                    }
                     if (errorsAfter.length != errorsBefore)
                     {
                         logger.warning("For proposal = " + displayString
@@ -497,7 +584,13 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                     }
                 }
                 if (errorsAfter == CompilationError.UNKNOWN)
-                    errorsAfter = getShadowCEs();
+                {
+                    long start = System.nanoTime();
+                    errorsAfter = BuilderUtility.calculateCompilationErrors(shadowProject_);
+                    long end = System.nanoTime();
+                    shadowCERetrieval_ ++;
+                    shadowCERetrievalTime_ += (end - start);
+                }
                 AugmentedCompletionProposal augmentedProposal = new AugmentedCompletionProposal(shadowProposal,
                         shadowCompilationError, errorsAfter, errorsBefore);
                 compareWithCurrentBest(augmentedProposal);
@@ -602,8 +695,14 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             logger.fine("Performing change...");
             undo = performChangeAndSave(shadowChange);
             logger.fine("Performed change...");
-            buildShadowProject();
-            errors = getShadowCEs();
+
+            long start = System.nanoTime();
+            BuilderUtility.build(shadowProject_);
+            long end = System.nanoTime();
+            shadowBuild_ ++;
+            shadowBuildTime_ += (end - start);
+            
+            errors = BuilderUtility.calculateCompilationErrors(shadowProject_);
             logger.fine("Number of compilation errors = " + errors.length);
         }
         catch (CoreException e)
@@ -620,7 +719,12 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         {
             logger.fine("Performing undo...");
             performChangeAndSave(undo);
-            buildShadowProject();
+
+            long start = System.nanoTime();
+            BuilderUtility.build(shadowProject_);
+            long end = System.nanoTime();
+            shadowBuild_ ++;
+            shadowBuildTime_ += (end - start);
         }
         catch (CoreException e)
         {
