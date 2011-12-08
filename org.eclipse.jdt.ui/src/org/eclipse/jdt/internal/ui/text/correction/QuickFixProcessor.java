@@ -42,6 +42,7 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 
     
     // XXX Kivanc starts here
+    static boolean PROFILE = false;
     static Formatter profiler_;
     static
     {
@@ -49,18 +50,22 @@ public class QuickFixProcessor implements IQuickFixProcessor {
         String day = calendar.get(Calendar.YEAR) + "." + calendar.get(Calendar.MONTH + 1) + "." + calendar.get(Calendar.DAY_OF_MONTH) + "-" + 
                 calendar.get(Calendar.HOUR_OF_DAY) + "." +  calendar.get(Calendar.MINUTE) + calendar.get(Calendar.SECOND);
         String fs = File.separator;
-        File profile = new File(System.getProperty("user.home") + fs + "profile_" + day + ".txt");
+        File profile = new File(System.getProperty("user.home") + fs + "profile-pg_" + day + ".txt");
         try
         {
-            profiler_ = new Formatter(profile);
-            profiler_.format("%s%n", "P ID\t\tC Time\t\tH Time\t\tShadow Project\t# of Proposals");
+            if (PROFILE)
+            {
+                profiler_ = new Formatter(profile);
+                profiler_.format("%s%n", "P ID\t\tC Time\t\tH Time\t\tShadow Project\t# of Proposals");
+            }
         }
         catch (FileNotFoundException e)
         {
             e.printStackTrace();
         }
     }
-
+    // XXX Kivanc ends here
+    
 	public boolean hasCorrections(ICompilationUnit cu, int problemId) {
 		switch (problemId) {
 			case IProblem.UnterminatedString:
@@ -653,8 +658,11 @@ public class QuickFixProcessor implements IQuickFixProcessor {
 		millis %= 1000;
 		String time = padZero(secs, 2) + ":" + padZero(millis, 3) + ":" + padZero(micros, 3);
 		
-		profiler_.format("%s%n", "0x" + (Integer.toHexString(problem.getProblemId()) + "\t" + padZero(end-start, 10) + "\t" + time + "\t" + specCall + "\t\t\t" + proposals.size()));
-		profiler_.flush();
+		if (profiler_ != null)
+		{
+	        profiler_.format("%s%n", "0x" + (Integer.toHexString(problem.getProblemId()) + "\t" + padZero(end-start, 10) + "\t" + time + "\t" + specCall + "\t\t\t" + proposals.size()));
+	        profiler_.flush();
+		}
 		// XXX Kivanc ends here.
 	}
 	
