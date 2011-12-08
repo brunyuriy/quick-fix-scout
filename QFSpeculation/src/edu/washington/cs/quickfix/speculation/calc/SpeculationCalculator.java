@@ -485,9 +485,11 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                 {
                     errorsAfter = processProposal(shadowProposal);
                     cachedProposals_.put(displayString, errorsAfter);
+                    // TODO Why do I need this?
                     if (errorsAfter == CompilationError.UNKNOWN)
                         errorsAfter = getShadowCEs();
-                    if (errorsAfter.length != errorsBefore)
+                    int errorsAfterUndo = getShadowCEs().length;
+                    if (errorsAfterUndo != errorsBefore)
                     {
                         logger.warning("For proposal = " + displayString
                                 + ", applying change and undo broke the synchronization of the projects. "
