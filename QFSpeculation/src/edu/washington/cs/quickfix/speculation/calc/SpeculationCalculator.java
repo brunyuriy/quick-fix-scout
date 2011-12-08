@@ -276,10 +276,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         CompilationError [] shadowCompilationErrors = null;
         try
         {
-            Timer.startSession();
             shadowCompilationErrors = BuilderUtility.calculateCompilationErrors(shadowProject_);
-            Timer.completeSession();
-            logger.fine("Time to get all compilation error markers took: " + Timer.getTimeAsString());
             shadowToOriginalCompilationErrors_.clear();
             EclipseUIUtility.saveAllEditors(false);
             BuilderUtility.build(synchronizer_.getProject());
@@ -361,7 +358,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
 
     private void updateBestProposals()
     {
-        Timer.startSession();
         HashMap<CompilationError, IJavaCompletionProposal []> cache = new HashMap <CompilationError, IJavaCompletionProposal[]>();
         ArrayList <AugmentedCompletionProposal> toRemove = new ArrayList <AugmentedCompletionProposal>();
         for(AugmentedCompletionProposal bestProposal: bestProposals_)
@@ -389,13 +385,10 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         }
         for (AugmentedCompletionProposal bestProposal: toRemove)
             bestProposals_.remove(bestProposal);
-        Timer.completeSession();
-        Timer.printTime("Updating best proposals took: ");
     }
 
     private void processCompilationErrors() throws InvalidatedException
     {
-        Timer.startSession();
         try
         {
             int counter = 0;
@@ -434,8 +427,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
              */
             // doSpeculativeAnalysis();
         }
-        Timer.completeSession();
-        Timer.printTime("Processing all compilation errors took: ");
     }
 
     private IJavaCompletionProposal convertToOriginalProposal(IJavaCompletionProposal shadowProposals,
@@ -469,8 +460,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             throw new InvalidatedException();
         try
         {
-            Timer.startSession();
-            
             int errorsBefore = getNumberOfErrors();
             logger.info("For compilation error: " + shadowCompilationError.toString());
             // This access to proposalsMap_ is safe since the only thread that can modify it is the calculator (this).
@@ -517,8 +506,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                 counter++;
                 logger.fine("");
             }
-            Timer.completeSession();
-            Timer.printTime("Processing one compilation error took: ");
             return result;
         }
         catch (InvalidatedException e)
