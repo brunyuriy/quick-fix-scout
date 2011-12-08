@@ -29,7 +29,6 @@ import edu.washington.cs.synchronization.sync.SynchronizerPartListener;
 import edu.washington.cs.synchronization.sync.SynchronizerResourceChangeListener;
 import edu.washington.cs.synchronization.sync.task.internal.TaskWorker;
 import edu.washington.cs.util.eclipse.ResourceUtility;
-import edu.washington.cs.util.eclipse.SharedConstants;
 
 /**
  * Project synchronizer is an implementation that will make sure that two projects are always in sync with the lowest
