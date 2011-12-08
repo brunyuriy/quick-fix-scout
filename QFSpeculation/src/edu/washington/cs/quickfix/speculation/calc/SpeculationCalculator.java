@@ -111,6 +111,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     private static void newRun()
     {
         if (profiler_ != null)
+        {
             profiler_.format("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%n", 
                     shadowBuildTime_, shadowBuild_,
                     originalBuildTime_, originalBuild_,
@@ -122,6 +123,8 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                     syncTime_, sync_,
                     analysisTime_
                     );
+            profiler_.flush();
+        }
         
         shadowBuild_ = 0;
         originalBuild_ = 0;
