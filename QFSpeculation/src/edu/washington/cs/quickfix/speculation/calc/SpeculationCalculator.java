@@ -234,9 +234,10 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     @Override
     protected void doWork() throws InterruptedException
     {
-        activationRecord_ = new ActivationRecord();
         if (isDead())
             return;
+        Timer.startSession();
+        activationRecord_ = new ActivationRecord();
         TaskWorker currentWorker = synchronizer_.getTaskWorker();
         currentWorker.block();
         /*
@@ -245,7 +246,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         logger.fine("Waiting until sync thread is done.");
         currentWorker.waitUntilSynchronization();
         doAnalysisPreparations();
-        Timer.startSession();
         try
         {
             doSpeculativeAnalysis();
@@ -257,8 +257,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             logger.info("Speculative analysis is invalidated in the middle.");
         }
         currentWorker.unblock();
-        Timer.completeSession();
-        logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
         stopWorking();
         // need to map proposals gained from shadow project to the original project!
         if (activationRecord_.isValid())
@@ -267,6 +265,8 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             signalSpeculativeAnalysisComplete();
         }
         logger.info("");
+        Timer.completeSession();
+        logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
     }
 
     private void doAnalysisPreparations()
