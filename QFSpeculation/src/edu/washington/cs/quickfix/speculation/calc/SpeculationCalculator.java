@@ -75,6 +75,31 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             e.printStackTrace();
         }
     }
+    
+    private static int shadowBuild_ = 0;
+    private static int originalBuild_ = 0;
+    private static int shadowCERetrieval_ = 0;
+    private static int originalCERetrieval_ = 0;
+    
+    private static long shadowBuildTime_ = 0;
+    private static long originalBuildTime_ = 0;
+    private static long shadowCERetrievalTime_ = 0;
+    private static long originalCERetrievalTime_ = 0;
+    
+    private static void newRun()
+    {
+        shadowBuild_ = 0;
+        originalBuild_ = 0;
+        shadowCERetrieval_ = 0;
+        originalCERetrieval_ = 0;
+        
+        shadowBuildTime_ = 0;
+        originalBuildTime_ = 0;
+        shadowCERetrievalTime_ = 0;
+        originalCERetrievalTime_ = 0;
+        
+    }
+    
     // Profiling ends here.
     
     private CompilationError [] shadowCompilationErrors_;
@@ -305,17 +330,38 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
 
     private void doAnalysisPreparations()
     {
+        long start = System.nanoTime();
         BuilderUtility.build(shadowProject_);
+        long end = System.nanoTime();
+        shadowBuild_ ++;
+        shadowBuildTime_ += (end - start);
+        
         // BuilderUtility.build(synchronizer_.getProject());
         CompilationError [] shadowCompilationErrors = null;
         try
         {
+            start = System.nanoTime();
             shadowCompilationErrors = BuilderUtility.calculateCompilationErrors(shadowProject_);
+            end = System.nanoTime();
+            shadowCERetrieval_ ++;
+            shadowCERetrievalTime_ += (end - start);
+            
             shadowToOriginalCompilationErrors_.clear();
             EclipseUIUtility.saveAllEditors(false);
+            
+            start = System.nanoTime();
             BuilderUtility.build(synchronizer_.getProject());
+            end = System.nanoTime();
+            originalBuild_ ++;
+            originalBuildTime_ += (end - start);
+
+            start = System.nanoTime();
             CompilationError [] originalCompilationErrors = BuilderUtility.calculateCompilationErrors(synchronizer_
                     .getProject());
+            end = System.nanoTime();
+            originalCERetrieval_ ++;
+            originalCERetrievalTime_ += (end - start);
+            
             boolean found;
             for (CompilationError shadowCompilationError: shadowCompilationErrors)
             {
@@ -521,7 +567,13 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                     errorsAfter = processProposal(shadowProposal);
                     cachedProposals_.put(displayString, errorsAfter);
                     if (errorsAfter == CompilationError.UNKNOWN)
+                    {
+                        long start = System.nanoTime();
                         errorsAfter = BuilderUtility.calculateCompilationErrors(shadowProject_);
+                        long end = System.nanoTime();
+                        shadowCERetrieval_ ++;
+                        shadowCERetrievalTime_ += (end - start);
+                    }
                     if (errorsAfter.length != errorsBefore)
                     {
                         logger.warning("For proposal = " + displayString
@@ -532,7 +584,13 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                     }
                 }
                 if (errorsAfter == CompilationError.UNKNOWN)
+                {
+                    long start = System.nanoTime();
                     errorsAfter = BuilderUtility.calculateCompilationErrors(shadowProject_);
+                    long end = System.nanoTime();
+                    shadowCERetrieval_ ++;
+                    shadowCERetrievalTime_ += (end - start);
+                }
                 AugmentedCompletionProposal augmentedProposal = new AugmentedCompletionProposal(shadowProposal,
                         shadowCompilationError, errorsAfter, errorsBefore);
                 compareWithCurrentBest(augmentedProposal);
@@ -637,7 +695,13 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             logger.fine("Performing change...");
             undo = SpeculationUtility.performChangeAndSave(shadowChange);
             logger.fine("Performed change...");
+
+            long start = System.nanoTime();
             BuilderUtility.build(shadowProject_);
+            long end = System.nanoTime();
+            shadowBuild_ ++;
+            shadowBuildTime_ += (end - start);
+            
             errors = BuilderUtility.calculateCompilationErrors(shadowProject_);
             logger.fine("Number of compilation errors = " + errors.length);
         }
@@ -655,7 +719,12 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         {
             logger.fine("Performing undo...");
             SpeculationUtility.performChangeAndSave(undo);
+
+            long start = System.nanoTime();
             BuilderUtility.build(shadowProject_);
+            long end = System.nanoTime();
+            shadowBuild_ ++;
+            shadowBuildTime_ += (end - start);
         }
         catch (CoreException e)
         {
