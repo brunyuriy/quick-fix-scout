@@ -1,10 +1,14 @@
 package edu.washington.cs.quickfix.speculation.calc;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -47,6 +51,32 @@ import edu.washington.cs.util.eclipse.model.CompilationError;
 public class SpeculationCalculator extends MortalThread implements ProjectModificationListener,
         SpeculativeAnalysisNotifier
 {
+    
+    // Profiling starts here.
+    static boolean PROFILE = false;
+    static Formatter profiler_;
+    static
+    {
+        Calendar calendar = Calendar.getInstance();
+        String day = calendar.get(Calendar.YEAR) + "." + calendar.get(Calendar.MONTH + 1) + "." + calendar.get(Calendar.DAY_OF_MONTH) + "-" + 
+                calendar.get(Calendar.HOUR_OF_DAY) + "." +  calendar.get(Calendar.MINUTE) + calendar.get(Calendar.SECOND);
+        String fs = File.separator;
+        File profile = new File(System.getProperty("user.home") + fs + "profile-sa_" + day + ".txt");
+        try
+        {
+            if (PROFILE)
+            {
+                profiler_ = new Formatter(profile);
+                profiler_.format("%s%n", "P ID\t\tC Time\t\tH Time\t\tShadow Project\t# of Proposals");
+            }
+        }
+        catch (FileNotFoundException e)
+        {
+            e.printStackTrace();
+        }
+    }
+    // Profiling ends here.
+    
     private CompilationError [] shadowCompilationErrors_;
     private Map <CompilationError, IJavaCompletionProposal []> shadowProposalsMap_;
     private ReentrantLock shadowProposalsLock_;
@@ -234,39 +264,43 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     @Override
     protected void doWork() throws InterruptedException
     {
-        if (isDead())
-            return;
-        Timer.startSession();
-        activationRecord_ = new ActivationRecord();
-        TaskWorker currentWorker = synchronizer_.getTaskWorker();
-        currentWorker.block();
-        /*
-         * Stop the current synchronizer thread, and calculate the quick fixes and their results in the shadow project.
-         */
-        logger.fine("Waiting until sync thread is done.");
-        currentWorker.waitUntilSynchronization();
-        doAnalysisPreparations();
-        try
+        int limit = 20;
+        for (int a = 0; a < limit; a++)
         {
-            doSpeculativeAnalysis();
-            activationRecord_.deactivate();
+            if (isDead())
+                return;
+            Timer.startSession();
+            activationRecord_ = new ActivationRecord();
+            TaskWorker currentWorker = synchronizer_.getTaskWorker();
+            currentWorker.block();
+            /*
+             * Stop the current synchronizer thread, and calculate the quick fixes and their results in the shadow project.
+             */
+            logger.fine("Waiting until sync thread is done.");
+            currentWorker.waitUntilSynchronization();
+            doAnalysisPreparations();
+            try
+            {
+                doSpeculativeAnalysis();
+                activationRecord_.deactivate();
+            }
+            catch (InvalidatedException e)
+            {
+                activationRecord_.activate();
+                logger.info("Speculative analysis is invalidated in the middle.");
+            }
+            currentWorker.unblock();
+            stopWorking();
+            // need to map proposals gained from shadow project to the original project!
+            if (activationRecord_.isValid())
+            {
+                CompletionProposalPopupCoordinator.getCoordinator().setBestProposals(bestProposals_);
+                signalSpeculativeAnalysisComplete();
+            }
+            logger.info("");
+            Timer.completeSession();
+            logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
         }
-        catch (InvalidatedException e)
-        {
-            activationRecord_.activate();
-            logger.info("Speculative analysis is invalidated in the middle.");
-        }
-        currentWorker.unblock();
-        stopWorking();
-        // need to map proposals gained from shadow project to the original project!
-        if (activationRecord_.isValid())
-        {
-            CompletionProposalPopupCoordinator.getCoordinator().setBestProposals(bestProposals_);
-            signalSpeculativeAnalysisComplete();
-        }
-        logger.info("");
-        Timer.completeSession();
-        logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
     }
 
     private void doAnalysisPreparations()
