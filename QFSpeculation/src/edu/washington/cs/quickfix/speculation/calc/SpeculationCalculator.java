@@ -277,17 +277,14 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             }
             logger.info("");
             
-        Timer.completeSession();
-        logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
+            Timer.completeSession();
+            logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
             if (!bot.done(true))
             {
                 AugmentedCompletionProposal shadowProposal = bot.selectShadowProposal();
                 bot.snapshot();
                 bot.applyProposal(shadowProposal);
             }
-            Timer.completeSession();
-            logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
-
 //            CompilationError [] remaining = BuilderUtility.calculateCompilationErrors(shadowProject_);
 //            updateShadowCompilationErrors(remaining);
             Thread.yield();
