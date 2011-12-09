@@ -376,6 +376,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             newRun();
         }
         profiler_.close();
+        System.out.println("Profiling completed...");
     }
 
     private void doAnalysisPreparations()
