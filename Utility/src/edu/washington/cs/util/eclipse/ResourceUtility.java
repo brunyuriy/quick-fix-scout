@@ -353,16 +353,7 @@ public class ResourceUtility
     {
         IWorkspace workspace = ResourcesPlugin.getWorkspace();
         IWorkspaceRoot root = workspace.getRoot();
-        IFile result = null;
-        try
-        {
-            result = root.getFile(path);
-        }
-        catch (Exception e)
-        {
-            logger.log(Level.WARNING, "Cannot retrieve file for path = " + path.toString(), e);
-        }
-        return result;
+        return root.getFile(path);
     }
 
     public static Object getPluginVersion(String pluginId)
