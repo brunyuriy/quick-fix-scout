@@ -1130,6 +1130,10 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     
     private void testSynchronization()
     {
+        long start = System.nanoTime();
         synchronizer_.testSynchronization();
+        long end = System.nanoTime();
+        sync_ ++;
+        syncTime_ += (end - start);
     }
 }
