@@ -360,7 +360,7 @@ public class ResourceUtility
         }
         catch (Exception e)
         {
-            logger.log(Level.WARNING, "Cannot retrieve file for path = " + path.toString());
+            logger.log(Level.WARNING, "Cannot retrieve file for path = " + path.toString(), e);
         }
         return result;
     }
