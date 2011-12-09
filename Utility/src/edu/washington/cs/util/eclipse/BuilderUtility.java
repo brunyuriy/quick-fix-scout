@@ -150,7 +150,7 @@ public class BuilderUtility
         }
         catch (CoreException e)
         {
-            logger.log(Level.SEVERE, "Cannot build project: " + project.getName(), e);
+            logger.log(Level.SEVERE, "Cannot build project: " + project.getName() + ". e.cause() = " + e.getCause(), e);
         }
     }
 }
