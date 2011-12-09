@@ -89,7 +89,7 @@ public class SpeculationUtility
                 {}
                 if (!valid)
                 {
-                    System.out.println("Problem locations differ on args => arg1 = " + arg1 + ", arg2 = " + arg2);
+                    logger.info("Problem locations differ on args => arg1 = " + arg1 + ", arg2 = " + arg2);
                     return false;
                 }
             }
