@@ -239,10 +239,11 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     @Override
     protected void doWork() throws InterruptedException
     {
-        activationRecord_ = new ActivationRecord();
         if (isDead())
             return;
         
+        Timer.startSession();
+        activationRecord_ = new ActivationRecord();
         int [] order = null;
         Bot bot = new QFS_GBP_Bot(order);
         do
@@ -255,7 +256,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             logger.fine("Waiting until sync thread is done.");
             currentWorker.waitUntilSynchronization();
             doAnalysisPreparations();
-            Timer.startSession();
             try
             {
                 doSpeculativeAnalysis();
@@ -277,6 +277,8 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             }
             logger.info("");
             
+        Timer.completeSession();
+        logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
             if (!bot.done(true))
             {
                 AugmentedCompletionProposal shadowProposal = bot.selectShadowProposal();
@@ -466,20 +468,15 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
 
     private void doAnalysisPreparations()
     {
-        BuilderUtility.build(shadowProject_);
-        // BuilderUtility.build(synchronizer_.getProject());
+        buildShadowProject();
         CompilationError [] shadowCompilationErrors = null;
         try
         {
-            Timer.startSession();
-            shadowCompilationErrors = BuilderUtility.calculateCompilationErrors(shadowProject_);
-            Timer.completeSession();
-            logger.fine("Time to get all compilation error markers took: " + Timer.getTimeAsString());
+            shadowCompilationErrors = getShadowCEs();
             shadowToOriginalCompilationErrors_.clear();
             EclipseUIUtility.saveAllEditors(false);
-            BuilderUtility.build(synchronizer_.getProject());
-            CompilationError [] originalCompilationErrors = BuilderUtility.calculateCompilationErrors(synchronizer_
-                    .getProject());
+            buildOriginalProject();
+            CompilationError [] originalCompilationErrors = getOriginalCEs();
             boolean found;
             for (CompilationError shadowCompilationError: shadowCompilationErrors)
             {
@@ -538,8 +535,9 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         try
         {
             logger.info("Speculative analysis started...");
+            // TODO Place for this code seems weird. It should be before the analysis preparations. 
             if (TEST_SYNCHRONIZATION)
-                synchronizer_.testSynchronization();
+                testSynchronization();
             // TODO handle thrown exception...
             clearGlobalState();
             // The place of signal is very important. Basically, it has to be done after all accessible state is cleared
@@ -556,7 +554,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
 
     private void updateBestProposals()
     {
-        Timer.startSession();
         HashMap<CompilationError, IJavaCompletionProposal []> cache = new HashMap <CompilationError, IJavaCompletionProposal[]>();
         ArrayList <AugmentedCompletionProposal> toRemove = new ArrayList <AugmentedCompletionProposal>();
         for(AugmentedCompletionProposal bestProposal: bestProposals_)
@@ -570,7 +567,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             {
                 try
                 {
-                    originalProposals = QuickFixUtility.computeQuickFix(originalCompilationError);
+                    originalProposals = computeOriginalProposals(originalCompilationError);
                     cache.put(originalCompilationError, originalProposals);
                     IJavaCompletionProposal originalProposal = findOriginalProposal(originalProposals, bestProposal.getProposal());
                     bestProposal.setProposal(originalProposal);
@@ -584,13 +581,10 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         }
         for (AugmentedCompletionProposal bestProposal: toRemove)
             bestProposals_.remove(bestProposal);
-        Timer.completeSession();
-        Timer.printTime("Updating best proposals took: ");
     }
 
     private void processCompilationErrors() throws InvalidatedException
     {
-        Timer.startSession();
         try
         {
             int counter = 0;
@@ -601,7 +595,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                 CompilationErrorComparator cec = new CompilationErrorComparator();
                 Collections.sort(compilationErrors, cec);
                 CompilationError shadowCompilationError = compilationErrors.get(0);
-                IJavaCompletionProposal [] shadowProposals = QuickFixUtility.computeQuickFix(shadowCompilationError);
+                IJavaCompletionProposal [] shadowProposals = computeShadowProposals(shadowCompilationError);
                 addToShadowProposalsMap(shadowCompilationError, shadowProposals);
                 if (shadowProposals != null)
                 {
@@ -629,8 +623,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
              */
             // doSpeculativeAnalysis();
         }
-        Timer.completeSession();
-        Timer.printTime("Processing all compilation errors took: ");
     }
 
     private IJavaCompletionProposal convertToOriginalProposal(IJavaCompletionProposal shadowProposals,
@@ -664,8 +656,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             throw new InvalidatedException();
         try
         {
-            Timer.startSession();
-            
             int errorsBefore = getNumberOfErrors();
             logger.info("For compilation error: " + shadowCompilationError.toString());
             // This access to proposalsMap_ is safe since the only thread that can modify it is the calculator (this).
@@ -692,9 +682,11 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                 {
                     errorsAfter = processProposal(shadowProposal);
                     cachedProposals_.put(displayString, errorsAfter);
+                    // TODO Why do I need this?
                     if (errorsAfter == CompilationError.UNKNOWN)
-                        errorsAfter = BuilderUtility.calculateCompilationErrors(shadowProject_);
-                    if (errorsAfter.length != errorsBefore)
+                        errorsAfter = getShadowCEs();
+                    int errorsAfterUndo = getShadowCEs().length;
+                    if (errorsAfterUndo != errorsBefore)
                     {
                         logger.warning("For proposal = " + displayString
                                 + ", applying change and undo broke the synchronization of the projects. "
@@ -704,7 +696,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                     }
                 }
                 if (errorsAfter == CompilationError.UNKNOWN)
-                    errorsAfter = BuilderUtility.calculateCompilationErrors(shadowProject_);
+                    errorsAfter = getShadowCEs();
                 AugmentedCompletionProposal augmentedProposal = new AugmentedCompletionProposal(shadowProposal,
                         shadowCompilationError, errorsAfter, errorsBefore);
                 compareWithCurrentBest(augmentedProposal);
@@ -712,8 +704,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                 counter++;
                 logger.fine("");
             }
-            Timer.completeSession();
-            Timer.printTime("Processing one compilation error took: ");
             return result;
         }
         catch (InvalidatedException e)
@@ -809,10 +799,10 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
              * changed files buffer should be saved! Weird but true...
              */
             logger.fine("Performing change...");
-            undo = SpeculationUtility.performChangeAndSave(shadowChange);
+            undo = performChangeAndSave(shadowChange);
             logger.fine("Performed change...");
-            BuilderUtility.build(shadowProject_);
-            errors = BuilderUtility.calculateCompilationErrors(shadowProject_);
+            buildShadowProject();
+            errors = getShadowCEs();
             logger.fine("Number of compilation errors = " + errors.length);
         }
         catch (CoreException e)
@@ -828,8 +818,8 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         try
         {
             logger.fine("Performing undo...");
-            SpeculationUtility.performChangeAndSave(undo);
-            BuilderUtility.build(shadowProject_);
+            performChangeAndSave(undo);
+            buildShadowProject();
         }
         catch (CoreException e)
         {
@@ -839,11 +829,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             result = false;
         }
         return result;
-    }
-
-    private void syncProjects()
-    {
-        synchronizer_.syncProjects();
     }
 
     public boolean isSynched()
@@ -1151,5 +1136,51 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         result = localSpeculationCompletionTime_;
         timingLock_.unlock();
         return result;
+    }
+    
+    // Code written for profiling.
+    private void buildShadowProject()
+    {
+        BuilderUtility.build(shadowProject_);
+    }
+    
+    private void buildOriginalProject()
+    {
+        BuilderUtility.build(synchronizer_.getProject());
+    }
+    
+    private CompilationError [] getShadowCEs()
+    {
+        return BuilderUtility.calculateCompilationErrors(shadowProject_);
+    }
+    
+    private CompilationError [] getOriginalCEs()
+    {
+        return BuilderUtility.calculateCompilationErrors(synchronizer_.getProject());
+    }
+    
+    private IJavaCompletionProposal [] computeShadowProposals(CompilationError shadowCE) throws Exception
+    {
+        return QuickFixUtility.computeQuickFix(shadowCE);
+    }
+    
+    private IJavaCompletionProposal [] computeOriginalProposals(CompilationError originalCE) throws Exception
+    {
+        return QuickFixUtility.computeQuickFix(originalCE);
+    }
+    
+    private Change performChangeAndSave(Change shadowChange) throws CoreException
+    {
+        return SpeculationUtility.performChangeAndSave(shadowChange);
+    }
+    
+    private void syncProjects()
+    {
+        synchronizer_.syncProjects();
+    }
+    
+    private void testSynchronization()
+    {
+        synchronizer_.testSynchronization();
     }
 }
