@@ -7,6 +7,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
+import org.eclipse.jdt.ui.text.java.IProblemLocation;
 import org.eclipse.jface.text.contentassist.CompletionProposalPopup;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.swt.widgets.Display;
@@ -16,9 +17,10 @@ import org.eclipse.swt.widgets.TableItem;
 import edu.washington.cs.quickfix.speculation.Speculator;
 import edu.washington.cs.quickfix.speculation.calc.SpeculationCalculator;
 import edu.washington.cs.quickfix.speculation.calc.model.AugmentedCompletionProposal;
+import edu.washington.cs.quickfix.speculation.model.SpeculationUtility;
 import edu.washington.cs.synchronization.ProjectSynchronizer;
+import edu.washington.cs.util.eclipse.QuickFixUtility;
 import edu.washington.cs.util.eclipse.model.CompilationError;
-import edu.washington.cs.util.eclipse.model.CompilationErrorDetails;
 
 //@formatter:off
 /*
@@ -46,6 +48,7 @@ public class CompletionProposalPopupCoordinator
     // best proposals also include the local bests. BP = GBP + LBP.
     private ArrayList <AugmentedCompletionProposal> bestProposals_;
     private ArrayList <AugmentedCompletionProposal> globalBestProposals_;
+    private CompilationError [] originalCompilationErrors_;
     private final Object lock_ = new Object();
     private static final Logger logger = Logger.getLogger(CompletionProposalPopupCoordinator.class.getName());
     static
@@ -98,6 +101,14 @@ public class CompletionProposalPopupCoordinator
         }
         else
             logger.finer("All proposals are null, not updating the UI.");
+    }
+    
+    public void setOriginalCompilationErrors(CompilationError [] errors)
+    {
+        synchronized(lock_)
+        {
+            originalCompilationErrors_ = errors;
+        }
     }
 
     public void clearBestProposals()
@@ -252,24 +263,68 @@ public class CompletionProposalPopupCoordinator
             // ") non processed proposals, get " +
             // "(" + nonProcessedProposals.length + ") of them.";
             // First enter the global best proposals.
+            int gbpSize = 0;
             for(int a = 0; a < globalBestProposals_.size(); a++)
             {
                 AugmentedCompletionProposal proposal = globalBestProposals_.get(a);
-                TableItem item = setTableItem(proposal, a, knownStyle, true);
-                knownStyle = item.getStyle();
+                try
+                {
+                    resolve(proposal);
+                    TableItem item = setTableItem(proposal, gbpSize, knownStyle, true);
+                    gbpSize ++;
+                    knownStyle = item.getStyle();
+                } catch (GBPResolutionException e)
+                {
+                    logger.log(Level.SEVERE, "Cannot resolve global best proposal.", e);
+                }
             }
             // Then, enter the local proposals ordered.
             for (int a = 0; a < localProposals_.length; a++)
             {
-                TableItem item = setTableItem(localProposals_[a], a+globalBestProposals_.size(), knownStyle, false);
+                TableItem item = setTableItem(localProposals_[a], a+gbpSize, knownStyle, false);
                 knownStyle = item.getStyle();    
             }
             // Then, enter the proposals that we don't have a calculation for.
             for (int a = 0; a < nonProcessedProposals.length; a++)
-                setTableItem(nonProcessedProposals[a], a+globalBestProposals_.size()+localProposals_.length, knownStyle);
+                setTableItem(nonProcessedProposals[a], a+gbpSize+localProposals_.length, knownStyle);
             table_.setRedraw(true);
             table_.redraw();
         }
+    }
+    
+    // Since the resolution from shadow proposals to original proposals are no longer done at the end of
+    // speculative analysis, we need to resolve the remaining global best proposals the momment quick fix
+    // dialog is created.
+    private void resolve(AugmentedCompletionProposal globalBestProposal)
+    {
+        CompilationError [] originalErrors = null;
+        synchronized(lock_)
+        {
+            originalErrors = originalCompilationErrors_;
+        }
+        CompilationError shadowCompilationError = globalBestProposal.getCompilationError();
+        IProblemLocation shadowLocation = shadowCompilationError.getLocation();
+        CompilationError originalCompilationError = null;
+        for (CompilationError originalError: originalErrors)
+        {
+            IProblemLocation originalLocation = originalError.getLocation();
+            if (SpeculationUtility.sameProblemLocationContent(shadowLocation, originalLocation))
+                originalCompilationError = originalError;
+        }
+        if (originalCompilationError == null)
+            throw new GBPResolutionException("Cannot resolve the original compiplation error for shadow proposal = " + globalBestProposal);
+        
+        try
+        {
+            IJavaCompletionProposal [] originalProposals = computeOriginalProposals(originalCompilationError);
+            IJavaCompletionProposal originalProposal = findOriginalProposal(originalProposals, globalBestProposal.getProposal());
+            globalBestProposal.setProposal(originalProposal);
+        }
+        catch (Exception e)
+        {
+            throw new GBPResolutionException("Cannot resolve original proposal for shadow proposal = " + globalBestProposal);
+        }
+        
     }
     
     private TableItem setTableItem(AugmentedCompletionProposal proposal, int index, int knownStyle, boolean gbp)
@@ -431,5 +486,28 @@ public class CompletionProposalPopupCoordinator
          * TODO Somehow invalidate quick fix calculator at this point. Otherwise if user clicks the quick fix too fast
          * (i.e., before the next calculation starts), grabber reads the old values and thinks that it has the results!
          */
+    }
+    
+    private IJavaCompletionProposal findOriginalProposal(IJavaCompletionProposal [] originalProposals,
+            ICompletionProposal shadowProposal) throws Exception
+    {
+        for (IJavaCompletionProposal proposal: originalProposals)
+        {
+            if (proposal.getDisplayString().equals(shadowProposal.getDisplayString()))
+                return proposal;
+        }
+        logger.info("Cannot find the corresponding original proposal for = " + shadowProposal.getDisplayString());
+        int counter = 0;
+        for (IJavaCompletionProposal originalProposal: originalProposals)
+        {
+            counter++;
+            logger.info("\tOriginal proposal #" + counter + " = " + originalProposal.getDisplayString());
+        }
+        throw new Exception();
+    }
+    
+    private IJavaCompletionProposal [] computeOriginalProposals(CompilationError originalCE) throws Exception
+    {
+        return QuickFixUtility.computeQuickFix(originalCE);
     }
 }
