@@ -1021,11 +1021,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         shadowProposalRetrieval_ ++;
         shadowProposalRetrievalTime_ += (end - start);
         return result;
-        IJavaCompletionProposal [] result = QuickFixUtility.computeQuickFix(originalCE);
-        long end = System.nanoTime();
-        originalProposalRetrieval_ ++;
-        originalProposalRetrievalTime_ += (end - start);
-        return result;
     }
     
     private Change performChangeAndSave(Change shadowChange) throws CoreException

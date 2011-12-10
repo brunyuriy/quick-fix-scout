@@ -508,6 +508,11 @@ public class CompletionProposalPopupCoordinator
     
     private IJavaCompletionProposal [] computeOriginalProposals(CompilationError originalCE) throws Exception
     {
-        return QuickFixUtility.computeQuickFix(originalCE);
+        long start = System.nanoTime();
+        IJavaCompletionProposal [] result = QuickFixUtility.computeQuickFix(originalCE);
+        long end = System.nanoTime();
+        // originalProposalRetrieval_ ++;
+        // originalProposalRetrievalTime_ += (end - start);
+        return result;
     }
 }
