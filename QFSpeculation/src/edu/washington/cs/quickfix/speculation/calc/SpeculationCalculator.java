@@ -23,7 +23,6 @@ import org.eclipse.jdt.internal.ui.text.correction.proposals.ChangeCorrectionPro
 import org.eclipse.jdt.internal.ui.text.correction.proposals.LinkedNamesAssistProposal;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
-import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.ltk.core.refactoring.Change;
 
 import com.kivancmuslu.www.timer.Timer;
@@ -187,12 +186,11 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         logger.setLevel(Level.INFO);
     }
     private final ProjectSynchronizer synchronizer_;
+    
     private static final boolean DEVELOPMENT_TEST = false;
     public final static boolean TEST_TRANSFORMATION = DEVELOPMENT_TEST;
     public final static boolean TEST_SYNCHRONIZATION = true;
-    // Note that I need the following to later resolve the original quick fixes offered (proposals) for a
-    // particular shadow proposal.
-    private final Map <CompilationError, CompilationError> shadowToOriginalCompilationErrors_ = new HashMap <CompilationError, CompilationError>();
+
     private Date localSpeculationCompletionTime_ = null;
     private Date analysisCompletionTime_ = null;
     private ReentrantLock timingLock_;
@@ -386,35 +384,10 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         try
         {
             shadowCompilationErrors = getShadowCEs(); 
-            shadowToOriginalCompilationErrors_.clear();
             EclipseUIUtility.saveAllEditors(false);
             buildOriginalProject();
             CompilationError [] originalCompilationErrors = getOriginalCEs();
-            boolean found;
-            for (CompilationError shadowCompilationError: shadowCompilationErrors)
-            {
-                found = false;
-                IProblemLocation shadowLocation = shadowCompilationError.getLocation();
-                for (CompilationError originalCompilationError: originalCompilationErrors)
-                {
-                    IProblemLocation originalLocation = originalCompilationError.getLocation();
-                    if (SpeculationUtility.sameProblemLocationContent(originalLocation, shadowLocation))
-                    {
-                        shadowToOriginalCompilationErrors_.put(shadowCompilationError, originalCompilationError);
-                        found = true;
-                    }
-                }
-                if (!found)
-                {
-                    logger.warning("Cannot find the corresponding original compilation error for shadow compilation error = " + shadowCompilationError);
-                    int counter = 0;
-                    for(CompilationError originalCompilationError: originalCompilationErrors)
-                    {
-                        counter ++;
-                        logger.warning(counter + "-) " + originalCompilationError);
-                    }
-                }
-            }
+            CompletionProposalPopupCoordinator.getCoordinator().setOriginalCompilationErrors(originalCompilationErrors);
         }
         catch (Exception e)
         {
@@ -457,43 +430,11 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             // to defaults.
             signalSpeculativeAnalysisStart();
             processCompilationErrors();
-            updateBestProposals();
         }
         catch (InvalidatedException e)
         {
             throw e;
         }
-    }
-
-    private void updateBestProposals()
-    {
-        HashMap<CompilationError, IJavaCompletionProposal []> cache = new HashMap <CompilationError, IJavaCompletionProposal[]>();
-        ArrayList <AugmentedCompletionProposal> toRemove = new ArrayList <AugmentedCompletionProposal>();
-        for(AugmentedCompletionProposal bestProposal: bestProposals_)
-        {
-            CompilationError shadowCompilationError = bestProposal.getCompilationError();
-            CompilationError originalCompilationError = shadowToOriginalCompilationErrors_.get(shadowCompilationError);
-            IJavaCompletionProposal [] originalProposals = null;
-            if (cache.containsKey(originalCompilationError))
-                originalProposals = cache.get(originalCompilationError);
-            else
-            {
-                try
-                {
-                    originalProposals = computeOriginalProposals(originalCompilationError);
-                    cache.put(originalCompilationError, originalProposals);
-                    IJavaCompletionProposal originalProposal = findOriginalProposal(originalProposals, bestProposal.getProposal());
-                    bestProposal.setProposal(originalProposal);
-                }
-                catch (Exception e)
-                {
-                    logger.log(Level.SEVERE, "Could not get the original compilation error for: " + shadowCompilationError, e);
-                    toRemove.add(bestProposal);
-                }
-            }
-        }
-        for (AugmentedCompletionProposal bestProposal: toRemove)
-            bestProposals_.remove(bestProposal);
     }
 
     private void processCompilationErrors() throws InvalidatedException
@@ -544,24 +485,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         return proposalConverter_.convert(shadowProposals, shadowLocation);
     }
 
-    private IJavaCompletionProposal findOriginalProposal(IJavaCompletionProposal [] originalProposals,
-            ICompletionProposal shadowProposal)
-    {
-        for (IJavaCompletionProposal proposal: originalProposals)
-        {
-            if (proposal.getDisplayString().equals(shadowProposal.getDisplayString()))
-                return proposal;
-        }
-        logger.info("Cannot find the corresponding original proposal for = " + shadowProposal.getDisplayString());
-        int counter = 0;
-        for (IJavaCompletionProposal originalProposal: originalProposals)
-        {
-            counter++;
-            logger.info("\tOriginal proposal #" + counter + " = " + originalProposal.getDisplayString());
-        }
-        return null;
-    }
-    
     private AugmentedCompletionProposal [] processCompilationError(CompilationError shadowCompilationError)
             throws InvalidatedException
     {
@@ -1098,11 +1021,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         shadowProposalRetrieval_ ++;
         shadowProposalRetrievalTime_ += (end - start);
         return result;
-    }
-    
-    private IJavaCompletionProposal [] computeOriginalProposals(CompilationError originalCE) throws Exception
-    {
-        long start = System.nanoTime();
         IJavaCompletionProposal [] result = QuickFixUtility.computeQuickFix(originalCE);
         long end = System.nanoTime();
         originalProposalRetrieval_ ++;
