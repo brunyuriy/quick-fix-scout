@@ -202,22 +202,24 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         if (bestProposals_.isEmpty())
         // there is no current best.
         {
-            if (proposal.getErrorAfter() != AugmentedCompletionProposal.NOT_AVAILABLE)
+            if (proposal.isResultAvaliable())
                 bestProposals_.add(proposal);
             // else, this proposal is still not a good candidate.
         }
         else
         {
-            int lowestError = bestProposals_.get(0).getErrorAfter();
-            if (lowestError == proposal.getErrorAfter())
+            AugmentedCompletionProposal bestProposal = bestProposals_.get(0);
+            // comparison indicates the relative location of best proposal vs. proposal.
+            int comparison = bestProposal.compareTo(proposal);
+            if (comparison == 0)
             {
                 // as good as current best.
                 if (!bestProposals_.contains(proposal))
                     // make sure that it is not already added
                     bestProposals_.add(proposal);
             }
-            else if (proposal.getErrorAfter() != AugmentedCompletionProposal.NOT_AVAILABLE
-                    && lowestError > proposal.getErrorAfter())
+            // > means that best proposal should be coming later in the list. That is why here we swap them.
+            else if (comparison > 0)
             {
                 // new proposal is better then the old best(s). Clear the old list and add this proposal.
                 bestProposals_.clear();
@@ -465,6 +467,9 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     {
         if (activationRecord_.isInvalid() || isDead())
             throw new InvalidatedException();
+        if (SpeculationUtility.isFlaggedProposal(shadowProposal))
+            return CompilationError.NOT_COMPUTED;
+        
         CompilationError [] errors = CompilationError.UNKNOWN;
         if (shadowProposal instanceof ChangeCorrectionProposal)
         {

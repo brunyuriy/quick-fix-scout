@@ -27,6 +27,8 @@ public class CompilationError
     }
     
     public static final CompilationError [] UNKNOWN = new CompilationError [0];
+    // NOT_COMPUTED is a constant type compilation error for flagged proposals.
+    public static final CompilationError [] NOT_COMPUTED = new CompilationError[0];
     
     private final IMarker marker_;
     private final IProblemLocation location_;
