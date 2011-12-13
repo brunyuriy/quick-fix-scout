@@ -40,14 +40,18 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
     }
     private final SpeculationCalculator calculator_;
     private boolean notInitialized_;
-    private ArrayList <AugmentedCompletionProposal> calculatedAugmentedProposals_;
 
     public SpeculationGrabber(IInvocationContext context, IProblemLocation [] locations)
     {
         // The problem locations can be zero if the user invokes quick fix where no compilation errors
         // are present.
         // Sometimes I get two problem locations. What does that mean?
-        assert locations.length <= 1: "Was expecting one problem location, got " + locations.length;
+        for (IProblemLocation location: locations)
+        {
+            System.out.println("Problem location: ");
+            System.out.println(location.toString());
+        }
+        // assert locations.length <= 1: "Was expecting one problem location, got " + locations.length;
         locations_ = locations;
         context_ = context;
         calculator_ = Speculator.getSpeculator().getCurrentCalculator();
@@ -55,7 +59,6 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
         {
             notInitialized_ = false;
             cachedCompilationErrors_ = null;
-            calculatedAugmentedProposals_ = new ArrayList <AugmentedCompletionProposal>();
         }
         else
             notInitialized_ = true;
@@ -107,8 +110,8 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
                     result.add(compilationError);
             }
         }
-        for (CompilationError compilationError: result)
-            logger.finer(compilationError.toString());
+        // for (CompilationError compilationError: result)
+        // logger.finer(compilationError.toString());
         logger.fine("result.size = " + result.size() + ", locations.length = " + locations_.length);
         if (result.size() == locations_.length)
         {
@@ -119,12 +122,18 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
         }
         else
         {
-            logger.fine("Locations");
-            for (IProblemLocation location: locations_)
-                logger.fine(location.toString());
-            logger.fine("Results:");
-            for (CompilationError compilationError: result)
-                logger.fine(compilationError.toString());
+            logger.warning("Locations: ");
+            for (int a = 0; a < locations_.length; a++)
+            {
+                logger.warning("Problem Location # " + (a + 1));
+                logger.warning(locations_[a].toString());
+            }
+            logger.warning("Successfully cached: ");
+            for (int a = 0; a < result.size(); a++)
+            {
+                logger.warning("Problem Location # " + (a + 1));
+                logger.warning(result.get(a).getLocation().toString());
+            }
             return false;
         }
     }
@@ -147,14 +156,15 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
         Map <CompilationError, IJavaCompletionProposal []> problemLocationToProposalMap = calculator_.getProposalsMap();
         Map <CompilationError, AugmentedCompletionProposal []> problemLocationToCompilationErrorMap = calculator_
                 .getSpeculativeProposalsMap();
+        ArrayList <AugmentedCompletionProposal> calculatedProposals = new ArrayList <AugmentedCompletionProposal>();
         for (CompilationError compilationError: cachedCompilationErrors_)
         {
             IJavaCompletionProposal [] proposals = problemLocationToProposalMap.get(compilationError);
-            AugmentedCompletionProposal [] augmentedProposals = problemLocationToCompilationErrorMap.get(compilationError);
+            AugmentedCompletionProposal [] augmentedProposals = problemLocationToCompilationErrorMap
+                    .get(compilationError);
             if (augmentedProposals == null)
                 /*
                  * If resultMap does not contain the searched location, we should wait for the calculation to advance.
-                 * At this moment proposals will also be null, however it does not seem too important.
                  */
                 return;
             /*
@@ -162,24 +172,33 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
              * broken.
              */
             for (int a = 0; a < proposals.length; a++)
-                calculatedAugmentedProposals_.add(augmentedProposals[a]);
+            {
+                // Sometimes due to multiple error locations, the same proposal can be generated from different error
+                // locations. Here, we filter them and make sure that they are shown as one proposal in the UI. 
+                if (!doesInclude(calculatedProposals, augmentedProposals[a]))
+                    calculatedProposals.add(augmentedProposals[a]);
+            }
         }
-        // if (calculatedResults_.isEmpty())
-        // /*
-        // * This means that we have gone through everything, however couldn't find what we are looking for. Probably
-        // * we were looking for an outdated mapping.
-        // */
-        // return false;
         calculator_.removeListener(this);
-        logger.info("For the clicked quick fix, there are: " + calculatedAugmentedProposals_.size()
+        logger.info("For the clicked quick fix, there are: " + calculatedProposals.size()
                 + " proposals calculated in advance.");
-        for (int a = 0; a < calculatedAugmentedProposals_.size(); a++)
-            logger.finer((a + 1) + "-) " + calculatedAugmentedProposals_.get(a).getDisplayString()
-                    + " will result with " + calculatedAugmentedProposals_.get(a) + " compilation errors.");
-        CompletionProposalPopupCoordinator.getCoordinator().updateProposalTable(
-                eclipseProposals_,
-                calculatedAugmentedProposals_.toArray(new AugmentedCompletionProposal [calculatedAugmentedProposals_
-                        .size()]), cachedCompilationErrors_.toArray(new CompilationError[cachedCompilationErrors_.size()]));
+        for (int a = 0; a < calculatedProposals.size(); a++)
+            logger.finer((a + 1) + "-) " + calculatedProposals.get(a).getDisplayString() + " will result with "
+                    + calculatedProposals.get(a).getRemainingErrors().length + " compilation errors.");
+        CompletionProposalPopupCoordinator.getCoordinator().updateProposalTable(eclipseProposals_,
+                calculatedProposals.toArray(new AugmentedCompletionProposal [calculatedProposals.size()]),
+                cachedCompilationErrors_.toArray(new CompilationError [cachedCompilationErrors_.size()]));
+    }
+
+    private boolean doesInclude(ArrayList <AugmentedCompletionProposal> calculatedProposals,
+            AugmentedCompletionProposal augmentedCompletionProposal)
+    {
+        for(AugmentedCompletionProposal calculatedProposal: calculatedProposals)
+        {
+            if (calculatedProposal.getProposal().getDisplayString().equals(augmentedCompletionProposal.getProposal().getDisplayString()))
+                return true;
+        }
+        return false;
     }
 
     @Override
