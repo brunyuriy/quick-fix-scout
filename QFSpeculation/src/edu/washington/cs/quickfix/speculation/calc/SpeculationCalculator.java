@@ -83,7 +83,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
          * FINE =>  See information for each proposal (# of compilation errors).
          */
         //@formatter:on
-        logger.setLevel(Level.INFO);
+        logger.setLevel(Level.FINE);
     }
     private final ProjectSynchronizer synchronizer_;
     private static final boolean DEVELOPMENT_TEST = false;
@@ -381,7 +381,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         try
         {
             int errorsBefore = getNumberOfErrors();
-            logger.info("For compilation error: " + shadowCompilationError.toString());
+            logger.info("For compilation error: " + shadowCompilationError.toString() + " type = " + shadowCompilationError.getErrorCode());
             // This access to proposalsMap_ is safe since the only thread that can modify it is the calculator (this).
             IJavaCompletionProposal [] shadowProposals = shadowProposalsMap_.get(shadowCompilationError);
             logger.info("Number of proposals = " + shadowProposals.length);
@@ -400,7 +400,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                 {
                     errorsAfter = cachedProposals_.get(displayString);
                     logger.fine("Proposal (" + displayString + ") was already calculated in this pass, returning "
-                            + errorsAfter + " from cache map.");
+                            + errorsAfter.length + " from cache map.");
                 }
                 else
                 {
@@ -469,7 +469,8 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         if (shadowProposal instanceof ChangeCorrectionProposal)
         {
             ChangeCorrectionProposal shadowChangeCorrection = (ChangeCorrectionProposal) shadowProposal;
-            logger.fine("For change correction = " + shadowChangeCorrection.getDisplayString());
+            logger.fine("For change correction = " + shadowChangeCorrection.getDisplayString()
+                    + ", shadowProposal.class() = " + shadowProposal.getClass());
             Change shadowChange = null;
             try
             {
