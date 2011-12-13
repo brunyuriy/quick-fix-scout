@@ -186,11 +186,9 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         logger.setLevel(Level.INFO);
     }
     private final ProjectSynchronizer synchronizer_;
-    
     private static final boolean DEVELOPMENT_TEST = false;
     public final static boolean TEST_TRANSFORMATION = DEVELOPMENT_TEST;
     public final static boolean TEST_SYNCHRONIZATION = true;
-
     private Date localSpeculationCompletionTime_ = null;
     private Date analysisCompletionTime_ = null;
     private ReentrantLock timingLock_;
@@ -423,7 +421,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         try
         {
             logger.info("Speculative analysis started...");
-            // TODO Place for this code seems weird. It should be before the analysis preparations. 
+            // TODO Place for this code seems weird. It should be before the analysis preparations.
             if (TEST_SYNCHRONIZATION)
                 testSynchronization();
             // TODO handle thrown exception...
@@ -468,7 +466,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                 compilationErrors.remove(shadowCompilationError);
             }
             logger.info("Speculative analysis completed: Available proposals (" + counter
-                    + ") and their results calculated in advance...");                    
+                    + ") and their results calculated in advance...");
         }
         catch (Exception e)
         {
@@ -526,7 +524,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                     int errorsAfterUndo = getShadowCEs().length;
                     if (errorsAfterUndo != errorsBefore)
                     {
-                        logger.warning("For proposal = " + displayString
+                        logger.warning("For proposal = " + displayString + ", class = " + shadowProposal.getClass()
                                 + ", applying change and undo broke the synchronization of the projects. "
                                 + "Before change = " + errorsBefore + ", after change = " + errorsAfter.length
                                 + ". Re-synching projects...");
@@ -744,7 +742,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         if (localSpeculationCompletionTime_ == null)
             localSpeculationCompletionTime_ = currentTime;
         timingLock_.unlock();
-        
         speculativeAnalysisListenersLock_.lock();
         speculativeAnalysisListenersToRemove_.add(listener);
         speculativeAnalysisListenersLock_.unlock();
@@ -757,10 +754,9 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         // set analysis completion time.
         timingLock_.lock();
         if (localSpeculationCompletionTime_ == null)
-            localSpeculationCompletionTime_ = currentTime; 
+            localSpeculationCompletionTime_ = currentTime;
         analysisCompletionTime_ = currentTime;
         timingLock_.unlock();
-        
         speculativeAnalysisListenersLock_.lock();
         processRemoveList();
         for (SpeculativeAnalysisListener listener: speculativeAnalysisListeners_)
@@ -938,6 +934,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         shadowProposalsMap_.clear();
         shadowProposalsLock_.unlock();
     }
+
     // public static void main(String [] args)
     // {
     // HashMap <Integer, String> map1 = new HashMap <Integer, String>();
@@ -957,7 +954,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     // for (Integer integer: map3.keySet())
     // System.out.println(integer + " = " + map3.get(integer));
     // }
-
     public Date getAnalysisCompletionTime()
     {
         Date result;
@@ -975,7 +971,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         timingLock_.unlock();
         return result;
     }
-    
+
     // Code written for profiling.
     private void buildShadowProject()
     {
@@ -985,7 +981,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         shadowBuild_ ++;
         shadowBuildTime_ += (end - start);
     }
-    
+
     private void buildOriginalProject()
     {
         long start = System.nanoTime();
@@ -994,7 +990,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         originalBuild_ ++;
         originalBuildTime_ += (end - start);
     }
-    
+
     private CompilationError [] getShadowCEs()
     {
         long start = System.nanoTime();
@@ -1004,7 +1000,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         shadowCERetrievalTime_ += (end - start);
         return result;
     }
-    
+
     private CompilationError [] getOriginalCEs()
     {
         long start = System.nanoTime();
@@ -1014,7 +1010,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         originalCERetrievalTime_ += (end - start);
         return result;
     }
-    
+
     private IJavaCompletionProposal [] computeShadowProposals(CompilationError shadowCE) throws Exception
     {
         long start = System.nanoTime();
@@ -1024,7 +1020,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         shadowProposalRetrievalTime_ += (end - start);
         return result;
     }
-    
+
     private Change performChangeAndSave(Change shadowChange) throws CoreException
     {
         long start = System.nanoTime();
@@ -1034,7 +1030,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         shadowChangeApplicationTime_ += (end - start);
         return result;
     }
-    
+
     private void syncProjects()
     {
         long start = System.nanoTime();
@@ -1043,7 +1039,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         sync_ ++;
         syncTime_ += (end - start);
     }
-    
+
     private void testSynchronization()
     {
         long start = System.nanoTime();

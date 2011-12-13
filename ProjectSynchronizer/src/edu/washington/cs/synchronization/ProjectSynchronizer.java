@@ -242,11 +242,12 @@ public class ProjectSynchronizer
         logger.finer("Killed worker.");
     }
     
-    public void testSynchronization()
+    public boolean testSynchronization()
     {
         startInternalCheck();
-        syncProjects();
+        boolean result = syncProjects();
         completeInternalCheck();
+        return result;
     }
 
     /**

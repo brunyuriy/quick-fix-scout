@@ -75,9 +75,7 @@ public class ObservationGrabber extends Thread
          * However, I didn't want to directly call 'run'.
          */
         ProjectSynchronizer synchronizer = Observer.getUsageObserver().getCurrentSynchronizer();
-        synchronizer.startInternalCheck();
-        boolean internalCheck = synchronizer.syncProjects();
-        synchronizer.completeInternalCheck();
+        boolean internalCheck = synchronizer.testSynchronization();
         if (!internalCheck)
         {
             session.invalidate();
