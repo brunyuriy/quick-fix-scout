@@ -13,6 +13,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaModelMarker;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.internal.ui.text.correction.ProblemLocation;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
 
@@ -165,4 +166,44 @@ public class CompilationError
         return cu;
     }
     
+    // This code is copied and modified from ProblemLocation.java in org.eclipse.jdt.internal.ui.text.correction
+    public String getErrorCode()
+    {
+        int code = location_.getProblemId();
+        StringBuffer buf = new StringBuffer();
+        if ((code & IProblem.TypeRelated) != 0)
+        {
+            buf.append("TypeRelated + "); //$NON-NLS-1$
+        }
+        if ((code & IProblem.FieldRelated) != 0)
+        {
+            buf.append("FieldRelated + "); //$NON-NLS-1$
+        }
+        if ((code & IProblem.ConstructorRelated) != 0)
+        {
+            buf.append("ConstructorRelated + "); //$NON-NLS-1$
+        }
+        if ((code & IProblem.MethodRelated) != 0)
+        {
+            buf.append("MethodRelated + "); //$NON-NLS-1$
+        }
+        if ((code & IProblem.ImportRelated) != 0)
+        {
+            buf.append("ImportRelated + "); //$NON-NLS-1$
+        }
+        if ((code & IProblem.Internal) != 0)
+        {
+            buf.append("Internal + "); //$NON-NLS-1$
+        }
+        if ((code & IProblem.Syntax) != 0)
+        {
+            buf.append("Syntax + "); //$NON-NLS-1$
+        }
+        if ((code & IProblem.Javadoc) != 0)
+        {
+            buf.append("Javadoc + "); //$NON-NLS-1$
+        }
+        buf.append(code & IProblem.IgnoreCategoriesMask);
+        return buf.toString();
+    }
 }
