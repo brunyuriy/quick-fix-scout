@@ -146,6 +146,16 @@ public class ProjectSynchronizer
             }
         }
     }
+    
+    static void updateShadowWorkingSet()
+    {
+        IProject [] projects = ResourceUtility.getAllProjects();
+        for (IProject project: projects)
+        {
+            if (isShadowProject(project, projects))
+                ResourceUtility.addToWorkingSet(WORKING_SET_NAME, project);
+        }
+    }
 
     /**
      * Returns an array of synchronizers that are associated with the given project. <br>
@@ -588,6 +598,7 @@ public class ProjectSynchronizer
         if (shadow.exists())
             ResourceUtility.deleteResource(shadow);
         ResourceUtility.copyResource(original_, shadow);
+        ResourceUtility.addToWorkingSet(WORKING_SET_NAME, shadow);
     }
 
     /**

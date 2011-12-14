@@ -63,17 +63,18 @@ public class SynchronizerStarter implements IStartup
             showWelcomeMessageUsingJava();
             globalListenersAdded_ = true;
             
-            deleteUnusedShadows();
+            cleanup();
         }
     }
 
-    private static void deleteUnusedShadows()
+    private static void cleanup()
     {
         Thread thread = new Thread()
         {
             public void run()
             {
                 ProjectSynchronizer.deleteUnusedShadows();
+                ProjectSynchronizer.updateShadowWorkingSet();
             }
         };
         thread.start();

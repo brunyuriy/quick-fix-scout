@@ -67,6 +67,54 @@ public class ResourceUtility
     /**************
      * PUBLIC API *
      *************/
+    public static IWorkingSet getWorkingSet(String name)
+    {
+        IWorkingSetManager wsManager = PlatformUI.getWorkbench().getWorkingSetManager();
+        IWorkingSet [] workingSets = wsManager.getAllWorkingSets();
+        IWorkingSet result = null;
+        for (IWorkingSet ws: workingSets)
+        {
+            if (ws.getName().equals(name))
+            {
+                result = ws;
+                break;
+            }
+        }
+        if (result == null)
+        {
+            logger.info("Creating working set = " + name);
+            result = wsManager.createWorkingSet(name, new IAdaptable[0]);
+            wsManager.addWorkingSet(result);
+        }
+        return result;
+    }
+    
+    public static void addToWorkingSet(String wsName, IProject project)
+    {
+        IWorkingSet ws = getWorkingSet(wsName);
+        IAdaptable [] existingElements = ws.getElements();
+        boolean exists = false;
+        for (IAdaptable elt: existingElements)
+        {
+            IProject pro = (IProject) elt.getAdapter(IProject.class);
+            if(pro != null && pro.getName().equals(project.getName()))
+            {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists)
+        {
+            logger.info("Adding project = " + project.getName() + " to working set = " + wsName);
+            IAdaptable [] elements = new IAdaptable [existingElements.length + 1];
+            for (int a = 0; a < existingElements.length; a++)
+                elements[a] = existingElements[a];
+            IAdaptable adaptedProject = ws.adaptElements(new IAdaptable[] {project})[0];
+            elements[existingElements.length] = adaptedProject;
+            ws.setElements(elements);
+        }
+    }
+    
     /**
      * Returns the project that is represented by 'name'.
      * 
