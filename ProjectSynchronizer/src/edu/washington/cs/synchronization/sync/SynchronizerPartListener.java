@@ -36,8 +36,9 @@ import edu.washington.cs.util.exception.NotInitializedException;
  * changed, it notifies all the listeners with this information.
  * 
  * @author Kivanc Muslu
+ * 
+ * @deprecated Use {@link SynchronizerCursorListener} instead.
  */
-@Deprecated
 public class SynchronizerPartListener implements IPartListener2, ActiveFileChangedNotifier
 {
     /** singleton instance. */
