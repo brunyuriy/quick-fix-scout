@@ -11,6 +11,9 @@ import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.eclipse.core.filesystem.EFS;
+import org.eclipse.core.filesystem.IFileInfo;
+import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -60,6 +63,9 @@ public class ResourceUtility
     /**************
      * PUBLIC API *
      *************/
+    public static void createWorkingSet(String name)
+    {}
+
     /**
      * Returns the project that is represented by 'name'.
      * 
@@ -125,6 +131,19 @@ public class ResourceUtility
         return false;
     }
 
+    private static boolean areFilesSameSize(IFile file1, IFile file2) throws CoreException
+    {
+        IFileInfo fileInfo1 = getFileInfo(file1);
+        IFileInfo fileInfo2 = getFileInfo(file2);
+        return fileInfo1.getLength() == fileInfo2.getLength();
+    }
+
+    private static IFileInfo getFileInfo(IFile file) throws CoreException
+    {
+        IFileStore fileStore = EFS.getStore(file.getLocationURI());
+        return fileStore.fetchInfo();
+    }
+
     /**
      * Returns <code>true</code> if two given files differ in content, <code>false</code> otherwise. <br>
      * This method assumes that the files don't have any buffer associated with them and reads the content from disc.
@@ -135,8 +154,18 @@ public class ResourceUtility
      */
     public static boolean areFilesIdentical(IFile file1, IFile file2)
     {
-        // TODO Add a quick check over the files length so that you don't need to read the whole
-        // files.
+        // Quickly look at the file sizes to see if they differ.
+        try
+        {
+            if (!areFilesSameSize(file1, file2))
+                return false;
+        }
+        catch (CoreException e)
+        {
+            logger.log(Level.WARNING,
+                    "Tried to check file sizes for files " + file1.getName() + " and " + file2.getName()
+                            + " and it failed. However, this was an optimization and does not affect the execution.", e);
+        }
         InputStream is1 = null;
         InputStream is2 = null;
         boolean same = false;
@@ -370,15 +399,15 @@ public class ResourceUtility
             logger.info(pluginId + " v." + getPluginVersion(pluginId));
         logger.info("=== System information ===");
     }
-    
-    public static String getExternalVersion(String ... pluginIds)
+
+    public static String getExternalVersion(String... pluginIds)
     {
         String [] internalVersions = new String [pluginIds.length];
         for (int a = 0; a < internalVersions.length; a++)
             internalVersions[a] = (String) getPluginVersion(pluginIds[a]);
         return createExternalVersion(internalVersions);
     }
-    
+
     private static String createExternalVersion(String [] internalVersions)
     {
         int major = 0;
@@ -397,7 +426,6 @@ public class ResourceUtility
             minor += Integer.parseInt(parts[1].trim());
             micro += Integer.parseInt(parts[2].trim());
         }
-        
         double majorAvg = major * 1.0 / internalVersions.length;
         double minorAvg = minor * 1.0 / internalVersions.length;
         double microAvg = micro * 1.0 / internalVersions.length;
@@ -441,7 +469,7 @@ public class ResourceUtility
             //@formatter:on
         }
     }
-    
+
     private static void readVersionMap(boolean showError, HashMap <String, String> versionMap)
     {
         try
