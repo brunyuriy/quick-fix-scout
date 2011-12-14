@@ -23,11 +23,15 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.ui.IWorkingSet;
+import org.eclipse.ui.IWorkingSetManager;
+import org.eclipse.ui.PlatformUI;
 
 /**
  * This utility class provides static helper methods for resource handling. <br>
@@ -63,9 +67,6 @@ public class ResourceUtility
     /**************
      * PUBLIC API *
      *************/
-    public static void createWorkingSet(String name)
-    {}
-
     /**
      * Returns the project that is represented by 'name'.
      * 
@@ -78,6 +79,13 @@ public class ResourceUtility
         IWorkspaceRoot root = workspace.getRoot();
         IProject project = root.getProject(name);
         return project;
+    }
+    
+    public static IProject [] getAllProjects()
+    {
+        IWorkspace workspace = ResourcesPlugin.getWorkspace();
+        IWorkspaceRoot root = workspace.getRoot();
+        return root.getProjects();
     }
 
     public static IResource [] getMembers(IContainer container)

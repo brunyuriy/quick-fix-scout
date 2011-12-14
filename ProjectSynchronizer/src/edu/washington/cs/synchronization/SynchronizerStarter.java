@@ -62,7 +62,21 @@ public class SynchronizerStarter implements IStartup
             initFileBufferListener();
             showWelcomeMessageUsingJava();
             globalListenersAdded_ = true;
+            
+            deleteUnusedShadows();
         }
+    }
+
+    private static void deleteUnusedShadows()
+    {
+        Thread thread = new Thread()
+        {
+            public void run()
+            {
+                ProjectSynchronizer.deleteUnusedShadows();
+            }
+        };
+        thread.start();
     }
 
     // TODO There is no icon for the welcome screen.
