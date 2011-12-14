@@ -13,7 +13,7 @@ import edu.washington.cs.quickfix.speculation.hack.SpeculationHackActionManager;
 import edu.washington.cs.swing.SwingUtility;
 import edu.washington.cs.synchronization.ProjectSynchronizer;
 import edu.washington.cs.synchronization.SynchronizerStarter;
-import edu.washington.cs.synchronization.sync.SynchronizerPartListener;
+import edu.washington.cs.synchronization.sync.SynchronizerCursorListener;
 import edu.washington.cs.threading.MortalThread;
 import edu.washington.cs.util.eclipse.EclipseUIUtility;
 import edu.washington.cs.util.eclipse.ResourceUtility;
@@ -55,7 +55,7 @@ public class SpeculationStarter implements IStartup
         ResourceUtility.logSystemInformation(DEPENDENT_PLUG_INS);
         ResourceUtility.checkForUpdates("Speculator", false, DEPENDENT_PLUG_INS);
         SynchronizerStarter.initGlobalListeners();
-        SynchronizerPartListener.getInstance().addActiveFileChangedListener(Speculator.getSpeculator());
+        SynchronizerCursorListener.getInstance().addCursorChangedListener(Speculator.getSpeculator());
         IFile initialFile = null;
         try
         {

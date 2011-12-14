@@ -24,7 +24,6 @@ import com.kivancmuslu.www.timer.Timer;
 import com.kivancmuslu.www.zip.Zipper;
 
 import edu.washington.cs.synchronization.sync.SynchronizerBufferChangedListener;
-import edu.washington.cs.synchronization.sync.SynchronizerPartListener;
 import edu.washington.cs.synchronization.sync.SynchronizerResourceChangeListener;
 import edu.washington.cs.synchronization.sync.task.internal.TaskWorker;
 import edu.washington.cs.util.eclipse.ResourceUtility;

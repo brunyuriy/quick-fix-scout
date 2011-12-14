@@ -11,6 +11,7 @@ import org.eclipse.core.resources.IFile;
  * @author Kivanc Muslu
  * @see ActiveFileChangedListener
  */
+@Deprecated
 public interface ActiveFileChangedNotifier
 {
     /**
