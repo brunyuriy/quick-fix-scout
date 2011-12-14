@@ -1,10 +1,13 @@
 package edu.washington.cs.quickfix.speculation.calc;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -24,6 +27,7 @@ import org.eclipse.ltk.core.refactoring.Change;
 import com.kivancmuslu.www.timer.Timer;
 
 import edu.cs.washington.quickfix.speculation.converter.IJavaCompletionProposalConverter;
+import edu.washington.cs.quickfix.speculation.Speculator;
 import edu.washington.cs.quickfix.speculation.calc.model.ActivationRecord;
 import edu.washington.cs.quickfix.speculation.calc.model.AugmentedCompletionProposal;
 import edu.washington.cs.quickfix.speculation.calc.model.SpeculativeAnalysisListener;
@@ -39,6 +43,7 @@ import edu.washington.cs.threading.MortalThread;
 import edu.washington.cs.util.eclipse.BuilderUtility;
 import edu.washington.cs.util.eclipse.EclipseUIUtility;
 import edu.washington.cs.util.eclipse.QuickFixUtility;
+import edu.washington.cs.util.eclipse.SharedConstants;
 import edu.washington.cs.util.eclipse.model.CompilationError;
 
 @SuppressWarnings("restriction")
@@ -234,38 +239,227 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     {
         if (isDead())
             return;
+        
         Timer.startSession();
         activationRecord_ = new ActivationRecord();
-        TaskWorker currentWorker = synchronizer_.getTaskWorker();
-        currentWorker.block();
-        /*
-         * Stop the current synchronizer thread, and calculate the quick fixes and their results in the shadow project.
-         */
-        logger.fine("Waiting until sync thread is done.");
-        currentWorker.waitUntilSynchronization();
-        doAnalysisPreparations();
-        try
+        int [] order = null;
+        Bot bot = new QFS_GBP_Bot(order);
+        do
         {
-            doSpeculativeAnalysis();
-            activationRecord_.deactivate();
-        }
-        catch (InvalidatedException e)
-        {
-            activationRecord_.activate();
-            logger.info("Speculative analysis is invalidated in the middle.");
-        }
-        currentWorker.unblock();
-        stopWorking();
-        // need to map proposals gained from shadow project to the original project!
-        if (activationRecord_.isValid())
-        {
-            CompletionProposalPopupCoordinator.getCoordinator().setBestProposals(bestProposals_);
-            signalSpeculativeAnalysisComplete();
-        }
-        logger.info("");
-        Timer.completeSession();
-        logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
+            TaskWorker currentWorker = synchronizer_.getTaskWorker();
+            currentWorker.block();
+            /*
+             * Stop the current synchronizer thread, and calculate the quick fixes and their results in the shadow project.
+             */
+            logger.fine("Waiting until sync thread is done.");
+            currentWorker.waitUntilSynchronization();
+            doAnalysisPreparations();
+            try
+            {
+                doSpeculativeAnalysis();
+                activationRecord_.deactivate();
+            }
+            catch (InvalidatedException e)
+            {
+                activationRecord_.activate();
+                logger.info("Speculative analysis is invalidated in the middle.");
+            }
+            stopWorking();
+//            currentWorker.clear();
+            currentWorker.unblock();
+            // need to map proposals gained from shadow project to the original project!
+            if (activationRecord_.isValid())
+            {
+                CompletionProposalPopupCoordinator.getCoordinator().setBestProposals(bestProposals_);
+                signalSpeculativeAnalysisComplete();
+            }
+            logger.info("");
+            
+            Timer.completeSession();
+            logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
+            if (!bot.done(true))
+            {
+                AugmentedCompletionProposal shadowProposal = bot.selectShadowProposal();
+                bot.snapshot();
+                bot.applyProposal(shadowProposal);
+            }
+//            CompilationError [] remaining = BuilderUtility.calculateCompilationErrors(shadowProject_);
+//            updateShadowCompilationErrors(remaining);
+            Thread.yield();
+            Thread.yield();
+            Thread.yield();
+            Thread.yield();
+            Thread.yield();
+        } while(!bot.done(false));
+        bot.snapshot();
+        bot.closeLog();
     }
+    
+    private static int botCounter = 1;
+    
+    private abstract class Bot
+    {
+        protected int [] order_;
+        private final String name_;
+        
+        private int counter_;
+        private final int id_;
+        
+        private final String home = System.getProperty("user.home");
+        private final String fs = File.separator;
+        private final File topDir = new File(home + fs + "Quick_Fix_Scout_Bots");
+        private Formatter writer_;
+        
+        protected Bot(int [] order, String name)
+        {
+            order_ = order;
+            name_ = name;
+            counter_ = 0;
+            id_ = botCounter;
+            botCounter ++;
+            
+            if (!topDir.exists())
+                topDir.mkdirs();
+        }
+        
+        public Formatter getWriter()
+        {
+            if (writer_ == null)
+                writer_ = createFormatter();
+            return writer_;
+        }
+
+        public abstract AugmentedCompletionProposal selectShadowProposal();
+
+        public void closeLog()
+        {
+            if (writer_ != null)
+                writer_.close();
+        }
+        
+        private Formatter createFormatter()
+        {
+            Formatter result = null;
+            try
+            {
+                result = new Formatter(new File(topDir, getName() + "_" + SharedConstants.UNIQUE_TIME_STAMP + ".txt"));
+            }
+            catch (FileNotFoundException e)
+            {
+                e.printStackTrace();
+            }
+            return result;
+        }
+        
+        private String getName()
+        {
+            return name_ + "_" + id_;
+        }
+
+        public void applyProposal(AugmentedCompletionProposal shadowProposal)
+        {
+            CompilationError shadowCE = shadowProposal.getCompilationError();
+            CompilationError originalCE = shadowToOriginalCompilationErrors_.get(shadowCE);
+            try
+            {
+                IJavaCompletionProposal [] originalProposals = QuickFixUtility.computeQuickFix(originalCE);
+                IJavaCompletionProposal originalProposal = findOriginalProposal(originalProposals, shadowProposal.getProposal());
+                write("Applying proposal = " + originalProposal.getDisplayString() + " on project version: " + (counter_ - 1));
+                if (originalProposal instanceof ChangeCorrectionProposal)
+                {
+                    ChangeCorrectionProposal ccp = (ChangeCorrectionProposal) originalProposal;
+                    Change change = ccp.getChange();
+                    int remainingError = applyChange(change, synchronizer_.getProject());
+//                    applyChange(((ChangeCorrectionProposal) shadowProposal.getProposal()).getChange(), shadowProject_);
+                    write("Application successful. Remaining compilation errors = " + remainingError);
+                }
+            }
+            catch (Exception e)
+            {
+                write("Application failed due to error = ", e);
+                e.printStackTrace();
+            }
+            write("");
+        }
+        
+        private void write(String message)
+        {
+            getWriter().format("%s%n", message);
+            getWriter().flush();
+        }
+        
+        private void write(String message, Exception e)
+        {
+            write(message);
+            for (StackTraceElement elt: e.getStackTrace())
+                getWriter().format("%s%n", elt.toString());
+            getWriter().flush();
+        }
+
+        // Copied and modified from applyChange method ...
+        private int applyChange(Change originalChange, IProject project)
+        {
+            if (originalChange == null)
+                return -1;
+            CompilationError [] errors = CompilationError.UNKNOWN;
+            try
+            {
+                /*
+                 * Problem: If I build the project before actually saving it, the markers are not generated correctly... The
+                 * changed files buffer should be saved! Weird but true...
+                 */
+                SpeculationUtility.performChangeAndSave(originalChange);
+                BuilderUtility.build(project);
+                errors = BuilderUtility.calculateCompilationErrors(project);
+            }
+            catch (CoreException e)
+            {
+            }
+            return errors.length;
+        }
+        
+        
+        public boolean done(boolean log)
+        {
+            int errors = BuilderUtility.getNumberOfCompilationErrors(synchronizer_.getProject());
+            if (errors == 0)
+                return true;
+
+            if (log)
+                write("Project has " + errors + " errors. Bot is working...");
+            return false;
+            
+//            assert shadowCompilationErrors_ != null;
+//            
+//            int errors = shadowCompilationErrors_.length;
+//            if (errors == 0)
+//                return true;
+//            write("Project has " + errors + " errors. Bot is working...");
+//            return false;
+        }
+        
+        public void snapshot()
+        {
+            String pName = synchronizer_.getProject().getName();
+            synchronizer_.snapshotShadow(topDir, pName + "_" + getName() + "_" + counter_ + "_" + SharedConstants.UNIQUE_TIME_STAMP + ".zip");
+            counter_ ++;
+        }
+    }
+    
+    private class QFS_GBP_Bot extends Bot
+    {
+        public QFS_GBP_Bot(int [] order)
+        {
+            super(order, "qfs-gbp");
+        }
+        
+        public AugmentedCompletionProposal selectShadowProposal()
+        {
+            int index = (int) (Math.random() * bestProposals_.size());
+            return bestProposals_.get(index);
+        }
+    }
+    
 
     private void doAnalysisPreparations()
     {
