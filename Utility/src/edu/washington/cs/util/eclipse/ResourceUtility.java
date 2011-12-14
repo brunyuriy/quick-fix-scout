@@ -11,6 +11,9 @@ import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.eclipse.core.filesystem.EFS;
+import org.eclipse.core.filesystem.IFileInfo;
+import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -20,11 +23,15 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.ui.IWorkingSet;
+import org.eclipse.ui.IWorkingSetManager;
+import org.eclipse.ui.PlatformUI;
 
 /**
  * This utility class provides static helper methods for resource handling. <br>
@@ -60,6 +67,54 @@ public class ResourceUtility
     /**************
      * PUBLIC API *
      *************/
+    public static IWorkingSet getWorkingSet(String name)
+    {
+        IWorkingSetManager wsManager = PlatformUI.getWorkbench().getWorkingSetManager();
+        IWorkingSet [] workingSets = wsManager.getAllWorkingSets();
+        IWorkingSet result = null;
+        for (IWorkingSet ws: workingSets)
+        {
+            if (ws.getName().equals(name))
+            {
+                result = ws;
+                break;
+            }
+        }
+        if (result == null)
+        {
+            logger.info("Creating working set = " + name);
+            result = wsManager.createWorkingSet(name, new IAdaptable[0]);
+            wsManager.addWorkingSet(result);
+        }
+        return result;
+    }
+    
+    public static void addToWorkingSet(String wsName, IProject project)
+    {
+        IWorkingSet ws = getWorkingSet(wsName);
+        IAdaptable [] existingElements = ws.getElements();
+        boolean exists = false;
+        for (IAdaptable elt: existingElements)
+        {
+            IProject pro = (IProject) elt.getAdapter(IProject.class);
+            if(pro != null && pro.getName().equals(project.getName()))
+            {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists)
+        {
+            logger.info("Adding project = " + project.getName() + " to working set = " + wsName);
+            IAdaptable [] elements = new IAdaptable [existingElements.length + 1];
+            for (int a = 0; a < existingElements.length; a++)
+                elements[a] = existingElements[a];
+            IAdaptable adaptedProject = ws.adaptElements(new IAdaptable[] {project})[0];
+            elements[existingElements.length] = adaptedProject;
+            ws.setElements(elements);
+        }
+    }
+    
     /**
      * Returns the project that is represented by 'name'.
      * 
@@ -72,6 +127,13 @@ public class ResourceUtility
         IWorkspaceRoot root = workspace.getRoot();
         IProject project = root.getProject(name);
         return project;
+    }
+    
+    public static IProject [] getAllProjects()
+    {
+        IWorkspace workspace = ResourcesPlugin.getWorkspace();
+        IWorkspaceRoot root = workspace.getRoot();
+        return root.getProjects();
     }
 
     public static IResource [] getMembers(IContainer container)
@@ -125,6 +187,19 @@ public class ResourceUtility
         return false;
     }
 
+    private static boolean areFilesSameSize(IFile file1, IFile file2) throws CoreException
+    {
+        IFileInfo fileInfo1 = getFileInfo(file1);
+        IFileInfo fileInfo2 = getFileInfo(file2);
+        return fileInfo1.getLength() == fileInfo2.getLength();
+    }
+
+    private static IFileInfo getFileInfo(IFile file) throws CoreException
+    {
+        IFileStore fileStore = EFS.getStore(file.getLocationURI());
+        return fileStore.fetchInfo();
+    }
+
     /**
      * Returns <code>true</code> if two given files differ in content, <code>false</code> otherwise. <br>
      * This method assumes that the files don't have any buffer associated with them and reads the content from disc.
@@ -135,8 +210,18 @@ public class ResourceUtility
      */
     public static boolean areFilesIdentical(IFile file1, IFile file2)
     {
-        // TODO Add a quick check over the files length so that you don't need to read the whole
-        // files.
+        // Quickly look at the file sizes to see if they differ.
+        try
+        {
+            if (!areFilesSameSize(file1, file2))
+                return false;
+        }
+        catch (CoreException e)
+        {
+            logger.log(Level.WARNING,
+                    "Tried to check file sizes for files " + file1.getName() + " and " + file2.getName()
+                            + " and it failed. However, this was an optimization and does not affect the execution.", e);
+        }
         InputStream is1 = null;
         InputStream is2 = null;
         boolean same = false;
@@ -370,15 +455,15 @@ public class ResourceUtility
             logger.info(pluginId + " v." + getPluginVersion(pluginId));
         logger.info("=== System information ===");
     }
-    
-    public static String getExternalVersion(String ... pluginIds)
+
+    public static String getExternalVersion(String... pluginIds)
     {
         String [] internalVersions = new String [pluginIds.length];
         for (int a = 0; a < internalVersions.length; a++)
             internalVersions[a] = (String) getPluginVersion(pluginIds[a]);
         return createExternalVersion(internalVersions);
     }
-    
+
     private static String createExternalVersion(String [] internalVersions)
     {
         int major = 0;
@@ -397,7 +482,6 @@ public class ResourceUtility
             minor += Integer.parseInt(parts[1].trim());
             micro += Integer.parseInt(parts[2].trim());
         }
-        
         double majorAvg = major * 1.0 / internalVersions.length;
         double minorAvg = minor * 1.0 / internalVersions.length;
         double microAvg = micro * 1.0 / internalVersions.length;
@@ -441,7 +525,7 @@ public class ResourceUtility
             //@formatter:on
         }
     }
-    
+
     private static void readVersionMap(boolean showError, HashMap <String, String> versionMap)
     {
         try
@@ -453,7 +537,7 @@ public class ResourceUtility
                 String line = reader.nextLine();
                 String [] parts = line.split(" - ");
                 if (parts.length != 2)
-                    logger.severe("Malformed version information line for = " + line);
+                    logger.finer("Malformed version information line for = " + line);
                 else
                     versionMap.put(parts[0].trim(), parts[1].trim());
             }

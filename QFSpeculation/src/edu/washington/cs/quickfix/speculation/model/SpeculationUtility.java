@@ -15,6 +15,7 @@ import org.eclipse.jdt.core.IOpenable;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
@@ -68,6 +69,17 @@ public class SpeculationUtility
         CompilationErrorDetails d1 = ce1.computeDetails();
         CompilationErrorDetails d2 = ce2.computeDetails();
         return d1.getFile().getName().equals(d2.getFile().getName()) && d1.getLine() == d2.getLine();
+    }
+    
+    // Flagged proposals are the proposals that force getting out of sync (after undo application)
+    // That is why they are not computed during the speculation and represented with (?) instead of
+    // N/A in Quick Fix Dialog.
+    public static boolean isFlaggedProposal(IJavaCompletionProposal proposal)
+    {
+        String displayString = proposal.getDisplayString();
+        if (displayString.startsWith("Rename compilation unit to '") && displayString.endsWith(".java'"))
+            return true;
+        return false;
     }
     
     public static boolean sameProblemLocationContent(IProblemLocation location1, IProblemLocation location2)

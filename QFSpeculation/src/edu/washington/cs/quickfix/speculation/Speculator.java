@@ -9,10 +9,10 @@ import org.eclipse.core.resources.IProject;
 import edu.washington.cs.quickfix.speculation.calc.SpeculationCalculator;
 import edu.washington.cs.quickfix.speculation.gui.SpeculationPreferencePage;
 import edu.washington.cs.synchronization.ProjectSynchronizer;
-import edu.washington.cs.synchronization.sync.internal.ActiveFileChangedListener;
+import edu.washington.cs.synchronization.sync.internal.CursorChangedListener;
 import edu.washington.cs.util.log.LogHandlers;
 
-public class Speculator implements ActiveFileChangedListener
+public class Speculator implements CursorChangedListener
 {
     public static final String PLUG_IN_ID = "edu.washington.cs.quickfix.speculation";
     public static final Logger logger = Logger.getLogger(Speculator.class.getName());
@@ -132,7 +132,7 @@ public class Speculator implements ActiveFileChangedListener
     }
 
     @Override
-    public void activeProjectChanged(IFile file)
+    public void editorFileChanged(IFile file)
     {
         IProject project = file.getProject();
         IProject currentProject = getCurrentProject();
@@ -140,5 +140,11 @@ public class Speculator implements ActiveFileChangedListener
             speculateProject(file);
         else if (currentProject != null && project.getName().equals(currentProject.getName()))
             getCurrentCalculator().setCurrentFile(file);
+    }
+
+    @Override
+    public void cursorChanged(int offset)
+    {
+        getCurrentCalculator().setCursorOffset(offset);
     }
 }

@@ -36,6 +36,8 @@ import edu.washington.cs.util.exception.NotInitializedException;
  * changed, it notifies all the listeners with this information.
  * 
  * @author Kivanc Muslu
+ * 
+ * @deprecated Use {@link SynchronizerCursorListener} instead.
  */
 public class SynchronizerPartListener implements IPartListener2, ActiveFileChangedNotifier
 {
@@ -45,7 +47,7 @@ public class SynchronizerPartListener implements IPartListener2, ActiveFileChang
     private static final Logger logger = Logger.getLogger(SynchronizerPartListener.class.getName());
     static
     {
-        logger.setLevel(Level.INFO);
+        logger.setLevel(Level.FINE);
     }
     /** listener list. */
     private final ArrayList <ActiveFileChangedListener> listeners_ = new ArrayList <ActiveFileChangedListener>();
@@ -84,6 +86,15 @@ public class SynchronizerPartListener implements IPartListener2, ActiveFileChang
     @Override
     public void partActivated(IWorkbenchPartReference partRef)
     {
+//        IEditorPart editor = getEditorPart(partRef);
+//        if (editor != null && editor instanceof ITextEditor)
+//        {
+//            ITextEditor textEditor = (ITextEditor) editor;
+//            updateCursorListener(textEditor.getSelectionProvider());
+//        }
+//        else
+//            System.out.println("Unknown editor type = " + editor.getClass());
+        
         // activation is the last thing to happen in a part listener. However even during the activation I cannot close the current file.
         debugPartActivity("Part activated", partRef);
         final IFile file = getCurrentFile(partRef);
@@ -165,6 +176,13 @@ public class SynchronizerPartListener implements IPartListener2, ActiveFileChang
     @Override
     public void partInputChanged(IWorkbenchPartReference partRef)
     {
+//        IEditorPart editor = getEditorPart(partRef);
+//        if (editor != null && editor instanceof ITextEditor)
+//        {
+//            ITextEditor textEditor = (ITextEditor) editor;
+//            updateCursorListener(textEditor.getSelectionProvider());
+//        }
+        
         debugPartActivity("Part input changed", partRef);
         IFile file = getCurrentFile(partRef);
         if (file != null)

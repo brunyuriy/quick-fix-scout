@@ -37,7 +37,6 @@ import edu.washington.cs.quickfix.speculation.hack.CompletionProposalPopupCoordi
 import edu.washington.cs.quickfix.speculation.model.Pair;
 import edu.washington.cs.quickfix.speculation.model.SpeculationUtility;
 import edu.washington.cs.synchronization.ProjectSynchronizer;
-import edu.washington.cs.synchronization.sync.SynchronizerPartListener;
 import edu.washington.cs.synchronization.sync.internal.ProjectModificationListener;
 import edu.washington.cs.synchronization.sync.task.internal.TaskWorker;
 import edu.washington.cs.threading.MortalThread;
@@ -167,6 +166,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
      * which markers to compute first). <br>
      */
     private volatile IFile currentFile_;
+    private volatile int currentCursorOffset_;
     private volatile ActivationRecord activationRecord_;
     private ArrayList <SpeculativeAnalysisListener> speculativeAnalysisListeners_;
     private ArrayList <SpeculativeAnalysisListener> speculativeAnalysisListenersToRemove_;
@@ -183,7 +183,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
          * FINE =>  See information for each proposal (# of compilation errors).
          */
         //@formatter:on
-        logger.setLevel(Level.INFO);
+        logger.setLevel(Level.FINE);
     }
     private final ProjectSynchronizer synchronizer_;
     private static final boolean DEVELOPMENT_TEST = false;
@@ -302,22 +302,24 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         if (bestProposals_.isEmpty())
         // there is no current best.
         {
-            if (proposal.getErrorAfter() != AugmentedCompletionProposal.NOT_AVAILABLE)
+            if (proposal.isResultAvaliable())
                 bestProposals_.add(proposal);
             // else, this proposal is still not a good candidate.
         }
         else
         {
-            int lowestError = bestProposals_.get(0).getErrorAfter();
-            if (lowestError == proposal.getErrorAfter())
+            AugmentedCompletionProposal bestProposal = bestProposals_.get(0);
+            // comparison indicates the relative location of best proposal vs. proposal.
+            int comparison = bestProposal.compareTo(proposal);
+            if (comparison == 0)
             {
                 // as good as current best.
                 if (!bestProposals_.contains(proposal))
                     // make sure that it is not already added
                     bestProposals_.add(proposal);
             }
-            else if (proposal.getErrorAfter() != AugmentedCompletionProposal.NOT_AVAILABLE
-                    && lowestError > proposal.getErrorAfter())
+            // > means that best proposal should be coming later in the list. That is why here we swap them.
+            else if (comparison > 0)
             {
                 // new proposal is better then the old best(s). Clear the old list and add this proposal.
                 bestProposals_.clear();
@@ -493,7 +495,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         try
         {
             int errorsBefore = getNumberOfErrors();
-            logger.info("For compilation error: " + shadowCompilationError.toString());
+            logger.info("For compilation error: " + shadowCompilationError.toString() + " type = " + shadowCompilationError.getErrorCode());
             // This access to proposalsMap_ is safe since the only thread that can modify it is the calculator (this).
             IJavaCompletionProposal [] shadowProposals = shadowProposalsMap_.get(shadowCompilationError);
             logger.info("Number of proposals = " + shadowProposals.length);
@@ -512,7 +514,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                 {
                     errorsAfter = cachedProposals_.get(displayString);
                     logger.fine("Proposal (" + displayString + ") was already calculated in this pass, returning "
-                            + errorsAfter + " from cache map.");
+                            + errorsAfter.length + " from cache map.");
                 }
                 else
                 {
@@ -577,11 +579,15 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     {
         if (activationRecord_.isInvalid() || isDead())
             throw new InvalidatedException();
+        if (SpeculationUtility.isFlaggedProposal(shadowProposal))
+            return CompilationError.NOT_COMPUTED;
+        
         CompilationError [] errors = CompilationError.UNKNOWN;
         if (shadowProposal instanceof ChangeCorrectionProposal)
         {
             ChangeCorrectionProposal shadowChangeCorrection = (ChangeCorrectionProposal) shadowProposal;
-            logger.fine("For change correction = " + shadowChangeCorrection.getDisplayString());
+            logger.fine("For change correction = " + shadowChangeCorrection.getDisplayString()
+                    + ", shadowProposal.class() = " + shadowProposal.getClass());
             Change shadowChange = null;
             try
             {
@@ -773,9 +779,11 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     private class CompilationErrorComparator implements Comparator <CompilationError>
     {
         private final String currentFilePath_;
-
+        private final int cursorOffset_;
+        
         private CompilationErrorComparator()
         {
+            cursorOffset_ = currentCursorOffset_;
             IFile currentFile = currentFile_;
             if (currentFile != null)
                 currentFilePath_ = currentFile.getProjectRelativePath().toString();
@@ -788,12 +796,34 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         {
             String path1 = error1.getResource().getProjectRelativePath().toString();
             String path2 = error2.getResource().getProjectRelativePath().toString();
-            if (path1.equals(path2))
-                return 0;
-            else if (currentFilePath_ != null && path1.equals(currentFilePath_))
-                return -1;
-            else if (currentFilePath_ != null && path2.equals(currentFilePath_))
-                return 1;
+            if (currentFilePath_ != null)
+            {
+                if (currentFilePath_.equals(path1))
+                {
+                    if (currentFilePath_.equals(path2))
+                    {
+                        // Both compilation errors are on the current editor file. We need to compare the offsets.
+                        int offset1 = error1.getLocation().getOffset();
+                        int offset2 = error2.getLocation().getOffset();
+                        
+                        int diff1 = Math.abs(cursorOffset_ - offset1);
+                        int diff2 = Math.abs(cursorOffset_ - offset2);
+                        
+                        return diff1 - diff2;
+                    }
+                    // The first compilation error is on the current editor file whereas the second one is not.
+                    // So, we process the first one earlier.
+                    else
+                        return -1;
+                }
+                // The second compilation error is on the current editor file whereas the first one is not.
+                // So, we process the second one earlier.
+                else if (currentFilePath_.equals(path2))
+                    return 1;
+                else
+                    return 0;
+            }
+            // There is no selected file in the Eclipse editor, so all compilation errors are equal.
             else
                 return 0;
         }
@@ -813,6 +843,11 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     public void setCurrentFile(IFile file)
     {
         currentFile_ = file;
+    }
+    
+    public void setCursorOffset(int offset)
+    {
+        currentCursorOffset_ = offset;
     }
 
     /**

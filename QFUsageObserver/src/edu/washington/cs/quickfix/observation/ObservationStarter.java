@@ -18,7 +18,7 @@ import edu.washington.cs.quickfix.observation.log.ObservationOperationHistoryLis
 import edu.washington.cs.swing.SwingUtility;
 import edu.washington.cs.synchronization.ProjectSynchronizer;
 import edu.washington.cs.synchronization.SynchronizerStarter;
-import edu.washington.cs.synchronization.sync.SynchronizerPartListener;
+import edu.washington.cs.synchronization.sync.SynchronizerCursorListener;
 import edu.washington.cs.threading.MortalThread;
 import edu.washington.cs.util.eclipse.EclipseUIUtility;
 import edu.washington.cs.util.eclipse.ResourceUtility;
@@ -58,7 +58,7 @@ public class ObservationStarter implements IStartup
     {
         logger.info("QFObservationStarter is running...");
         SynchronizerStarter.initGlobalListeners();
-        SynchronizerPartListener.getInstance().addActiveFileChangedListener(Observer.getUsageObserver());
+        SynchronizerCursorListener.getInstance().addCursorChangedListener(Observer.getUsageObserver());
         OperationHistoryFactory.getOperationHistory().addOperationHistoryListener(
                 new ObservationOperationHistoryListener());
         sendLogs();

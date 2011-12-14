@@ -8,13 +8,12 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IPartListener2;
 import org.eclipse.ui.IStartup;
-import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 
 import edu.washington.cs.swing.KDialog;
+import edu.washington.cs.synchronization.sync.SynchronizerCursorListener;
 import edu.washington.cs.synchronization.sync.SynchronizerFileBufferListener;
-import edu.washington.cs.synchronization.sync.SynchronizerPartListener;
 import edu.washington.cs.synchronization.sync.SynchronizerResourceChangeListener;
 import edu.washington.cs.util.eclipse.PreferencesUtility;
 
@@ -54,15 +53,34 @@ public class SynchronizerStarter implements IStartup
                 public void run()
                 {
                     IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
-                    // manageWorkingSets(window);
-                    initPartListener(window);
+                    initPostSelectionListener(window);
                 }
             });
             initResourceListener();
             initFileBufferListener();
             showWelcomeMessageUsingJava();
             globalListenersAdded_ = true;
+            
+            cleanup();
         }
+    }
+    
+    private static void initPostSelectionListener(IWorkbenchWindow window)
+    {
+        window.getSelectionService().addPostSelectionListener(SynchronizerCursorListener.getInstance());
+    }
+
+    private static void cleanup()
+    {
+        Thread thread = new Thread()
+        {
+            public void run()
+            {
+                ProjectSynchronizer.deleteUnusedShadows();
+                ProjectSynchronizer.updateShadowWorkingSet();
+            }
+        };
+        thread.start();
     }
 
     // TODO There is no icon for the welcome screen.
@@ -134,18 +152,6 @@ public class SynchronizerStarter implements IStartup
             prefs_.put(WELCOME_MESSAGE_ID, true);
             prefs_.save();
         }
-    }
-
-    /**
-     * Creates and installs a part listener for the active page in the workbench. <br>
-     * Should only be called once and after org.eclipse.ui plug-in is completely loaded.
-     * 
-     * @param window
-     */
-    private static void initPartListener(IWorkbenchWindow window)
-    {
-        IWorkbenchPage page = window.getActivePage();
-        page.addPartListener(new SynchronizerPartListener());
     }
 
     private static void initResourceListener()

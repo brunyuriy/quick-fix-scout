@@ -8,11 +8,11 @@ import org.eclipse.core.resources.IProject;
 
 import edu.washington.cs.quickfix.observation.gui.ObservationPreferencePage;
 import edu.washington.cs.synchronization.ProjectSynchronizer;
-import edu.washington.cs.synchronization.sync.internal.ActiveFileChangedListener;
+import edu.washington.cs.synchronization.sync.internal.CursorChangedListener;
 import edu.washington.cs.synchronization.sync.task.internal.TaskWorker;
 import edu.washington.cs.util.log.LogHandlers;
 
-public class Observer implements ActiveFileChangedListener
+public class Observer implements CursorChangedListener
 {
     public static final String PLUG_IN_ID = "edu.washington.cs.quickfix.observation";
     public static final Logger logger = Logger.getLogger(Observer.class.getName());
@@ -124,14 +124,21 @@ public class Observer implements ActiveFileChangedListener
     }
 
     @Override
-    public void activeProjectChanged(IFile initialFile)
+    public void editorFileChanged(IFile file)
     {
-        IProject project = initialFile.getProject();
+        IProject project = file.getProject();
         logger.fine("Active project changed => " + project.getName());
         if (!ProjectSynchronizer.isShadowProject(project))
         {
             if (getCurrentProject() == null || !project.getName().equals(getCurrentProject().getName()))
                 observeProject(project);
         }
+    }
+
+    @Override
+    public void cursorChanged(int offset)
+    {
+        // Usage observer does not need an implementation based on cursor change.
+        // Left empty intentionally. 
     }
 }

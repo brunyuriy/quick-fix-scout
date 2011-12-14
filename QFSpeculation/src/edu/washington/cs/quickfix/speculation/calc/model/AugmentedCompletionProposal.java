@@ -39,11 +39,6 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
         return errorsAfter_;
     }
     
-    public int getErrorAfter()
-    {
-        return errorsAfter_ == CompilationError.UNKNOWN ? NOT_AVAILABLE : errorsAfter_.length;
-    }
-
     public int getErrorBefore()
     {
         return errorBefore_;
@@ -91,13 +86,23 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     private Color decideColor(TableItem item)
     {
         Color result = null;
-        if (getErrorAfter() > errorBefore_)
-            result = new Color(item.getDisplay(), 200, 0, 0);
-        else if (getErrorAfter() < errorBefore_)
-            result = new Color(item.getDisplay(), 0, 200, 0);
-        // Should override the previous decision if any, so there is no 'else'.
-        if (getErrorAfter() == NOT_AVAILABLE)
+        if (errorsAfter_ == CompilationError.NOT_COMPUTED)
             result = null;
+        else if (errorsAfter_ == CompilationError.UNKNOWN)
+            result = null;
+        else
+        {
+            int noErrorsAfter = errorsAfter_.length;
+            // Things are worse.
+            if (noErrorsAfter > errorBefore_)
+                result = new Color(item.getDisplay(), 200, 0, 0);
+            // Things are better.
+            else if (noErrorsAfter < errorBefore_)
+                result = new Color(item.getDisplay(), 0, 200, 0);
+            // No change.
+            else
+                result = null;
+        }
         return result;
     }
 
@@ -109,30 +114,34 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     @Override
     public int compareTo(AugmentedCompletionProposal other)
     {
-        if (getErrorAfter() == NOT_AVAILABLE)
+        if (isResultAvaliable())
         {
-            if (other.getErrorAfter() == NOT_AVAILABLE)
-                return 0;
-            /*
-             * Here max value is returned so that comparison always swaps elements (i.e., puts the proposal that has no
-             * information to the end).
-             */
-            return Integer.MAX_VALUE;
+            if (other.isResultAvaliable())
+                return errorsAfter_.length - other.errorsAfter_.length;
+            else
+                /*
+                 * Here min value is returned so that comparison never swaps elements (i.e., leaves the proposal that has no
+                 * information at the end).
+                 */
+                return Integer.MIN_VALUE;
         }
-        else if (other.getErrorAfter() == NOT_AVAILABLE)
-            /*
-             * Here min value is returned so that comparison never swaps elements (i.e., leaves the proposal that has no
-             * information at the end).
-             */
-            return Integer.MIN_VALUE;
         else
-            return getErrorAfter() - other.getErrorAfter();
+        {
+            if (other.isResultAvaliable())
+                /*
+                 * Here max value is returned so that comparison always swaps elements (i.e., puts the proposal that has no
+                 * information to the end).
+                 */
+                return Integer.MAX_VALUE;
+            else
+                return 0;
+        }
     }
 
     public String toString()
     {
         return "[AugmentedCompletionProposal: proposal = "
-                + (proposal_ == null ? "null" : proposal_.getDisplayString()) + ", number of errors = " + getErrorAfter() + "]";
+                + (proposal_ == null ? "null" : proposal_.getDisplayString()) + ", number of errors = " + resolveErrorsAfter() + "]";
     }
     
     public String getFinalDisplayString()
@@ -145,11 +154,26 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
         CompilationError ce = getCompilationError();
         CompilationErrorDetails ced = (ce == null ? null : getCompilationError().computeDetails());
         String gbpInformation = gbp ? ((ced == null ? "!" : ced.toString()) + ": ") : "";
-        String prefix = (getErrorAfter() == NOT_AVAILABLE ? "(N/A)" : ("(" + getErrorAfter() + ")")) + " ";
+        String prefix = "(" + resolveErrorsAfter() + ") ";
         String text = prefix + gbpInformation + (proposal_ == null ? "null" : proposal_.getDisplayString());
 //        if (text.contains("Change to 'String'"))
 //            text = text.replace("Change to 'String'", "Change 'string' to 'String'");
         return text;
+    }
+    
+    public boolean isResultAvaliable()
+    {
+        return errorsAfter_ != CompilationError.NOT_COMPUTED && errorsAfter_ != CompilationError.UNKNOWN; 
+    }
+    
+    private String resolveErrorsAfter()
+    {
+        if (errorsAfter_ == CompilationError.UNKNOWN)
+            return "N/A";
+        else if (errorsAfter_ == CompilationError.NOT_COMPUTED)
+            return "?";
+        
+        return errorsAfter_.length + "";
     }
 
     public boolean canFix(CompilationError compilationError)

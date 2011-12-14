@@ -10,6 +10,7 @@ import org.eclipse.core.resources.IFile;
  * 
  * @author Kivanc Muslu
  * @see ActiveFileChangedListener
+ * @deprecated Use {@link CursorChangedNotifier} instead.
  */
 public interface ActiveFileChangedNotifier
 {

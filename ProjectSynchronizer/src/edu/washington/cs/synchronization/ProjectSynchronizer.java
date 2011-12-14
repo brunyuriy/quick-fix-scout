@@ -14,7 +14,6 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IBuffer;
@@ -25,7 +24,6 @@ import com.kivancmuslu.www.timer.Timer;
 import com.kivancmuslu.www.zip.Zipper;
 
 import edu.washington.cs.synchronization.sync.SynchronizerBufferChangedListener;
-import edu.washington.cs.synchronization.sync.SynchronizerPartListener;
 import edu.washington.cs.synchronization.sync.SynchronizerResourceChangeListener;
 import edu.washington.cs.synchronization.sync.task.internal.TaskWorker;
 import edu.washington.cs.util.eclipse.ResourceUtility;
@@ -58,6 +56,8 @@ import edu.washington.cs.util.eclipse.ResourceUtility;
 public class ProjectSynchronizer
 {
     public static final String SHADOW_PREFIX = "DO_NOT_DELETE_";
+    /** Constant value that represents the working set name to be assigned to the shadow projects. */
+    public static final String WORKING_SET_NAME = "QFS";
     public static final String PLUG_IN_ID = "edu.washington.cs.synchronization";
     /** logger for debugging. */
     private static final Logger logger = Logger.getLogger(ProjectSynchronizer.class.getName());
@@ -65,8 +65,6 @@ public class ProjectSynchronizer
     {
         logger.setLevel(Level.INFO);
     }
-    /** contant value that represents the working set name to be assinged to the shadow projects. */
-    public static final String WORKING_SET_NAME = "QF Speculation";
     //@formatter:off
     /*
      * Mapping is done from shadow project to the synchronizers for the following reason:
@@ -108,9 +106,13 @@ public class ProjectSynchronizer
      */
     public static boolean isShadowProject(IProject project)
     {
+        return isShadowProject(project, ResourceUtility.getAllProjects());
+    }
+
+    private static boolean isShadowProject(IProject project, IProject [] allProjects)
+    {
         String projectName = project.getName();
-        IProject [] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
-        for (IProject pro: projects)
+        for (IProject pro: allProjects)
         {
             for (String prefix: getKnownPrefixes())
             {
@@ -120,6 +122,38 @@ public class ProjectSynchronizer
             }
         }
         return false;
+    }
+
+    private static boolean isDeadShadowProject(IProject project, IProject [] allProjects)
+    {
+        boolean shadow = isShadowProject(project, allProjects);
+        if (!shadow)
+            return project.getName().startsWith(SHADOW_PREFIX);
+        return false;
+    }
+
+    static void deleteUnusedShadows()
+    {
+        IProject [] projects = ResourceUtility.getAllProjects();
+        for (IProject project: projects)
+        {
+            if (isDeadShadowProject(project, projects))
+            {
+                logger.info("Deleting shadow project = " + project.getName()
+                        + " since the corresponding original project no longer exists.");
+                ResourceUtility.deleteResource(project);
+            }
+        }
+    }
+    
+    static void updateShadowWorkingSet()
+    {
+        IProject [] projects = ResourceUtility.getAllProjects();
+        for (IProject project: projects)
+        {
+            if (isShadowProject(project, projects))
+                ResourceUtility.addToWorkingSet(WORKING_SET_NAME, project);
+        }
     }
 
     /**
@@ -185,7 +219,7 @@ public class ProjectSynchronizer
         logger.fine("Searching synchronizer for project = " + shadow.getName());
         return synchronizers_.get(shadow.getName());
     }
-    
+
     public static synchronized ProjectSynchronizer getSynchronizerFromShadow(IProject shadow)
     {
         return synchronizers_.get(shadow.getName());
@@ -241,7 +275,7 @@ public class ProjectSynchronizer
         removeProjectSynchronizer(this);
         logger.finer("Killed worker.");
     }
-    
+
     public boolean testSynchronization()
     {
         startInternalCheck();
@@ -277,7 +311,7 @@ public class ProjectSynchronizer
         worker_.block();
         logger.info("Waiting until sync thread is done.");
         worker_.waitUntilSynchronization();
-//        worker_.clear();
+        // worker_.clear();
         logger.finest("Started syncing projects.");
         ResourceUtility.syncWithFileSystemIfNecessary(original_);
         ResourceUtility.syncWithFileSystemIfNecessary(shadow_);
@@ -297,7 +331,7 @@ public class ProjectSynchronizer
         if (!worker_.isEmpty())
         {
             result = false;
-//            result = internalResult_;
+            // result = internalResult_;
             logger.warning("While syncing projects, the original project changed through a buffer change event.");
             syncProjects();
             return result;
@@ -306,7 +340,6 @@ public class ProjectSynchronizer
             worker_.unblock();
         // if (blocked)
         // worker_.block();
-        
         return result && internalResult_;
     }
 
@@ -385,7 +418,6 @@ public class ProjectSynchronizer
     {
         if (shouldSkip(original))
             return;
-        
         if (!shadow.exists())
             ResourceUtility.copyResource(original, shadow);
         else
@@ -405,7 +437,8 @@ public class ProjectSynchronizer
     {
         logger.finer("Trying to sync buffers for file = " + original.getName());
         // If any of the files are not java files, return false.
-        if (!ResourceUtility.isJavaLike(original) || !ResourceUtility.isOnClassPath(original) || !ResourceUtility.isJavaLike(shadow))
+        if (!ResourceUtility.isJavaLike(original) || !ResourceUtility.isOnClassPath(original)
+                || !ResourceUtility.isJavaLike(shadow))
         {
             logger.finer("Cannot sync files at buffer level since they are not java-like.");
             return false;
@@ -464,7 +497,7 @@ public class ProjectSynchronizer
     {
         syncFiles(original, shadow, true);
     }
-    
+
     public void snapshotShadow(File directory, String zipName)
     {
         if (shadow_ != null)
@@ -475,23 +508,23 @@ public class ProjectSynchronizer
             logger.info("Created snapshot with success.");
         }
     }
-    
+
     private boolean shouldSkip(IFolder folder)
     {
         return isHGDirectory(folder);
     }
-    
+
     private boolean isHGDirectory(IFolder folder)
     {
         String name = folder.getName();
         return name.equals(".hg");
     }
-    
+
     private boolean shouldSkip(IFile file)
     {
         return generatedFile(file);
     }
-    
+
     private boolean generatedFile(IFile file)
     {
         if (file == null || file.getFileExtension() == null)
@@ -564,6 +597,7 @@ public class ProjectSynchronizer
         if (shadow.exists())
             ResourceUtility.deleteResource(shadow);
         ResourceUtility.copyResource(original_, shadow);
+        ResourceUtility.addToWorkingSet(WORKING_SET_NAME, shadow);
     }
 
     /**
@@ -578,8 +612,8 @@ public class ProjectSynchronizer
     private static String getShadowProjectName(IProject original, String prefix)
     {
         String result = null;
-        result = SHADOW_PREFIX + prefix + "_" + original.getName() + "_"
-        + original.getProjectRelativePath().toString() + original.hashCode();
+        result = SHADOW_PREFIX + prefix + "_" + original.getName() + "_" + original.getProjectRelativePath().toString()
+                + original.hashCode();
         return result;
     }
 
