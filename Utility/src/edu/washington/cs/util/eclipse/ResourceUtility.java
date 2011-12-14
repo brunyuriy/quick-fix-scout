@@ -537,7 +537,7 @@ public class ResourceUtility
                 String line = reader.nextLine();
                 String [] parts = line.split(" - ");
                 if (parts.length != 2)
-                    logger.severe("Malformed version information line for = " + line);
+                    logger.finer("Malformed version information line for = " + line);
                 else
                     versionMap.put(parts[0].trim(), parts[1].trim());
             }
