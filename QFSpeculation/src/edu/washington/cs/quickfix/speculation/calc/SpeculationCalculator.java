@@ -1069,6 +1069,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     private void syncProjects()
     {
         long start = System.nanoTime();
+//        synchronizer_.createShadow();
         synchronizer_.syncProjects();
         long end = System.nanoTime();
         sync_ ++;

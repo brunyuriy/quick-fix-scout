@@ -590,7 +590,7 @@ public class ProjectSynchronizer
      * 
      * @param original Original project
      */
-    private void createShadow()
+    public void createShadow()
     {
         IPath destination = new Path(getShadowProjectName(original_, prefix_));
         IProject shadow = ResourceUtility.getProject(destination.toString());
