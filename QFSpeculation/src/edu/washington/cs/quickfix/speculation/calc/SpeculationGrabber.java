@@ -21,14 +21,14 @@ import edu.washington.cs.quickfix.speculation.hack.CompletionProposalPopupCoordi
 import edu.washington.cs.quickfix.speculation.model.SpeculationUtility;
 import edu.washington.cs.synchronization.ProjectSynchronizer;
 import edu.washington.cs.util.eclipse.QuickFixUtility;
-import edu.washington.cs.util.eclipse.model.CompilationError;
+import edu.washington.cs.util.eclipse.model.Squiggly;
 
 public class SpeculationGrabber extends Thread implements SpeculativeAnalysisListener
 {
     private final IProblemLocation [] locations_;
     private final IInvocationContext context_;
     private IJavaCompletionProposal [] eclipseProposals_;
-    private ArrayList <CompilationError> cachedCompilationErrors_;
+    private ArrayList <Squiggly> cachedCompilationErrors_;
     private final static Logger logger = Logger.getLogger(SpeculationGrabber.class.getName());
     static
     {
@@ -100,9 +100,9 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
 
     private boolean preCacheLocations()
     {
-        ArrayList <CompilationError> result = new ArrayList <CompilationError>();
-        Map <CompilationError, IJavaCompletionProposal []> currentMap = calculator_.getProposalsMap();
-        for (CompilationError compilationError: currentMap.keySet())
+        ArrayList <Squiggly> result = new ArrayList <Squiggly>();
+        Map <Squiggly, IJavaCompletionProposal []> currentMap = calculator_.getProposalsMap();
+        for (Squiggly compilationError: currentMap.keySet())
         {
             for (IProblemLocation loc: locations_)
             {
@@ -153,11 +153,11 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
                 return;
         }
         logger.fine("Attempting quick fix calculation.");
-        Map <CompilationError, IJavaCompletionProposal []> problemLocationToProposalMap = calculator_.getProposalsMap();
-        Map <CompilationError, AugmentedCompletionProposal []> problemLocationToCompilationErrorMap = calculator_
+        Map <Squiggly, IJavaCompletionProposal []> problemLocationToProposalMap = calculator_.getProposalsMap();
+        Map <Squiggly, AugmentedCompletionProposal []> problemLocationToCompilationErrorMap = calculator_
                 .getSpeculativeProposalsMap();
         ArrayList <AugmentedCompletionProposal> calculatedProposals = new ArrayList <AugmentedCompletionProposal>();
-        for (CompilationError compilationError: cachedCompilationErrors_)
+        for (Squiggly compilationError: cachedCompilationErrors_)
         {
             IJavaCompletionProposal [] proposals = problemLocationToProposalMap.get(compilationError);
             AugmentedCompletionProposal [] augmentedProposals = problemLocationToCompilationErrorMap
@@ -187,7 +187,7 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
                     + calculatedProposals.get(a).getRemainingErrors().length + " compilation errors.");
         CompletionProposalPopupCoordinator.getCoordinator().updateProposalTable(eclipseProposals_,
                 calculatedProposals.toArray(new AugmentedCompletionProposal [calculatedProposals.size()]),
-                cachedCompilationErrors_.toArray(new CompilationError [cachedCompilationErrors_.size()]));
+                cachedCompilationErrors_.toArray(new Squiggly [cachedCompilationErrors_.size()]));
     }
 
     private boolean doesInclude(ArrayList <AugmentedCompletionProposal> calculatedProposals,
