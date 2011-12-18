@@ -36,7 +36,7 @@ public class Squiggly
     private final Integer severity_;
     
     // Lazily computed field.
-    private CompilationErrorDetails details_;
+    private SquigglyDetails details_;
  
     public Squiggly(IMarker marker)
     {
@@ -61,7 +61,7 @@ public class Squiggly
         return severity;
     }
     
-    public CompilationErrorDetails computeDetails()
+    public SquigglyDetails computeDetails()
     {
         if (details_ != null)
             return details_;
@@ -94,7 +94,7 @@ public class Squiggly
         {
             e.printStackTrace();
         }
-        details_ = new CompilationErrorDetails(file, line, position);
+        details_ = new SquigglyDetails(file, line, position);
         return details_;
     }
 

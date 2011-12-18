@@ -6,7 +6,7 @@ import org.eclipse.swt.widgets.TableItem;
 
 import edu.washington.cs.quickfix.speculation.model.SpeculationUtility;
 import edu.washington.cs.util.eclipse.model.Squiggly;
-import edu.washington.cs.util.eclipse.model.CompilationErrorDetails;
+import edu.washington.cs.util.eclipse.model.SquigglyDetails;
 
 public class AugmentedCompletionProposal implements Comparable <AugmentedCompletionProposal>
 {
@@ -152,7 +152,7 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     public String getFinalDisplayString(boolean gbp)
     {
         Squiggly ce = getCompilationError();
-        CompilationErrorDetails ced = (ce == null ? null : getCompilationError().computeDetails());
+        SquigglyDetails ced = (ce == null ? null : getCompilationError().computeDetails());
         String gbpInformation = gbp ? ((ced == null ? "!" : ced.toString()) + ": ") : "";
         String prefix = "(" + resolveErrorsAfter() + ") ";
         String text = prefix + gbpInformation + (proposal_ == null ? "null" : proposal_.getDisplayString());

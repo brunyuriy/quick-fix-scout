@@ -2,13 +2,13 @@ package edu.washington.cs.util.eclipse.model;
 
 import org.eclipse.core.resources.IFile;
 
-public class CompilationErrorDetails
+public class SquigglyDetails
 {
     private final int line_;
     private final int offset_;
     private final IFile file_;
     
-    public CompilationErrorDetails(IFile file, int line, int offset)
+    public SquigglyDetails(IFile file, int line, int offset)
     {
         file_ = file;
         line_ = line;

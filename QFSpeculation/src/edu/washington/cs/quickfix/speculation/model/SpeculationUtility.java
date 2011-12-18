@@ -30,7 +30,7 @@ import org.eclipse.ui.PlatformUI;
 import edu.washington.cs.quickfix.speculation.calc.SpeculationCalculator;
 import edu.washington.cs.util.eclipse.ResourceUtility;
 import edu.washington.cs.util.eclipse.model.Squiggly;
-import edu.washington.cs.util.eclipse.model.CompilationErrorDetails;
+import edu.washington.cs.util.eclipse.model.SquigglyDetails;
 import edu.washington.cs.util.exception.NotInitializedException;
 
 public class SpeculationUtility
@@ -66,8 +66,8 @@ public class SpeculationUtility
     
     public static boolean areOnTheSameLine(Squiggly ce1, Squiggly ce2)
     {
-        CompilationErrorDetails d1 = ce1.computeDetails();
-        CompilationErrorDetails d2 = ce2.computeDetails();
+        SquigglyDetails d1 = ce1.computeDetails();
+        SquigglyDetails d2 = ce2.computeDetails();
         return d1.getFile().getName().equals(d2.getFile().getName()) && d1.getLine() == d2.getLine();
     }
     
