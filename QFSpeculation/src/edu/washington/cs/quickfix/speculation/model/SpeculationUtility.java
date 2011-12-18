@@ -29,7 +29,7 @@ import org.eclipse.ui.PlatformUI;
 
 import edu.washington.cs.quickfix.speculation.calc.SpeculationCalculator;
 import edu.washington.cs.util.eclipse.ResourceUtility;
-import edu.washington.cs.util.eclipse.model.CompilationError;
+import edu.washington.cs.util.eclipse.model.Squiggly;
 import edu.washington.cs.util.eclipse.model.CompilationErrorDetails;
 import edu.washington.cs.util.exception.NotInitializedException;
 
@@ -64,7 +64,7 @@ public class SpeculationUtility
         logger.info("");
     }
     
-    public static boolean areOnTheSameLine(CompilationError ce1, CompilationError ce2)
+    public static boolean areOnTheSameLine(Squiggly ce1, Squiggly ce2)
     {
         CompilationErrorDetails d1 = ce1.computeDetails();
         CompilationErrorDetails d2 = ce2.computeDetails();

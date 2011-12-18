@@ -12,7 +12,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaModelMarker;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
 
-import edu.washington.cs.util.eclipse.model.CompilationError;
+import edu.washington.cs.util.eclipse.model.Squiggly;
 
 /**
  * This utility class provides static helper methods for building projects and manipulating markers and problem
@@ -56,9 +56,9 @@ public class BuilderUtility
         return calculateCompilationErrorMarkers(project).length;
     }
     
-    public static CompilationError [] calculateCompilationErrors(IProject project)
+    public static Squiggly [] calculateCompilationErrors(IProject project)
     {
-        ArrayList <CompilationError> result = new ArrayList <CompilationError>();
+        ArrayList <Squiggly> result = new ArrayList <Squiggly>();
         IMarker [] markers = null;
         try
         {
@@ -69,7 +69,7 @@ public class BuilderUtility
                 if (severityType.intValue() == IMarker.SEVERITY_ERROR)
                 {
                     logger.finer("Returning marker = " + marker);
-                    result.add(new CompilationError(marker));
+                    result.add(new Squiggly(marker));
                 }
             }
         }
@@ -77,10 +77,8 @@ public class BuilderUtility
         {
             logger.log(Level.SEVERE, "Cannot get the marker or marker attribute for project: " + project.getName(), e);
         }
-        return result.toArray(new CompilationError [result.size()]);
+        return result.toArray(new Squiggly [result.size()]);
     }
-    
-    
     
     /**
      * Calculates and returns the markers available in the current project. <br>
