@@ -308,23 +308,16 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     {
         if (activationRecord_.isInvalid() || isDead())
             throw new InvalidatedException();
-        try
-        {
-            logger.info("Speculative analysis started...");
-            // TODO Place for this code seems weird. It should be before the analysis preparations.
-            if (TEST_SYNCHRONIZATION)
-                testSynchronization();
-            // TODO handle thrown exception...
-            clearGlobalState();
-            // The place of signal is very important. Basically, it has to be done after all accessible state is cleared
-            // to defaults.
-            signalSpeculativeAnalysisStart();
-            processCompilationErrors();
-        }
-        catch (InvalidatedException e)
-        {
-            throw e;
-        }
+        logger.info("Speculative analysis started...");
+        // TODO Place for this code seems weird. It should be before the analysis preparations.
+        if (TEST_SYNCHRONIZATION)
+            testSynchronization();
+        // TODO handle thrown exception...
+        clearGlobalState();
+        // The place of signal is very important. Basically, it has to be done after all accessible state is cleared
+        // to defaults.
+        signalSpeculativeAnalysisStart();
+        processCompilationErrors();
     }
 
     private void processCompilationErrors() throws InvalidatedException

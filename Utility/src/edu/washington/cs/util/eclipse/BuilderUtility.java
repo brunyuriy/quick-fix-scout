@@ -55,7 +55,6 @@ public class BuilderUtility
     {
         return calculateCompilationErrorMarkers(project).length;
     }
-
     
     public static CompilationError [] calculateCompilationErrors(IProject project)
     {
@@ -80,6 +79,8 @@ public class BuilderUtility
         }
         return result.toArray(new CompilationError [result.size()]);
     }
+    
+    
     
     /**
      * Calculates and returns the markers available in the current project. <br>
