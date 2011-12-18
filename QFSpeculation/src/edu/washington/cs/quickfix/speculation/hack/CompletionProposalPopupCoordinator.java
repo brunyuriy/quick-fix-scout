@@ -20,7 +20,7 @@ import edu.washington.cs.quickfix.speculation.calc.model.AugmentedCompletionProp
 import edu.washington.cs.quickfix.speculation.model.SpeculationUtility;
 import edu.washington.cs.synchronization.ProjectSynchronizer;
 import edu.washington.cs.util.eclipse.QuickFixUtility;
-import edu.washington.cs.util.eclipse.model.CompilationError;
+import edu.washington.cs.util.eclipse.model.Squiggly;
 
 //@formatter:off
 /*
@@ -46,11 +46,11 @@ public class CompletionProposalPopupCoordinator
     // if the user invokes quick fix where no compilation error is present.
     // or sometimes Eclipse generates multiple compilation errors on the same line (or same error location),
     // so it can be more than one.
-    private CompilationError [] compilationErrors_ = null;
+    private Squiggly [] compilationErrors_ = null;
     // best proposals also include the local bests. BP = GBP + LBP.
     private ArrayList <AugmentedCompletionProposal> bestProposals_;
     private ArrayList <AugmentedCompletionProposal> globalBestProposals_;
-    private CompilationError [] originalCompilationErrors_;
+    private Squiggly [] originalCompilationErrors_;
     private final Object lock_ = new Object();
     private static final Logger logger = Logger.getLogger(CompletionProposalPopupCoordinator.class.getName());
     static
@@ -103,7 +103,7 @@ public class CompletionProposalPopupCoordinator
             logger.finer("All proposals are null, not updating the UI.");
     }
 
-    public void setOriginalCompilationErrors(CompilationError [] errors)
+    public void setOriginalCompilationErrors(Squiggly [] errors)
     {
         synchronized (lock_)
         {
@@ -121,7 +121,7 @@ public class CompletionProposalPopupCoordinator
     }
 
     public void updateProposalTable(IJavaCompletionProposal [] eclipseProposals,
-            AugmentedCompletionProposal [] calculatedProposals, CompilationError [] compilationErrors)
+            AugmentedCompletionProposal [] calculatedProposals, Squiggly [] compilationErrors)
     {
         logger.finer("Updating proposal table. EclipseProposals.length = "
                 + (eclipseProposals == null ? 0 : eclipseProposals.length) + ", augmentedProposals.length = "
@@ -153,7 +153,7 @@ public class CompletionProposalPopupCoordinator
         // is present. At this moment only the global best proposals should be shown (if any).
         compilationErrors_ = compilationErrors;
         logger.finer("Received compilation errors:");
-        for (CompilationError compilationError: compilationErrors_)
+        for (Squiggly compilationError: compilationErrors_)
             logger.finer(compilationError.toString());
         constructLocalProposalsInternally();
         updateProposalTableInternalInUIThread();
@@ -172,7 +172,7 @@ public class CompletionProposalPopupCoordinator
                 if (!currentDisplayStrings.contains(proposal.getDisplayString()))
                 {
                     boolean fixesAtLeastOne = false;
-                    for (CompilationError compilationError: compilationErrors_)
+                    for (Squiggly compilationError: compilationErrors_)
                     {
                         if (proposal.canFix(compilationError))
                             fixesAtLeastOne = true;
@@ -197,7 +197,7 @@ public class CompletionProposalPopupCoordinator
             for (int a = 0; a < localProposals_.length; a++)
             {
                 AugmentedCompletionProposal calculatedProposal = calculatedProposals_[a];
-                CompilationError [] errorAfter = calculatedProposal.getRemainingErrors();
+                Squiggly [] errorAfter = calculatedProposal.getRemainingErrors();
                 int errorBefore = calculatedProposal.getErrorBefore();
                 ICompletionProposal eclipseProposal = (SpeculationCalculator.TEST_TRANSFORMATION) ? calculatedProposal
                         .getProposal() : null;
@@ -310,15 +310,15 @@ public class CompletionProposalPopupCoordinator
     // dialog is created.
     private void resolve(AugmentedCompletionProposal globalBestProposal)
     {
-        CompilationError [] originalErrors = null;
+        Squiggly [] originalErrors = null;
         synchronized (lock_)
         {
             originalErrors = originalCompilationErrors_;
         }
-        CompilationError shadowCompilationError = globalBestProposal.getCompilationError();
+        Squiggly shadowCompilationError = globalBestProposal.getCompilationError();
         IProblemLocation shadowLocation = shadowCompilationError.getLocation();
-        CompilationError originalCompilationError = null;
-        for (CompilationError originalError: originalErrors)
+        Squiggly originalCompilationError = null;
+        for (Squiggly originalError: originalErrors)
         {
             IProblemLocation originalLocation = originalError.getLocation();
             if (SpeculationUtility.sameProblemLocationContent(shadowLocation, originalLocation))
@@ -518,7 +518,7 @@ public class CompletionProposalPopupCoordinator
         throw new Exception();
     }
 
-    private IJavaCompletionProposal [] computeOriginalProposals(CompilationError originalCE) throws Exception
+    private IJavaCompletionProposal [] computeOriginalProposals(Squiggly originalCE) throws Exception
     {
         long start = System.nanoTime();
         IJavaCompletionProposal [] result = QuickFixUtility.computeQuickFix(originalCE);

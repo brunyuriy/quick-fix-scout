@@ -18,34 +18,50 @@ import org.eclipse.jdt.internal.ui.text.correction.ProblemLocation;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
 
 @SuppressWarnings("restriction")
-public class CompilationError
+public class Squiggly
 {
-    private static final Logger logger = Logger.getLogger(CompilationError.class.getName());
+    private static final Logger logger = Logger.getLogger(Squiggly.class.getName());
     static
     {
         logger.setLevel(Level.INFO);
     }
     
-    public static final CompilationError [] UNKNOWN = new CompilationError [0];
+    public static final Squiggly [] UNKNOWN = new Squiggly [0];
     // NOT_COMPUTED is a constant type compilation error for flagged proposals.
-    public static final CompilationError [] NOT_COMPUTED = new CompilationError[0];
+    public static final Squiggly [] NOT_COMPUTED = new Squiggly[0];
     
     private final IMarker marker_;
     private final IProblemLocation location_;
     private final ICompilationUnit compilationUnit_;
+    private final Integer severity_;
     
     // Lazily computed field.
-    private CompilationErrorDetails details_;
+    private SquigglyDetails details_;
  
-    public CompilationError(IMarker marker)
+    public Squiggly(IMarker marker)
     {
         marker_ = marker;
         compilationUnit_ = getCompilationUnitFromMarker(marker_);
         location_ = convertMarkerToProblemLocation(marker_, compilationUnit_);
+        severity_ = computeSeverity();
         details_ = null;
     }
     
-    public CompilationErrorDetails computeDetails()
+    private Integer computeSeverity()
+    {
+        Integer severity = null;
+        try
+        {
+            severity = (Integer) marker_.getAttribute(IMarker.SEVERITY);
+        }
+        catch (CoreException e)
+        {
+            // Marker does not exist anymore, so we will probably not compute it.
+        }
+        return severity;
+    }
+    
+    public SquigglyDetails computeDetails()
     {
         if (details_ != null)
             return details_;
@@ -78,8 +94,18 @@ public class CompilationError
         {
             e.printStackTrace();
         }
-        details_ = new CompilationErrorDetails(file, line, position);
+        details_ = new SquigglyDetails(file, line, position);
         return details_;
+    }
+
+    public boolean isCompilationError()
+    {
+        return severity_ != null && severity_.intValue() == IMarker.SEVERITY_ERROR;
+    }
+
+    public boolean isWarning()
+    {
+        return severity_ != null && severity_.intValue() == IMarker.SEVERITY_WARNING;
     }
     
     public IMarker getMarker()

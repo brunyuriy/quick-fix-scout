@@ -14,7 +14,7 @@ import org.eclipse.jdt.ui.text.java.IProblemLocation;
 import org.eclipse.jdt.ui.text.java.IQuickFixProcessor;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 
-import edu.washington.cs.util.eclipse.model.CompilationError;
+import edu.washington.cs.util.eclipse.model.Squiggly;
 
 /**
  * This utility class provides static helper methods for quick fix related issues. <br>
@@ -59,10 +59,10 @@ public class QuickFixUtility
      *         proposal in the array represents the different kind of selections you can do for that particular location
      *         (i.e., different quick fixes).
      */
-    public static Map <CompilationError, IJavaCompletionProposal []> computeQuickFixes(CompilationError [] compilationErrors) throws Exception
+    public static Map <Squiggly, IJavaCompletionProposal []> computeQuickFixes(Squiggly [] compilationErrors) throws Exception
     {
-        Map <CompilationError, IJavaCompletionProposal []> result = new HashMap <CompilationError, IJavaCompletionProposal []>();
-        for(CompilationError compilationError: compilationErrors)
+        Map <Squiggly, IJavaCompletionProposal []> result = new HashMap <Squiggly, IJavaCompletionProposal []>();
+        for(Squiggly compilationError: compilationErrors)
         {
             logger.fine("Processing marker = " + compilationError.getMarker() + " for quick fix calculation");
             logger.fine("Corresponding compilation unit for marker = " + compilationError.getCompilationUnit().getResource().getProjectRelativePath());
@@ -82,7 +82,7 @@ public class QuickFixUtility
         return result;
     }
     
-    public static IJavaCompletionProposal [] computeQuickFix(CompilationError compilationError)
+    public static IJavaCompletionProposal [] computeQuickFix(Squiggly compilationError)
             throws Exception
     {
         logger.fine("Processing marker = " + compilationError.getMarker() + " for quick fix calculation");
@@ -152,7 +152,7 @@ public class QuickFixUtility
      * @param cu Compilation unit that contains the location.
      * @return The {@link ICompletionProposal}s that are offered for the given location in the compilation unit.
      */
-    private static IJavaCompletionProposal [] getCompletionProposalsFrom(CompilationError compilationError)
+    private static IJavaCompletionProposal [] getCompletionProposalsFrom(Squiggly compilationError)
     {
 //        ArrayList <IJavaCompletionProposal> proposals = new ArrayList <IJavaCompletionProposal>();
 //        IProblemLocation location = compilationError.getLocation();

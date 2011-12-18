@@ -5,18 +5,18 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.TableItem;
 
 import edu.washington.cs.quickfix.speculation.model.SpeculationUtility;
-import edu.washington.cs.util.eclipse.model.CompilationError;
-import edu.washington.cs.util.eclipse.model.CompilationErrorDetails;
+import edu.washington.cs.util.eclipse.model.Squiggly;
+import edu.washington.cs.util.eclipse.model.SquigglyDetails;
 
 public class AugmentedCompletionProposal implements Comparable <AugmentedCompletionProposal>
 {
     private ICompletionProposal proposal_;
     private final int errorBefore_;
-    private final CompilationError compilationError_;
+    private final Squiggly compilationError_;
     public static final int NOT_AVAILABLE = -1;
-    private final CompilationError [] errorsAfter_;
+    private final Squiggly [] errorsAfter_;
 
-    public AugmentedCompletionProposal(ICompletionProposal proposal, CompilationError compilationError, CompilationError [] errorsAfter, int errorBefore)
+    public AugmentedCompletionProposal(ICompletionProposal proposal, Squiggly compilationError, Squiggly [] errorsAfter, int errorBefore)
     {
         proposal_ = proposal;
         errorBefore_ = errorBefore;
@@ -29,12 +29,12 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
         proposal_ = proposal;
     }
     
-    public CompilationError getCompilationError()
+    public Squiggly getCompilationError()
     {
         return compilationError_;
     }
     
-    public CompilationError [] getRemainingErrors()
+    public Squiggly [] getRemainingErrors()
     {
         return errorsAfter_;
     }
@@ -86,9 +86,9 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     private Color decideColor(TableItem item)
     {
         Color result = null;
-        if (errorsAfter_ == CompilationError.NOT_COMPUTED)
+        if (errorsAfter_ == Squiggly.NOT_COMPUTED)
             result = null;
-        else if (errorsAfter_ == CompilationError.UNKNOWN)
+        else if (errorsAfter_ == Squiggly.UNKNOWN)
             result = null;
         else
         {
@@ -151,8 +151,8 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
 
     public String getFinalDisplayString(boolean gbp)
     {
-        CompilationError ce = getCompilationError();
-        CompilationErrorDetails ced = (ce == null ? null : getCompilationError().computeDetails());
+        Squiggly ce = getCompilationError();
+        SquigglyDetails ced = (ce == null ? null : getCompilationError().computeDetails());
         String gbpInformation = gbp ? ((ced == null ? "!" : ced.toString()) + ": ") : "";
         String prefix = "(" + resolveErrorsAfter() + ") ";
         String text = prefix + gbpInformation + (proposal_ == null ? "null" : proposal_.getDisplayString());
@@ -163,22 +163,22 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     
     public boolean isResultAvaliable()
     {
-        return errorsAfter_ != CompilationError.NOT_COMPUTED && errorsAfter_ != CompilationError.UNKNOWN; 
+        return errorsAfter_ != Squiggly.NOT_COMPUTED && errorsAfter_ != Squiggly.UNKNOWN; 
     }
     
     private String resolveErrorsAfter()
     {
-        if (errorsAfter_ == CompilationError.UNKNOWN)
+        if (errorsAfter_ == Squiggly.UNKNOWN)
             return "N/A";
-        else if (errorsAfter_ == CompilationError.NOT_COMPUTED)
+        else if (errorsAfter_ == Squiggly.NOT_COMPUTED)
             return "?";
         
         return errorsAfter_.length + "";
     }
 
-    public boolean canFix(CompilationError compilationError)
+    public boolean canFix(Squiggly compilationError)
     {
-        for(CompilationError errorAfter: errorsAfter_)
+        for(Squiggly errorAfter: errorsAfter_)
         {
             // Here, I cannot use the exact offset information since after the application of the proposal, the line
             // that the current proposal applied to changes. So the errors coming after that line change offset.
