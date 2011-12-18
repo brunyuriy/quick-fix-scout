@@ -80,6 +80,15 @@ public class BuilderUtility
         return result.toArray(new Squiggly [result.size()]);
     }
     
+    public static Squiggly [] calculateSquigglies(IProject project)
+    {
+        IMarker [] markers = findJavaProblemMarkers(project);
+        Squiggly [] result = new Squiggly[markers.length];
+        for (int a = 0; a < markers.length; a++)
+            result[a] = new Squiggly(markers[a]);
+        return result;
+    }
+    
     /**
      * Calculates and returns the markers available in the current project. <br>
      * <br>
