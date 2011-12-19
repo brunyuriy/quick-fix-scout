@@ -37,7 +37,7 @@ public class SynchronizerCursorListener implements ISelectionListener, CursorCha
     public void selectionChanged(IWorkbenchPart part, ISelection selection)
     {
         IFile file = getCurrentFile(part);
-        if (lastFile_ == null || (file != null && isFileChanged(file)))
+        if (file != null && (lastFile_ == null || isFileChanged(file)))
         {
             signalEditorFileChanged(file);
             lastFile_ = file;
