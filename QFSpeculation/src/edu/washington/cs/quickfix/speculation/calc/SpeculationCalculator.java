@@ -254,10 +254,10 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             // This is a known exception, so we don't need to log it (at least not with severity).
             logger.info("Current speculative analysis instance is invalidated.");
             activationRecord_.activate();
+//            Thread.sleep(currentWorker.)
         }
         currentWorker.unblock();
         stopWorking();
-        // need to map proposals gained from shadow project to the original project!
         if (activationRecord_.isValid())
         {
             CompletionProposalPopupCoordinator.getCoordinator().setBestProposals(bestProposals_);
@@ -285,7 +285,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             for (Squiggly squiggly: shadowSquigglies)
             {
                 if (squiggly.isWarning())
-                    System.out.println("Detected a warning marker of type = " + squiggly.getErrorCode());
+                    System.out.println("Detected a warning marker of type = " + squiggly.getErrorCode() + " in " + squiggly.getResource().getName());
             }
         }
         catch (Exception e)
