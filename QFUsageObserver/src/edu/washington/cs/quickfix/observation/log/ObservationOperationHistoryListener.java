@@ -30,6 +30,8 @@ public class ObservationOperationHistoryListener implements IOperationHistoryLis
         if (changeOperation == null)
             return;
         Change change = changeOperation.getChange();
+        if (change == null)
+            return;
         String changeName = change.getName();
         switch (event.getEventType())
         {

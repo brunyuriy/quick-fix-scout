@@ -251,8 +251,9 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         }
         catch (InvalidatedException e)
         {
+            // This is a known exception, so we don't need to log it (at least not with severity).
+            logger.info("Current speculative analysis instance is invalidated.");
             activationRecord_.activate();
-            logger.info("Speculative analysis is invalidated in the middle.");
         }
         currentWorker.unblock();
         stopWorking();
@@ -278,6 +279,14 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             buildOriginalProject();
             Squiggly [] originalCompilationErrors = getOriginalCEs();
             CompletionProposalPopupCoordinator.getCoordinator().setOriginalCompilationErrors(originalCompilationErrors);
+            
+            // Added for debugging (i.e., better understanding of errors vs. warnings)
+            Squiggly [] shadowSquigglies = getShadowSquigglies();
+            for (Squiggly squiggly: shadowSquigglies)
+            {
+                if (squiggly.isWarning())
+                    System.out.println("Detected a warning marker of type = " + squiggly.getErrorCode());
+            }
         }
         catch (Exception e)
         {
@@ -350,6 +359,11 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             }
             logger.info("Speculative analysis completed: Available proposals (" + counter
                     + ") and their results calculated in advance...");
+        }
+        catch (InvalidatedException ie)
+        {
+            // This is a known exception, so we re-throw it instead of logging.
+            throw ie;
         }
         catch (Exception e)
         {
@@ -902,6 +916,11 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     private Squiggly [] getShadowCEs()
     {
         return BuilderUtility.calculateCompilationErrors(shadowProject_);
+    }
+    
+    private Squiggly [] getShadowSquigglies()
+    {
+        return BuilderUtility.calculateSquigglies(shadowProject_);
     }
 
     private Squiggly [] getOriginalCEs()
