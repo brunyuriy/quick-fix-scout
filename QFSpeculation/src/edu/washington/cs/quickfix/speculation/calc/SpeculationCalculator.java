@@ -29,6 +29,7 @@ import edu.washington.cs.quickfix.speculation.calc.model.AugmentedCompletionProp
 import edu.washington.cs.quickfix.speculation.calc.model.SpeculativeAnalysisListener;
 import edu.washington.cs.quickfix.speculation.calc.model.SpeculativeAnalysisNotifier;
 import edu.washington.cs.quickfix.speculation.exception.InvalidatedException;
+import edu.washington.cs.quickfix.speculation.gui.SpeculationPreferencePage;
 import edu.washington.cs.quickfix.speculation.hack.CompletionProposalPopupCoordinator;
 import edu.washington.cs.quickfix.speculation.model.Pair;
 import edu.washington.cs.quickfix.speculation.model.SpeculationUtility;
@@ -92,6 +93,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     private Date localSpeculationCompletionTime_ = null;
     private Date analysisCompletionTime_ = null;
     private ReentrantLock timingLock_;
+    private volatile int typingSessionLength_ = -1;
 
     public SpeculationCalculator(ProjectSynchronizer synchronizer)
     {
@@ -113,6 +115,20 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         shadowProposalsLock_ = new ReentrantLock();
         activationRecord_ = new ActivationRecord(true, false);
         timingLock_ = new ReentrantLock();
+        
+        if (typingSessionLength_ == -1)
+            updateTypingSessionTime(SpeculationPreferencePage.getInstance().getTypingSessionLength());
+    }
+    
+    public void updateTypingSessionTime(int value)
+    {
+        typingSessionLength_ = value;
+        getTaskWorker().updateTypingSessionLength(typingSessionLength_);
+    }
+    
+    private TaskWorker getTaskWorker()
+    {
+        return synchronizer_.getTaskWorker();
     }
 
     /**
@@ -254,7 +270,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             // This is a known exception, so we don't need to log it (at least not with severity).
             logger.info("Current speculative analysis instance is invalidated.");
             activationRecord_.activate();
-//            Thread.sleep(currentWorker.)
+            Thread.sleep(typingSessionLength_);
         }
         currentWorker.unblock();
         stopWorking();

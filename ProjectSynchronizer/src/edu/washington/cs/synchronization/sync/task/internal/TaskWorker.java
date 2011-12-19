@@ -52,6 +52,7 @@ public class TaskWorker extends BlockableMortalThread implements ProjectModifica
     /** last modification date (i.e., the moment when the last task is added. */
     private volatile Date lastModificationDate_ = new Date();
     
+    private volatile int typingSessionLength_ = 2000;
     public static volatile boolean blockAddingTasks = false;
 
     // private static final long BREAK_TIME = 500;
@@ -93,6 +94,11 @@ public class TaskWorker extends BlockableMortalThread implements ProjectModifica
     {
         super.postWaitUntilSynchronization();
         doSaveTasks();
+    }
+    
+    public void updateTypingSessionLength(int value)
+    {
+        typingSessionLength_ = value;
     }
     
     private void addSaveTask(SaveTask task)
@@ -310,7 +316,7 @@ public class TaskWorker extends BlockableMortalThread implements ProjectModifica
             SaveTask result = current.doTask();
             addSaveTask(result);
         }
-        TaskWorkerNotifierDaemon daemon = new TaskWorkerNotifierDaemon(2000);
+        TaskWorkerNotifierDaemon daemon = new TaskWorkerNotifierDaemon(typingSessionLength_);
         daemon.start();
         oldDaemon_ = daemon;
     }

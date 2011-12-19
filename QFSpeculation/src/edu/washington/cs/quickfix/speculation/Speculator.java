@@ -147,4 +147,11 @@ public class Speculator implements CursorChangedListener
     {
         getCurrentCalculator().setCursorOffset(offset);
     }
+
+    public void updateTypingSessionTime(int value)
+    {
+        SpeculationCalculator calculator = getCurrentCalculator();
+        if (calculator != null)
+            calculator.updateTypingSessionTime(value);
+    }
 }

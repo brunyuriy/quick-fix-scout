@@ -42,6 +42,9 @@ public class SpeculationPreferencePage extends FieldEditorPreferencePage impleme
     public static final String QF_SPECULATION_ENABLED = "QF Speculation Enabled";
     public static final String QF_SPECULATION_AUGMENTED = "QF Speculation Augmented";
     public static SpeculationPreferencePage instance_ = new SpeculationPreferencePage();
+    
+    private static final int DEFAULT_TYPING_SESSION_LENGTH = 2000;
+    
     private static final Logger logger = Logger.getLogger(SpeculationPreferencePage.class.getName());
 
     public SpeculationPreferencePage()
@@ -55,6 +58,11 @@ public class SpeculationPreferencePage extends FieldEditorPreferencePage impleme
     public static SpeculationPreferencePage getInstance()
     {
         return instance_;
+    }
+    
+    public int getTypingSessionLength()
+    {
+        return preferences_.get(QF_SPECULATION_TYPING_SESSION_LENGTH, DEFAULT_TYPING_SESSION_LENGTH);
     }
     
     public boolean isActivated()
@@ -73,7 +81,7 @@ public class SpeculationPreferencePage extends FieldEditorPreferencePage impleme
     protected void performDefaults()
     {
         super.performDefaults();
-        typingSessionLengthField_.setStringValue(2000 + "");
+        typingSessionLengthField_.setStringValue(DEFAULT_TYPING_SESSION_LENGTH + "");
         speculationDisabledButton_.setSelection(true);
         speculationEnabledButton_.setSelection(false);
         speculationAugmentedButton_.setSelection(false);
@@ -91,6 +99,7 @@ public class SpeculationPreferencePage extends FieldEditorPreferencePage impleme
         boolean isActivated = speculationAugmentedButton_.getSelection() || speculationEnabledButton_.getSelection();
         boolean result = super.performOk();
         saveChanges();
+        Speculator.getSpeculator().updateTypingSessionTime(getTypingSessionLength());
         if (wasActivated && !isActivated)
             // plug-in is deactivated, kill the current speculative analysis.
             Speculator.getSpeculator().stopSpeculation();
@@ -155,7 +164,7 @@ public class SpeculationPreferencePage extends FieldEditorPreferencePage impleme
     
     private void loadInitialValues()
     {
-        typingSessionLengthField_.setStringValue(preferences_.get(QF_SPECULATION_TYPING_SESSION_LENGTH, 2000) + "");
+        typingSessionLengthField_.setStringValue(preferences_.get(QF_SPECULATION_TYPING_SESSION_LENGTH, DEFAULT_TYPING_SESSION_LENGTH) + "");
         speculationDisabledButton_.setSelection(preferences_.get(QF_SPECULATION_DISABLED, true));
         speculationEnabledButton_.setSelection(preferences_.getBoolean(QF_SPECULATION_ENABLED));
         speculationAugmentedButton_.setSelection(preferences_.getBoolean(QF_SPECULATION_AUGMENTED));
