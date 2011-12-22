@@ -7,8 +7,13 @@ import java.util.logging.Logger;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.IWorkspaceDescription;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.jdt.core.IJavaModelMarker;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
 
@@ -55,7 +60,7 @@ public class BuilderUtility
     {
         return calculateCompilationErrorMarkers(project).length;
     }
-    
+
     public static Squiggly [] calculateCompilationErrors(IProject project)
     {
         ArrayList <Squiggly> result = new ArrayList <Squiggly>();
@@ -79,16 +84,16 @@ public class BuilderUtility
         }
         return result.toArray(new Squiggly [result.size()]);
     }
-    
+
     public static Squiggly [] calculateSquigglies(IProject project)
     {
         IMarker [] markers = findJavaProblemMarkers(project);
-        Squiggly [] result = new Squiggly[markers.length];
+        Squiggly [] result = new Squiggly [markers.length];
         for (int a = 0; a < markers.length; a++)
             result[a] = new Squiggly(markers[a]);
         return result;
     }
-    
+
     /**
      * Calculates and returns the markers available in the current project. <br>
      * <br>
@@ -144,21 +149,90 @@ public class BuilderUtility
         }
         return markers;
     }
+    
+    public static void setAutoBuilding(boolean value)
+    {
+        IWorkspace workspace= ResourcesPlugin.getWorkspace();
+        IWorkspaceDescription desc= workspace.getDescription();
+        boolean current = desc.isAutoBuilding();
+        if (current != value)
+        {
+            desc.setAutoBuilding(value);
+            try
+            {
+                workspace.setDescription(desc);
+            }
+            catch (CoreException e)
+            {
+                logger.log(Level.SEVERE, "Cannot set auto-build value to: " + value + ". e.cause() = " + e.getCause(), e);
+            }
+            if (value == false)
+                joinAutoBuilder();
+        }
+    }
+    
+    public static boolean isAutoBuilding()
+    {
+        IWorkspace workspace= ResourcesPlugin.getWorkspace();
+        IWorkspaceDescription desc= workspace.getDescription();
+        return desc.isAutoBuilding();
+    }
+    
+    private static void joinAutoBuilder()
+    {
+        try
+        {
+            Platform.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_BUILD, null);
+        }
+        catch (OperationCanceledException e)
+        {
+            logger.log(Level.SEVERE, "Cannot join with auto-builder. e.cause() = " + e.getCause(), e);
+        }
+        catch (InterruptedException e)
+        {
+            logger.log(Level.SEVERE, "Cannot join with auto-builder. e.cause() = " + e.getCause(), e);
+        }
+    }
 
     /**
-     * Builds the project using the incremental builder of Eclipse.
+     * Builds the project using the incremental builder of Eclipse. <br>
+     * This process joins to Eclipse auto-builder if auto-build is activated for the project or invokes an incremental
+     * build itself.
      * 
      * @param project Project to be built.
      */
     public static void build(IProject project)
     {
+//        IWorkspace workspace= ResourcesPlugin.getWorkspace();
+//        IWorkspaceDescription desc= workspace.getDescription();
+//        boolean isAutoBuilding= desc.isAutoBuilding(); 
         try
         {
-            project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
+//            if (isAutoBuilding)
+//            {
+//                desc.setAutoBuilding(false);
+//                workspace.setDescription(desc); 
+//            }
+//                Platform.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_BUILD, null);
+//            else
+                project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
+//           if (isAutoBuilding)
+//           {
+//               desc.setAutoBuilding(true);
+//               workspace.setDescription(desc);
+//           }
         }
         catch (CoreException e)
         {
             logger.log(Level.SEVERE, "Cannot build project: " + project.getName() + ". e.cause() = " + e.getCause(), e);
         }
+//        catch (OperationCanceledException e)
+//        {
+//            logger.log(Level.SEVERE, "Cannot build project: " + project.getName() + ". e.cause() = " + e.getCause(), e);
+//        }
+//        catch (InterruptedException e)
+//        {
+//            logger.log(Level.SEVERE, "Cannot build project: " + project.getName() + ". e.cause() = " + e.getCause(), e);
+//        }
     }
 }

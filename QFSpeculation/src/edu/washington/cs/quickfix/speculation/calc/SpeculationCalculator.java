@@ -259,6 +259,8 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
          */
         logger.fine("Waiting until sync thread is done.");
         currentWorker.waitUntilSynchronization();
+        boolean prevAutoBuilding = deactivateAutoBuilding();
+        BuilderUtility.setAutoBuilding(false);
         doAnalysisPreparations();
         try
         {
@@ -281,7 +283,22 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         }
         logger.info("");
         Timer.completeSession();
+        if (prevAutoBuilding)
+            activateAutoBuilding();
         logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
+    }
+
+    private boolean deactivateAutoBuilding()
+    {
+        boolean prevValue = BuilderUtility.isAutoBuilding();
+        if (prevValue)
+            BuilderUtility.setAutoBuilding(false);
+        return prevValue;
+    }
+    
+    private void activateAutoBuilding()
+    {
+        BuilderUtility.setAutoBuilding(true);
     }
 
     private void doAnalysisPreparations()
