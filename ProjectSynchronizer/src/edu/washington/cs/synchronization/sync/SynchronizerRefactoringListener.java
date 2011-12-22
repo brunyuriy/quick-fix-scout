@@ -20,7 +20,6 @@ public class SynchronizerRefactoringListener implements IRefactoringExecutionLis
                 break;
             case RefactoringExecutionEvent.PERFORMED:
                 TaskWorker.blockAddingTasks = false;
-                
                 break;
         }
     }
