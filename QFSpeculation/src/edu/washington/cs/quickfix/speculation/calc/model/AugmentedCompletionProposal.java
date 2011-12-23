@@ -379,6 +379,8 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
             return result + " to '" + context + "'";
         if (result.equals("Add abstract modifier"))
             return result + " to '" + context + "'";
+        if (result.equals("Remove 'abstract' modifier"))
+            return result + " from '" + context + "'";
         if (result.equals("Add return statement"))
             return result + " to '" + context + "'";
         if (result.startsWith("Change return type to "))
