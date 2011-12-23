@@ -15,6 +15,11 @@ import org.eclipse.jdt.core.IJavaModelMarker;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.compiler.IProblem;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.internal.ui.text.correction.ProblemLocation;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
 import org.eclipse.jface.text.BadLocationException;
@@ -40,6 +45,7 @@ public class Squiggly
     
     // Lazily computed field.
     private SquigglyDetails details_;
+    private CompilationUnit compilationUnitNode_;
  
     public Squiggly(IMarker marker)
     {
@@ -48,6 +54,7 @@ public class Squiggly
         location_ = convertMarkerToProblemLocation(marker_, compilationUnit_);
         severity_ = computeSeverity();
         details_ = null;
+        compilationUnitNode_ = null;
     }
     
     private Integer computeSeverity()
@@ -242,5 +249,33 @@ public class Squiggly
         }
         buf.append(code & IProblem.IgnoreCategoriesMask);
         return buf.toString();
+    }
+    
+    private CompilationUnit getCompilationUnitNode()
+    {
+        if (compilationUnitNode_ == null)
+        {
+            ASTParser parser = ASTParser.newParser(AST.JLS3);
+            parser.setSource(compilationUnit_);
+            ASTNode result = parser.createAST(null);
+            assert result instanceof CompilationUnit: "Parsed java file does not yield to a compilation unit: " + getResource().getName();
+            compilationUnitNode_ = (CompilationUnit) result;
+        }
+        return compilationUnitNode_;
+    }
+
+    public MethodDeclaration getCoveringMethod()
+    {
+        CompilationUnit compilationUnit = getCompilationUnitNode();
+        ASTNode result = location_.getCoveringNode(compilationUnit);
+        while (result != null && result.getNodeType() != ASTNode.METHOD_DECLARATION)
+            result = result.getParent();
+        return (MethodDeclaration) result;
+    }
+
+    public String getCoveringMethodName(ASTNode coveringMethod) throws JavaModelException, BadLocationException
+    {
+        Document document = new Document(compilationUnit_.getBuffer().getContents());
+        return document.get(coveringMethod.getStartPosition(), coveringMethod.getLength());  
     }
 }

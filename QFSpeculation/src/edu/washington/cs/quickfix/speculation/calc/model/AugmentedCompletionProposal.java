@@ -4,6 +4,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.swt.graphics.Color;
@@ -264,7 +265,7 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
             return result;
         if (result.startsWith("Create method "))
             return result;
-        if (result.startsWith("Change method ") && result.contains(" to "))
+        if (result.startsWith("Change method ") && result.contains(" to ") && !result.contains(" return type "))
             return result;
         if (result.startsWith("Change method ") && result.contains(": Remove parameter "))
             return result;
@@ -319,24 +320,26 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
         
         // The proposals that I am not sure what to do. For now, I am not adding context to them.
         // 'exception handling' proposals
-        if (result.equals("Surround with try/catch"))
-            return result;
-        if (result.equals("Add catch clause to surrounding try"))
-            return result;
-        if (result.equals("Replace catch clause with throws"))
-            return result;
-        if (result.equals("Remove catch clause"))
-            return result;
-        
-        // 'unknown' proposals
-        if (result.equals("Remove assignment"))
-            return result;
-        if (result.equals("Infer Generic Type Arguments..."))
-            return result;
-        if (result.startsWith("Remove ") && result.endsWith(" token"))
-            return result;
-        if (result.startsWith("Change access to using static ") && result.endsWith(" (declaring type)"))
-            return result;
+        // Below is commented out for the following reason: In any case I return 'result' at the end. By commenting
+        // I will make sure that I am logging these proposals.
+//        if (result.equals("Surround with try/catch"))
+//            return result;
+//        if (result.equals("Add catch clause to surrounding try"))
+//            return result;
+//        if (result.equals("Replace catch clause with throws"))
+//            return result;
+//        if (result.equals("Remove catch clause"))
+//            return result;
+//        
+//        // 'unknown' proposals
+//        if (result.equals("Remove assignment"))
+//            return result;
+//        if (result.equals("Infer Generic Type Arguments..."))
+//            return result;
+//        if (result.startsWith("Remove ") && result.endsWith(" token"))
+//            return result;
+//        if (result.startsWith("Change access to using static ") && result.endsWith(" (declaring type)"))
+//            return result;
         
         // The proposals that need context information.
         String context = compilationError_.getContext();
@@ -395,6 +398,26 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
             return result + " from '" + context + "'"; 
         if (result.equals("Remove invalid modifiers"))
             return result + " from '" + context + "'";
+        
+        // difficult proposals (the ones that require more than just the context information coming from the problem location)
+        MethodDeclaration coveringMethod = compilationError_.getCoveringMethod();
+        if (coveringMethod != null)
+        {
+            String coveringMethodName = "'" + coveringMethod.getName().getIdentifier() + "(..)'";
+            // 'method' proposals
+            if (result.startsWith("Change method return type to "))
+                return result.replace("Change method return type to ", "Change method return type of " + coveringMethodName + " to ");
+            
+            // 'exception handling' proposals
+            if (result.equals("Add throws declaration"))
+                return result + " to " + coveringMethodName; 
+            
+            // 'field and variable' proposals
+            if (result.startsWith("Create local variable "))
+                return result.replace("Create local variable ", "Create local variable in " + coveringMethodName);
+            if (result.startsWith("Create parameter "))
+                return result.replace("Create parameter ", "Create parameter for " + coveringMethodName);
+        }
         
         // The proposals I don't know yet.
         logger_.warning("Unknown proposal for contexifying: " + result);
