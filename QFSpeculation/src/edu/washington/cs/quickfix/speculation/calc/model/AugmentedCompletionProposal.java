@@ -348,7 +348,13 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
         // 'type' proposals
         // This one also applies to 'field and variable' proposals.
         if (result.startsWith("Change to "))
-            return result.replace("Change to ", "Change '" + context + "' to ");
+        {
+            // This one also applied to 'method' proposals (method calls)
+            if (result.contains("(..)"))
+                return result.replace("Change to ", "Change '" + context + "(..)' to ");
+            else
+                return result.replace("Change to ", "Change '" + context + "' to ");
+        }
         if (result.startsWith("Rename type to "))
             return result.replace("Rename type to ", "Rename '" + context + "' to ");
         if (result.startsWith("Rename compilation unit to "))
@@ -373,13 +379,18 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
             return result + " to '" + context + "'";
         if (result.equals("Add abstract modifier"))
             return result + " to '" + context + "'";
+        if (result.equals("Add return statement"))
+            return result + " to '" + context + "'";
+        if (result.startsWith("Change return type to "))
+            return result.replace("Change return type to ", "Change return type of '" + context + "' to");
 
         // 'exception handling' proposals
-//        if (result.equals("Add throws declaration"))
             
         // 'field and variable' proposals
         
         // 'unknown' proposals
+        if (result.startsWith("Remove ") && result.endsWith(" annotation"))
+            return result + " from '" + context + "'"; 
         if (result.equals("Remove invalid modifiers"))
             return result + " from '" + context + "'";
         
@@ -387,7 +398,7 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
         logger_.warning("Unknown proposal for contexifying: " + result);
         return result;
     }
-
+    
     public boolean isResultAvaliable()
     {
         return errorsAfter_ != Squiggly.NOT_COMPUTED && errorsAfter_ != Squiggly.UNKNOWN; 
