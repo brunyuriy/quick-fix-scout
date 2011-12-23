@@ -13,9 +13,12 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaModelMarker;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.compiler.IProblem;
 import org.eclipse.jdt.internal.ui.text.correction.ProblemLocation;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
+import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.Document;
 
 @SuppressWarnings("restriction")
 public class Squiggly
@@ -192,6 +195,12 @@ public class Squiggly
         if (javaElement instanceof ICompilationUnit)
             cu = (ICompilationUnit) javaElement;
         return cu;
+    }
+    
+    public String getContext() throws JavaModelException, BadLocationException
+    {
+        Document document = new Document(compilationUnit_.getBuffer().getContents());
+        return document.get(location_.getOffset(), location_.getLength());
     }
     
     // This code is copied and modified from ProblemLocation.java in org.eclipse.jdt.internal.ui.text.correction

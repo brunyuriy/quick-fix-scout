@@ -3,6 +3,8 @@ package edu.washington.cs.quickfix.speculation.calc.model;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.TableItem;
@@ -187,11 +189,24 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
         
         String result = proposal_.getDisplayString();
         if (gbp)
-            result = contexify(result);
+        {
+            try
+            {
+                result = contexify(result);
+            }
+            catch (JavaModelException e)
+            {
+                logger_.log(Level.SEVERE, "Cannot contexify proposal string for = " + result + " due to a java model exception.", e);
+            }
+            catch (BadLocationException e)
+            {
+                logger_.log(Level.SEVERE, "Cannot contexify proposal string for = " + result + " due to a bad location exception.", e);
+            }
+        }
         return result;
     }
 
-    private String contexify(String result)
+    private String contexify(String result) throws JavaModelException, BadLocationException
     {
         logger_.info("Contexifying global best proposal: " + result);
         
@@ -324,9 +339,53 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
             return result;
         
         // The proposals that need context information.
+        String context = compilationError_.getContext();
+        String cuName = compilationError_.getResource().getName();
+        // 'import' proposals
+        if (result.equals("Remove unused import"))
+            return result + " '" + context + "'";
+        
+        // 'type' proposals
+        // This one also applies to 'field and variable' proposals.
+        if (result.startsWith("Change to "))
+            return result.replace("Change to ", "Change '" + context + "' to ");
+        if (result.startsWith("Rename type to "))
+            return result.replace("Rename type to ", "Rename '" + context + "' to ");
+        if (result.startsWith("Rename compilation unit to "))
+            return result.replace("Rename compilation unit to ", "Rename '" + cuName + ".java' to ");
+        
+        // 'constructor' proposals (the first four proposals are also applicable to method proposals).
+        if (result.startsWith("Remove argument to match "))
+            return result.replace("Remove argument to match ", "Remove argument from '" + context + "(..)' to match ");
+        if (result.startsWith("Remove arguments to match "))
+            return result.replace("Remove arguments to match ", "Remove arguments from '" + context + "(..)' to match ");
+        if (result.startsWith("Add argument to match "))
+            return result.replace("Add argument to match ", "Add argument from '" + context + "(..)' to match ");
+        if (result.startsWith("Add arguments to match "))
+            return result.replace("Add arguments to match ", "Add arguments from '" + context + "(..)' to match ");
+        if (result.equals("Add unimplemented methods"))
+            return result + " to '" + context + "'";
+        
+        // 'method' proposals
+        if (result.startsWith("Swap arguments ") && result.contains(" and "))
+            return "For method call: '" + context + "(..)' " + result.replace("Swap arguments ", "swap arguments ");
+        if (result.equals("Add body"))
+            return result + " to '" + context + "'";
+        if (result.equals("Add abstract modifier"))
+            return result + " to '" + context + "'";
+
+        // 'exception handling' proposals
+//        if (result.equals("Add throws declaration"))
+            
+        // 'field and variable' proposals
+        
+        // 'unknown' proposals
+        if (result.equals("Remove invalid modifiers"))
+            return result + " from '" + context + "'";
         
         // The proposals I don't know yet.
         logger_.warning("Unknown proposal for contexifying: " + result);
+        return result;
     }
 
     public boolean isResultAvaliable()
