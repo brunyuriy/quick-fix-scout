@@ -1,5 +1,8 @@
 package edu.washington.cs.quickfix.speculation.calc.model;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.TableItem;
@@ -15,6 +18,12 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     private final Squiggly compilationError_;
     public static final int NOT_AVAILABLE = -1;
     private final Squiggly [] errorsAfter_;
+    
+    private final static Logger logger_ = Logger.getLogger(AugmentedCompletionProposal.class.getName());
+    static
+    {
+        logger_.setLevel(Level.INFO);
+    }
 
     public AugmentedCompletionProposal(ICompletionProposal proposal, Squiggly compilationError, Squiggly [] errorsAfter, int errorBefore)
     {
@@ -151,16 +160,175 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
 
     public String getFinalDisplayString(boolean gbp)
     {
-        Squiggly ce = getCompilationError();
-        SquigglyDetails ced = (ce == null ? null : getCompilationError().computeDetails());
-        String gbpInformation = gbp ? ((ced == null ? "!" : ced.toString()) + ": ") : "";
-        String prefix = "(" + resolveErrorsAfter() + ") ";
-        String text = prefix + gbpInformation + (proposal_ == null ? "null" : proposal_.getDisplayString());
-//        if (text.contains("Change to 'String'"))
-//            text = text.replace("Change to 'String'", "Change 'string' to 'String'");
+        String gbpInformation = getGBPInformation(gbp);
+        String prefix = getPrefix();
+        String displayString = getDisplayStringWithContext(gbp);
+        String text = prefix + gbpInformation + displayString;
         return text;
     }
     
+    private String getGBPInformation(boolean gbp)
+    {
+        Squiggly ce = getCompilationError();
+        SquigglyDetails ced = (ce == null ? null : getCompilationError().computeDetails());
+        String result = gbp ? ((ced == null ? "!" : ced.toString()) + ": ") : "";
+        return result;
+    }
+
+    private String getPrefix()
+    {
+        return "(" + resolveErrorsAfter() + ") ";
+    }
+
+    private String getDisplayStringWithContext(boolean gbp)
+    {
+        if (proposal_ == null)
+            return "null";
+        
+        String result = proposal_.getDisplayString();
+        if (gbp)
+            result = contexify(result);
+        return result;
+    }
+
+    private String contexify(String result)
+    {
+        logger_.info("Contexifying global best proposal: " + result);
+        
+        // The proposals that does not need extra context first...
+        // 'package' proposals
+        if (result.startsWith("Remove package declaration "))
+            return result;
+        if (result.startsWith("Add package declaration "))
+            return result;
+        if (result.startsWith("Move ") && result.contains(".java' to "))
+            return result;
+        if (result.startsWith("Move ") && result.endsWith(".java' to the default package"))
+            return result;
+        if (result.startsWith("Change package declaration to "))
+            return result;
+
+        // 'import' proposals
+        if (result.equals("Organize imports"))
+            return result;
+        
+        // 'type' proposals
+        if (result.startsWith("Create class "))
+            return result;
+        if (result.startsWith("Create interface "))
+            return result;
+        if (result.startsWith("Create enum "))
+            return result;
+        if (result.startsWith("Create annotation "))
+            return result;
+        if (result.startsWith("Import "))
+            return result;
+        if (result.startsWith("Add type parameter ") && result.contains(" to "))
+            return result;
+        if (result.startsWith("Remove type "))
+            return result;
+
+        // 'constructor' proposals
+        if (result.startsWith("Create constructor "))
+            return result;
+        if (result.startsWith("Make type ") && result.endsWith(" abstract"))
+            return result;
+        if (result.startsWith("Change constructor ") && result.contains(" to "))
+            return result;
+        if (result.startsWith("Change constructor ") && result.contains(": Remove parameter "))
+            return result;
+        if (result.startsWith("Change constructor ") && result.contains(": Remove parameters "))
+            return result;
+        if (result.startsWith("Add constructor "))
+            return result;
+        if (result.startsWith("Remove constructor "))
+            return result;
+        
+        // 'method' proposals
+        if (result.startsWith("Remove ") && result.contains(", keep side-effect assignments"))
+            return result;
+        if (result.startsWith("Create method "))
+            return result;
+        if (result.startsWith("Change method ") && result.contains(" to "))
+            return result;
+        if (result.startsWith("Change method ") && result.contains(": Remove parameter "))
+            return result;
+        if (result.startsWith("Change method ") && result.contains(": Add parameter "))
+            return result;
+        if (result.startsWith("Change method ") && result.contains(": Swap parameters "))
+            return result;
+        if (result.startsWith("Change visibility of ") && result.contains(" to "))
+            return result;
+        if (result.startsWith("Remove method "))
+            return result;
+        if (result.startsWith("Remove 'static' modifier of "))
+            return result;
+        
+        // 'build path problem' proposals
+        if (result.equals("Fix project setup..."))
+            return result;
+        
+        // 'other' proposals
+        if (result.startsWith("Add @SuppressWarnings") && result.contains(" to "))
+            return result;
+        if (result.startsWith("Add cast to "))
+            return result;
+        if (result.startsWith("Add type arguments to "))
+            return result;
+        
+        // 'field and variable' proposals
+        if (result.startsWith("Create getter and setter for "))
+            return result;
+        if (result.startsWith("Create field "))
+            return result;
+        if (result.startsWith("Create constant "))
+            return result;
+        if (result.startsWith("Initialize variable "))
+            return result;
+        
+        // 'unknown' proposals
+        if (result.startsWith("Rename method "))
+            return result;
+        if (result.startsWith("Rename field "))
+            return result;
+        if (result.startsWith("Remove ") && result.endsWith(" and all assignments"))
+            return result;
+        if (result.equals("Add default serial version ID"))
+            return result;
+        if (result.equals("Add generated serial version ID"))
+            return result;
+        if (result.startsWith("Remove exceptions from "))
+            return result;
+        if (result.startsWith("Add exceptions to "))
+            return result;
+        
+        // The proposals that I am not sure what to do. For now, I am not adding context to them.
+        // 'exception handling' proposals
+        if (result.equals("Surround with try/catch"))
+            return result;
+        if (result.equals("Add catch clause to surrounding try"))
+            return result;
+        if (result.equals("Replace catch clause with throws"))
+            return result;
+        if (result.equals("Remove catch clause"))
+            return result;
+        
+        // 'unknown' proposals
+        if (result.equals("Remove assignment"))
+            return result;
+        if (result.equals("Infer Generic Type Arguments..."))
+            return result;
+        if (result.startsWith("Remove ") && result.endsWith(" token"))
+            return result;
+        if (result.startsWith("Change access to using static ") && result.endsWith(" (declaring type)"))
+            return result;
+        
+        // The proposals that need context information.
+        
+        // The proposals I don't know yet.
+        logger_.warning("Unknown proposal for contexifying: " + result);
+    }
+
     public boolean isResultAvaliable()
     {
         return errorsAfter_ != Squiggly.NOT_COMPUTED && errorsAfter_ != Squiggly.UNKNOWN; 
