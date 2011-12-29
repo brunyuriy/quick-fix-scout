@@ -24,9 +24,10 @@ public class ObservationOperationHistoryListener implements IOperationHistoryLis
     {
         if (event.getEventType() == OperationHistoryEvent.UNDONE)
         {
-            System.out.println("Detected undone event = " + event);
             IUndoableOperation op = event.getOperation();
             System.out.println(op.getLabel());
+            System.out.println(op.getClass());
+            System.out.println(op);
             IUndoContext [] contexts = op.getContexts();
             for (IUndoContext context: contexts)
             {

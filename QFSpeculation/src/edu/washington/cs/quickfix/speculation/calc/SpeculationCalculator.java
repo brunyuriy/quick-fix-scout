@@ -308,10 +308,10 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         try
         {
             shadowCompilationErrors = getShadowCEs();
-            EclipseUIUtility.saveAllEditors(false);
-            buildOriginalProject();
-            Squiggly [] originalCompilationErrors = getOriginalCEs();
-            CompletionProposalPopupCoordinator.getCoordinator().setOriginalCompilationErrors(originalCompilationErrors);
+//            EclipseUIUtility.saveAllEditors(false);
+//            buildOriginalProject();
+//            Squiggly [] originalCompilationErrors = getOriginalCEs();
+//            CompletionProposalPopupCoordinator.getCoordinator().setOriginalCompilationErrors(originalCompilationErrors);
             
             // Added for debugging (i.e., better understanding of errors vs. warnings)
             Squiggly [] shadowSquigglies = getShadowSquigglies();
@@ -896,6 +896,14 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         shadowProposalsLock_.lock();
         shadowProposalsMap_.clear();
         shadowProposalsLock_.unlock();
+    }
+    
+    public void quickFixInvoked()
+    {
+        EclipseUIUtility.saveAllEditors(false);
+        buildOriginalProject();
+        Squiggly [] originalCompilationErrors = getOriginalCEs();
+        CompletionProposalPopupCoordinator.getCoordinator().setOriginalCompilationErrors(originalCompilationErrors);  
     }
 
     // public static void main(String [] args)
