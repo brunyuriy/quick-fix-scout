@@ -135,7 +135,6 @@ public class ObservationPreferencePage extends PreferencePage implements IWorkbe
             @Override
             public void widgetDefaultSelected(SelectionEvent e)
             {
-                System.out.println("What the heck!");
             }
         });
         PreferencePageUtility.makeHorizontalComposite(generalSettingsComposite, observationActivatedButton_, observationCheckVersionButton);

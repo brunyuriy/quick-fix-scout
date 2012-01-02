@@ -4,15 +4,12 @@ import javax.swing.JOptionPane;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.jface.text.TextSelection;
-import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.IDE;
-import org.eclipse.ui.texteditor.ITextEditor;
 
 import edu.washington.cs.swing.KDialog;
 import edu.washington.cs.util.exception.NotInitializedException;
@@ -49,49 +46,6 @@ public class EclipseUIUtility
             String path = "/" + editor.getTitleToolTip();
             return ResourceUtility.getFile(new Path(path));
         }
-    }
-    
-    private static void getCursorLocation() throws NotInitializedException
-    {
-        IEditorPart editor = getActiveEditorPart();
-        if (editor != null)
-        {
-            if (editor instanceof ITextEditor)
-            {
-                ITextEditor textEditor = (ITextEditor) editor;
-                ISelection selection = textEditor.getSelectionProvider().getSelection();
-                if (selection instanceof TextSelection)
-                {
-                    TextSelection textSelection = (TextSelection) selection;
-                    System.out.println("Offset for selection = " + textSelection.getOffset());
-                }
-                else
-                    System.out.println("Unknown selection type = " + selection.getClass());
-            }
-        }
-    }
-    
-    private static boolean cursorRetrievedBySuccess_;
-    
-    public static void getCursorLocationInUIThread() throws NotInitializedException
-    {
-        cursorRetrievedBySuccess_ = true;
-        Display.getDefault().syncExec(new Thread()
-        {
-            public void run()
-            {
-                try
-                {
-                    getCursorLocation();
-                }
-                catch (NotInitializedException e)
-                {
-                    cursorRetrievedBySuccess_ = false;
-                }
-            }
-        });
-        if (!cursorRetrievedBySuccess_)
-            throw new NotInitializedException("There is no page loaded yet.");
     }
     
     private static IEditorPart getActiveEditorPart() throws NotInitializedException

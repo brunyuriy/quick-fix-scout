@@ -40,12 +40,22 @@
 0.7.13:	Reduced the synchronization used in SpeculationCalculator (i.e., for fields only accessed used volatile instead of locks).
 0.8.0:	Version update for the new release (and possible fix in refactorings).
 		Changed the name of the plug-in to Quick Fix Scout (in the preference pages).
-0.8.1:	Added 'check version' button to the preferene page. Updated external version numbers.
+0.8.1:	Added 'check version' button to the preference page. Updated external version numbers.
 0.8.2:	Added automated version checking at the beginning when plug-in loads.
 0.8.3: 	Updated bridge implementation so that we can log if the analysis is running or not.
 0.9.0:	Implemented context aware global best proposals. The global best proposals are no longer showed if they do not fix the local compilation error.
-0.9.1:	Implemented optimized calculation for calculating global best proposals. 
-		Now, we are not getting offered proposals (through QuickFixProcessor) for the original project for all compilation errors, however this computation is delayed until we need to look this up for a guaranteed global best proposal.
+0.9.1:	Implemented optimized calculation for calculating global best proposals. Now, we are not getting offered proposals (through QuickFixProcessor) for the original project for all 
+		compilation errors, however this computation is delayed until we need to look this up for a guaranteed global best proposal.
 0.9.2:	Implemented support for getting local and global analysis calculation times so that they can be also logged.
 0.9.3:	Implemented auto-save and auto-build properties before any analysis start so that the retrieved compilation errors and offered proposals will always match with the shadow project.
 0.9.4:	Now using Timer library instead of TimeUtility.
+1.0.4:	Implemented better context for global best proposals in AugmentedCompletionProposal.java. (issue 6)
+1.1.4:	Implemented support for multiple compilation errors (problem locations) on the same line. (issue 22)
+1.1.5:	Updated the speculative analysis calculation priority with the new notification mechanism: CursorChange observer pattern. (issue 26)
+1.1.6:	Forced save is now done when the user invokes a quick fix (and before the dialog is created). This way, the analysis no longer closes user dialogs (i.e., auto-complete). (issue 30)
+1.2.7:	Updated the internal mechanism so that a known proposal that forces a sync (because of an Eclipse undo bug) is no longer computed and shown as '?' in the dialog. (issue 8)
+1.2.8:	Updated the way proposal display strings are re-written to the dialog so that duplicated proposals are no longer shown. (issue 11)
+1.2.9:	Updated the analysis protocol so that it will first try to join with Eclipse auto-builder (if active), deactivate the auto builder, do the analysis and reactivate it. This is done so that
+		Eclipse auto builder won't clash with the incremental build calls done on the shadow project. (issue 20)
+1.3.0:	Updated the implementation so that typing session now really affects the computation delay. (issue 28)
+1.3.1:	Removed dependency for Speculation Converter.

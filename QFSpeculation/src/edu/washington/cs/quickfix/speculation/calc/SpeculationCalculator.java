@@ -23,7 +23,7 @@ import org.eclipse.ltk.core.refactoring.Change;
 
 import com.kivancmuslu.www.timer.Timer;
 
-import edu.cs.washington.quickfix.speculation.converter.IJavaCompletionProposalConverter;
+//import edu.cs.washington.quickfix.speculation.converter.IJavaCompletionProposalConverter;
 import edu.washington.cs.quickfix.speculation.calc.model.ActivationRecord;
 import edu.washington.cs.quickfix.speculation.calc.model.AugmentedCompletionProposal;
 import edu.washington.cs.quickfix.speculation.calc.model.SpeculativeAnalysisListener;
@@ -58,8 +58,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     /** Lock that protected field: {@link #speculativeProposalsMap_}. */
     private ReentrantLock speculativeProposalsLock_;
     private IProject shadowProject_;
-    private IJavaCompletionProposalConverter proposalConverter_;
-    // private final static long BREAK_TIME = 3000;
+//    private IJavaCompletionProposalConverter proposalConverter_;
     private static final Logger logger = Logger.getLogger(SpeculationCalculator.class.getName());
     private Map <String, Squiggly []> cachedProposals_;
     /**
@@ -84,7 +83,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
          * FINE =>  See information for each proposal (# of compilation errors).
          */
         //@formatter:on
-        logger.setLevel(Level.FINE);
+        logger.setLevel(Level.INFO);
     }
     private final ProjectSynchronizer synchronizer_;
     private static final boolean DEVELOPMENT_TEST = false;
@@ -101,7 +100,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         setPriority(Thread.MIN_PRIORITY);
         synchronizer_ = synchronizer;
         shadowProject_ = synchronizer_.getShadowProject();
-        proposalConverter_ = new IJavaCompletionProposalConverter(synchronizer_.getProject());
+//        proposalConverter_ = new IJavaCompletionProposalConverter(synchronizer_.getProject());
         shadowProposalsMap_ = new HashMap <Squiggly, IJavaCompletionProposal []>();
         speculativeProposalsMap_ = new HashMap <Squiggly, AugmentedCompletionProposal []>();
         cachedProposals_ = new HashMap <String, Squiggly []>();
@@ -308,18 +307,14 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         try
         {
             shadowCompilationErrors = getShadowCEs();
-//            EclipseUIUtility.saveAllEditors(false);
-//            buildOriginalProject();
-//            Squiggly [] originalCompilationErrors = getOriginalCEs();
-//            CompletionProposalPopupCoordinator.getCoordinator().setOriginalCompilationErrors(originalCompilationErrors);
             
             // Added for debugging (i.e., better understanding of errors vs. warnings)
-            Squiggly [] shadowSquigglies = getShadowSquigglies();
-            for (Squiggly squiggly: shadowSquigglies)
-            {
-                if (squiggly.isWarning())
-                    System.out.println("Detected a warning marker of type = " + squiggly.getErrorCode() + " in " + squiggly.getResource().getName());
-            }
+//            Squiggly [] shadowSquigglies = getShadowSquigglies();
+//            for (Squiggly squiggly: shadowSquigglies)
+//            {
+//                if (squiggly.isWarning())
+//                    System.out.println("Detected a warning marker of type = " + squiggly.getErrorCode() + " in " + squiggly.getResource().getName());
+//            }
         }
         catch (Exception e)
         {
@@ -409,12 +404,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         }
     }
 
-    private IJavaCompletionProposal convertToOriginalProposal(IJavaCompletionProposal shadowProposals,
-            IProblemLocation shadowLocation)
-    {
-        return proposalConverter_.convert(shadowProposals, shadowLocation);
-    }
-
     private AugmentedCompletionProposal [] processCompilationError(Squiggly shadowCompilationError)
             throws InvalidatedException
     {
@@ -478,29 +467,35 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         }
     }
 
-    @SuppressWarnings("unused")
-    private IJavaCompletionProposal transformShadowProposal(IJavaCompletionProposal shadowProposal,
-            Squiggly shadowCompilationError, IJavaCompletionProposal originalProposal)
-    {
-        if (originalProposal == null || TEST_TRANSFORMATION)
-        {
-            if (originalProposal == null)
-                logger.warning("Couldn't get the corresponding proposal from original project =  "
-                        + shadowProposal.getDisplayString() + ", proposal.class = " + shadowProposal.getClass());
-            try
-            {
-                IJavaCompletionProposal convertedProposal = convertToOriginalProposal(shadowProposal,
-                        shadowCompilationError.getLocation());
-                if (convertedProposal != null)
-                    originalProposal = convertedProposal;
-            }
-            catch (Exception e)
-            {
-                logger.log(Level.SEVERE, "Cannot convert propoal of type = " + shadowProposal.getClass(), e);
-            }
-        }
-        return originalProposal;
-    }
+//    @SuppressWarnings("unused")
+//    private IJavaCompletionProposal transformShadowProposal(IJavaCompletionProposal shadowProposal,
+//            Squiggly shadowCompilationError, IJavaCompletionProposal originalProposal)
+//    {
+//        if (originalProposal == null || TEST_TRANSFORMATION)
+//        {
+//            if (originalProposal == null)
+//                logger.warning("Couldn't get the corresponding proposal from original project =  "
+//                        + shadowProposal.getDisplayString() + ", proposal.class = " + shadowProposal.getClass());
+//            try
+//            {
+//                IJavaCompletionProposal convertedProposal = convertToOriginalProposal(shadowProposal,
+//                        shadowCompilationError.getLocation());
+//                if (convertedProposal != null)
+//                    originalProposal = convertedProposal;
+//            }
+//            catch (Exception e)
+//            {
+//                logger.log(Level.SEVERE, "Cannot convert propoal of type = " + shadowProposal.getClass(), e);
+//            }
+//        }
+//        return originalProposal;
+//    }
+    
+//    private IJavaCompletionProposal convertToOriginalProposal(IJavaCompletionProposal shadowProposals,
+//            IProblemLocation shadowLocation)
+//    {
+//        return proposalConverter_.convert(shadowProposals, shadowLocation);
+//    }
 
     // returns the remaining compilation errors after the proposal is applied to the project.
     private Squiggly [] processProposal(IJavaCompletionProposal shadowProposal) throws InvalidatedException
@@ -906,25 +901,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         CompletionProposalPopupCoordinator.getCoordinator().setOriginalCompilationErrors(originalCompilationErrors);  
     }
 
-    // public static void main(String [] args)
-    // {
-    // HashMap <Integer, String> map1 = new HashMap <Integer, String>();
-    // map1.put(1, "Hello");
-    // HashMap <Integer, String> map2 = new HashMap <Integer, String>(map1);
-    // HashMap <Integer, String> map3 = new HashMap <Integer, String>(map1);
-    // map2.put(1, "Hi");
-    // map3.put(2, "Die");
-    // map1.put(3, "Say");
-    // System.out.println("Printing map1: ");
-    // for (Integer integer: map1.keySet())
-    // System.out.println(integer + " = " + map1.get(integer));
-    // System.out.println("Printing map2: ");
-    // for (Integer integer: map2.keySet())
-    // System.out.println(integer + " = " + map2.get(integer));
-    // System.out.println("Printing map3: ");
-    // for (Integer integer: map3.keySet())
-    // System.out.println(integer + " = " + map3.get(integer));
-    // }
     public Date getAnalysisCompletionTime()
     {
         Date result;
@@ -959,10 +935,10 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         return BuilderUtility.calculateCompilationErrors(shadowProject_);
     }
     
-    private Squiggly [] getShadowSquigglies()
-    {
-        return BuilderUtility.calculateSquigglies(shadowProject_);
-    }
+//    private Squiggly [] getShadowSquigglies()
+//    {
+//        return BuilderUtility.calculateSquigglies(shadowProject_);
+//    }
 
     private Squiggly [] getOriginalCEs()
     {
