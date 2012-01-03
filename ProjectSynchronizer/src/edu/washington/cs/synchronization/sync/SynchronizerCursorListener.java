@@ -55,8 +55,8 @@ public class SynchronizerCursorListener implements ISelectionListener, CursorCha
             TextSelection textSelection = (TextSelection) selection;
             result = textSelection.getOffset();
         }
-        else
-            System.out.println("Unknown selection type = " + selection.getClass());
+//        else
+//            System.out.println("Unknown selection type = " + selection.getClass());
         return result;
     }
 

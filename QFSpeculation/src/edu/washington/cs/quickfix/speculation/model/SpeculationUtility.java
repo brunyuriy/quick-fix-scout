@@ -142,22 +142,6 @@ public class SpeculationUtility
      */
     public static boolean sameProblemLocationContentWeak(IProblemLocation location1, IProblemLocation location2)
     {
-        // System.out.println("location1.id = " + location1.getProblemId() + ", location2.id = " +
-        // location2.getProblemId());
-        // System.out.println("location1.length = " + location1.getLength() + ", location2.length = " +
-        // location2.getLength());
-        // System.out.println("location1.markerType = " + location1.getMarkerType() + ", location2.markerType = " +
-        // location2.getMarkerType());
-        // System.out.println("location1.offset = " + location1.getOffset() + ", location2.offset = " +
-        // location2.getOffset());
-        // String [] a1 = location1.getProblemArguments();
-        // String [] a2 = location2.getProblemArguments();
-        // System.out.println("location1.arguments:");
-        // for (String arg: a1)
-        // System.out.println(arg);
-        // System.out.println("location2.arguments:");
-        // for (String arg: a2)
-        // System.out.println(arg);
         if (location1.getProblemId() != location2.getProblemId())
             return false;
         if (location1.getLength() != location2.getLength())

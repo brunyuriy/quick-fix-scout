@@ -35,11 +35,8 @@ public class SynchronizerFileBufferListener implements IFileBufferListener
 
     public static void attachListenerToBuffer(IFileBuffer buffer)
     {
-//        System.out.println("Attaching buffer listener for " + buffer.getLocation());
         IPath location = buffer.getLocation();
         IFile file = ResourceUtility.getFile(location);
-//        boolean result = attachBufferListenerToFile(file);
-//        if (!result && buffer instanceof ITextFileBuffer)
         if (buffer instanceof ITextFileBuffer)
         {
             IProject project = file.getProject();

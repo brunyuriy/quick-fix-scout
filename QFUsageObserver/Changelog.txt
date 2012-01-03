@@ -20,12 +20,13 @@
 		Updated the preference page information.
 0.9.1:	Added 'check version' button to the preference page. Updated external version numbers.
 0.9.2:	Added automated version checking at the beginning when plug-in loads.
-0.10.0:	Added internal check before logging number of compilation errors (when user clicks on quick fix).
+1.0.0:	Added internal check before logging number of compilation errors (when user clicks on quick fix).
 		If the synchronizer finds inconsistency between projects, current quick fix session is violated, and not logged.
-0.10.1:	Added an error popup dialog when the logs cannot be sent due to zip file being too big.
-0.10.2:	Added logging information for 'Observation' communications.
-0.10.3:	Updated logging information for 'LogSender'.
-0.10.4:	Updated the log sending algorithm so that it won't try to send logs if the zip file is not created.
-0.10.5: Updated logging so that it will also log if the analysis is running or not.
-0.10.6:	Added support for getting local analysis completion time and global speculation completion time from Speculator plug-in.
-0.10.7:	Now using Timer library instead of TimeUtility.
+1.0.1:	Added an error popup dialog when the logs cannot be sent due to zip file being too big.
+1.0.2:	Added logging information for 'Observation' communications.
+1.0.3:	Updated logging information for 'LogSender'.
+1.0.4:	Updated the log sending algorithm so that it won't try to send logs if the zip file is not created.
+1.0.5: Updated logging so that it will also log if the analysis is running or not.
+1.0.6:	Added support for getting local analysis completion time and global speculation completion time from Speculator plug-in.
+1.0.7:	Now using Timer library instead of TimeUtility.
+1.0.8:	Updated the observer internal patterns with the new notification pattern: CursorChange observer pattern. (issue 26)

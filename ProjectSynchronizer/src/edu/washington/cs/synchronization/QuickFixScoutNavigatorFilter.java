@@ -8,7 +8,6 @@ import org.eclipse.jface.viewers.ViewerFilter;
 @SuppressWarnings("restriction")
 public class QuickFixScoutNavigatorFilter extends ViewerFilter
 {
-
     @Override
     public boolean select(Viewer viewer, Object parentElement, Object element)
     {
@@ -20,9 +19,6 @@ public class QuickFixScoutNavigatorFilter extends ViewerFilter
             JavaProject javaProject = (JavaProject) element;
             project = javaProject.getProject();
         }
-//        else
-//            System.out.println(element.getClass());
-        
         return project == null || !shouldFilter(project);
     }
     

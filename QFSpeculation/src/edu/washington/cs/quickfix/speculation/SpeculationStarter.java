@@ -6,7 +6,7 @@ import java.util.logging.Logger;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.ui.IStartup;
 
-import edu.cs.washington.quickfix.speculation.converter.EclipseObjectConverter;
+//import edu.cs.washington.quickfix.speculation.converter.EclipseObjectConverter;
 import edu.washington.cs.hack.HackActionManager;
 import edu.washington.cs.quickfix.bridge.BridgeActionManager;
 import edu.washington.cs.quickfix.speculation.hack.SpeculationHackActionManager;
@@ -31,7 +31,7 @@ public class SpeculationStarter implements IStartup
 {
     public static final String [] DEPENDENT_PLUG_INS = {Speculator.PLUG_IN_ID, SpeculationHackActionManager.PLUG_IN_ID,
         BridgeActionManager.PLUG_IN_ID, HackActionManager.PLUG_IN_ID, ProjectSynchronizer.PLUG_IN_ID,
-        ResourceUtility.PLUG_IN_ID, EclipseObjectConverter.PLUG_IN_ID,
+        ResourceUtility.PLUG_IN_ID, /*EclipseObjectConverter.PLUG_IN_ID,*/
         LogHandlers.PLUG_IN_ID, MortalThread.PLUG_IN_ID, SwingUtility.PLUG_IN_ID};
     /** Logger for debugging. */
     private static final Logger logger = Logger.getLogger(SpeculationStarter.class.getName());

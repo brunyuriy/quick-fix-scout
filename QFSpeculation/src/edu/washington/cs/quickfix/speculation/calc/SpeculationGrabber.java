@@ -44,14 +44,8 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
     public SpeculationGrabber(IInvocationContext context, IProblemLocation [] locations)
     {
         // The problem locations can be zero if the user invokes quick fix where no compilation errors
-        // are present.
-        // Sometimes I get two problem locations. What does that mean?
-        for (IProblemLocation location: locations)
-        {
-            System.out.println("Problem location: ");
-            System.out.println(location.toString());
-        }
-        // assert locations.length <= 1: "Was expecting one problem location, got " + locations.length;
+        // are present. Sometimes I get two problem locations. What does that mean? I guess they mean that
+        // there are multiple compilation errors (problems) on the same line.
         locations_ = locations;
         context_ = context;
         calculator_ = Speculator.getSpeculator().getCurrentCalculator();

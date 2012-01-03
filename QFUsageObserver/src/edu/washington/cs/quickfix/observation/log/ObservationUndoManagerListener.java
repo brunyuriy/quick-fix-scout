@@ -10,10 +10,9 @@ import org.eclipse.ltk.core.refactoring.IUndoManagerListener;
 
 /**
  * @author Kivanc Muslu
- * @deprecated Not used anymore.
+ * @ deprecated Not used anymore.
  * @see ObservationOperationHistoryListener
  */
-@Deprecated
 public class ObservationUndoManagerListener implements IUndoManagerListener
 {
     private static final Logger logger = Logger.getLogger(ObservationUndoManagerListener.class.getName());
@@ -76,6 +75,7 @@ public class ObservationUndoManagerListener implements IUndoManagerListener
     {
         boolean undoChange = false;
         String undoName = manager.peekUndoName();
+        System.out.println("Change performed = " + change.getName());
         logger.fine("changePerformed = " + undoName);
         if (possibleUndoExecuted_)
         {

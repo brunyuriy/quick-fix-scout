@@ -178,6 +178,7 @@ public class BuilderUtility
         return desc.isAutoBuilding();
     }
     
+    @SuppressWarnings("deprecation")
     private static void joinAutoBuilder()
     {
         try

@@ -115,10 +115,7 @@ public class QuickFixUtility
     {
         try
         {
-//            long start = System.nanoTime();
             IJavaCompletionProposal [] proposals = qfProcessor_.getCorrections(context, locations);
-//            long end = System.nanoTime();
-//            System.out.println("Getting corrections took: 0:0:0:" + (end-start)/1000000);
             return proposals;
         }
         catch (CoreException e)
