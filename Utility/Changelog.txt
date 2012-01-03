@@ -5,3 +5,6 @@
 1.3.1:	Fixed a bug in ResourceUtility#getFile(...) method that were throwing IllegalArgumentException (internally) when users were opening files that were not in their workspace.
 		Now the method logs the error, however returns null (as if no new file were opened).
 1.4.0:	Added version checking rules and detecting an old version running.
+1.5.0:	Added support for deactivating, reactivating and joining with the Eclipse auto builder. (issue 20)
+1.5.1:	Added support for cleaning up the shadow projects (i.e., deleting the shadow projects that are not used anymore) at the beginning of the load phase. (issue 23)
+1.5.2:	Added support for organizing the shadow projects into QFS Working Set at the beginning of the load phase. (issue 24, 25)

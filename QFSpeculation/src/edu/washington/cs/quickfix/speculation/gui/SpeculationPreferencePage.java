@@ -149,7 +149,6 @@ public class SpeculationPreferencePage extends FieldEditorPreferencePage impleme
             @Override
             public void widgetDefaultSelected(SelectionEvent e)
             {
-                System.out.println("What the heck!");
             }
         });
         PreferencePageUtility.makeControlVisible(activationGroup);

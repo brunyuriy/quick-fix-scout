@@ -122,9 +122,6 @@ public class QFSession
     QFSession(Date sessionStartTime, Date delayTime, String [] availableProposals, String [] speculationProposals,
             int errorsBefore, String selectedProposal, int errorsAfter, Date sessionEndTime, Date localComputationLength, Date analysisLength)
     {
-//        System.out.println("start time = " + sessionStartTime);
-//        System.out.println("end time = " + sessionEndTime);
-        
         log_ = new StringBuffer();
         sessionStartTime_ = sessionStartTime;
         delayTime_ = delayTime;

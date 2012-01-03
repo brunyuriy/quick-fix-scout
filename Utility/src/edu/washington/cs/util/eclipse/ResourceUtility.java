@@ -474,8 +474,9 @@ public class ResourceUtility
             String [] parts = externalVersion.split("\\.");
             if (parts.length != 3)
             {
+                logger.severe("Malformed version number for string: " + externalVersion);
                 for (String part: parts)
-                    System.out.println(part);
+                    logger.severe(part);
                 throw new RuntimeException("External Version ID cannot be calculated.");
             }
             major += Integer.parseInt(parts[0].trim());
@@ -519,7 +520,7 @@ public class ResourceUtility
             String currentVersion = createExternalVersion(relatedVersions.toArray(new String [relatedVersions.size()]));
             //@formatter:off
             EclipseUIUtility.showInformationDialog("<div align=left>Quick Fix Scout plug-in (" + externalName + " feature) is outdated.<br>" +
-                    "A new version is available at: http://www.kivancmuslu.com/Quick_Fix_Scout/Releases<br><br>" +
+                    "A new version is available at: http://code.google.com/p/quick-fix-scout/downloads/list<br><br>" +
                     "Installed version = " + installedVersion + ", current version = " + currentVersion + "</div>"
                     , "New Version Available!", 450);
             //@formatter:on

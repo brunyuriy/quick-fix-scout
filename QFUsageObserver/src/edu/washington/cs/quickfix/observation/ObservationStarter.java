@@ -3,6 +3,7 @@ package edu.washington.cs.quickfix.observation;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+
 import org.eclipse.core.commands.operations.OperationHistoryFactory;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.ui.IStartup;
@@ -53,6 +54,7 @@ public class ObservationStarter implements IStartup
      * Initializes the observation plug-in and observes the current file's project if any.
      * </p>
      */
+//    @SuppressWarnings("restriction")
     @Override
     public void earlyStartup()
     {
@@ -61,6 +63,9 @@ public class ObservationStarter implements IStartup
         SynchronizerCursorListener.getInstance().addCursorChangedListener(Observer.getUsageObserver());
         OperationHistoryFactory.getOperationHistory().addOperationHistoryListener(
                 new ObservationOperationHistoryListener());
+//        DocumentUndoManager undoManager = new DocumentUndoManager(document)
+//        UndoManager2 undoManager = new UndoManager2();
+//        undoManager.addListener(new ObservationUndoManagerListener());
         sendLogs();
         ResourceUtility.checkForUpdates("Observer", false, DEPENDENT_PLUG_INS);
         ResourceUtility.logSystemInformation(DEPENDENT_PLUG_INS);
@@ -75,7 +80,7 @@ public class ObservationStarter implements IStartup
             logger.log(Level.SEVERE, "Workbench page is not created yet", e);
         }
     }
-
+    
     private void sendLogs()
     {
         final ObservationLogSender logSender;

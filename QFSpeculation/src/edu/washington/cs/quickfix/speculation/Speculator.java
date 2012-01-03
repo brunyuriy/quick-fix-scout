@@ -154,4 +154,11 @@ public class Speculator implements CursorChangedListener
         if (calculator != null)
             calculator.updateTypingSessionTime(value);
     }
+
+    public void quickFixInvoked()
+    {
+        SpeculationCalculator calculator = getCurrentCalculator();
+        if (calculator != null)
+            calculator.quickFixInvoked();
+    }
 }

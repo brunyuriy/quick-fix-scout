@@ -4,7 +4,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.core.commands.operations.IOperationHistoryListener;
-import org.eclipse.core.commands.operations.IUndoContext;
+//import org.eclipse.core.commands.operations.IUndoContext;
 import org.eclipse.core.commands.operations.IUndoableOperation;
 import org.eclipse.core.commands.operations.OperationHistoryEvent;
 import org.eclipse.core.commands.operations.TriggeredOperations;
@@ -22,19 +22,23 @@ public class ObservationOperationHistoryListener implements IOperationHistoryLis
 
     public void historyNotification(OperationHistoryEvent event)
     {
-        if (event.getEventType() == OperationHistoryEvent.UNDONE)
-        {
-            System.out.println("Detected undone event = " + event);
-            IUndoableOperation op = event.getOperation();
-            System.out.println(op.getLabel());
-            IUndoContext [] contexts = op.getContexts();
-            for (IUndoContext context: contexts)
-            {
-                System.out.println("Context.label = " + context.getLabel());
-                System.out.println("Context.toString = " + context.toString());
-            }
-        }
-        
+//        if (event.getEventType() == OperationHistoryEvent.UNDONE)
+//        {
+//            IUndoableOperation op = event.getOperation();
+//            while (op instanceof TriggeredOperations)
+//            {
+//                System.out.println("Operation is a triggered operation.");
+//                op = ((TriggeredOperations) op).getTriggeringOperation();
+//            }
+//            System.out.println("Label = " + op.getLabel());
+//            System.out.println(op.getClass());
+//            System.out.println("Op = " + op);
+//            if (op instanceof UndoableOperation2ChangeAdapter)
+//            {
+//                System.out.println("Operation is undoable operation 2 change adapter.");
+//            }
+//        }
+
         IUndoableOperation op = event.getOperation();
         if (op instanceof TriggeredOperations)
             op = ((TriggeredOperations) op).getTriggeringOperation();
@@ -42,10 +46,7 @@ public class ObservationOperationHistoryListener implements IOperationHistoryLis
         if (op instanceof UndoableOperation2ChangeAdapter)
             changeOperation = (UndoableOperation2ChangeAdapter) op;
         if (changeOperation == null)
-        {
-            System.out.println("Event has no change operation.");
             return;
-        }
         else
             System.out.println("Event has the following change operation = " + changeOperation);
         Change change = changeOperation.getChange();
@@ -69,15 +70,12 @@ public class ObservationOperationHistoryListener implements IOperationHistoryLis
                 ObservationLogger.getLogger().logUndo(changeName);
                 break;
             case OperationHistoryEvent.REDONE:
-                // System.out.println("Redo executed = " + changeName);
                 break;
             case OperationHistoryEvent.OPERATION_NOT_OK:
                 break;
             case OperationHistoryEvent.OPERATION_ADDED:
-                // System.out.println("Operation added...");
                 break;
             case OperationHistoryEvent.OPERATION_REMOVED:
-                // System.out.println("Operation removed...");
                 break;
         }
     }
