@@ -110,7 +110,7 @@ class CompletionProposalPopup implements IContentAssistListener {
 	 */
 	private static final boolean USE_VIRTUAL= !"motif".equals(SWT.getPlatform()); //$NON-NLS-1$
 
-	   // XXX Kivanc starts here...
+	// XXX Kivanc starts here...
     // Note to myself. This class (CompletionProposalPopup is instantiated only once - per contentAssistant)
     private static ICompletionProposalPopupSpeculationHack speculationHack_ = getSpeculationHack();
     private static ICompletionProposalPopupUsageHack observerHack_ = getObserverHack();
