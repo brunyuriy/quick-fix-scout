@@ -5,6 +5,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.kivancmuslu.www.time.Calendars;
+import com.kivancmuslu.www.zip.ZipException;
 import com.kivancmuslu.www.zip.Zipper;
 
 import edu.washington.cs.email.AttachmentTooBigException;
@@ -56,8 +57,15 @@ public class ObservationLogSender
         String zipName = Calendars.nowToString(".", "-", ".");
         File result = new File(directory.getParentFile(), zipName + ".zip");
         Zipper zipCreator = new Zipper(result.getAbsolutePath());
-        zipCreator.addFolder(directory, new File(SharedConstants.DEBUG_LOG_PATH), new File(ObservationLogger.LOG_PATH));
-        zipCreator.close();
+        try
+        {
+            zipCreator.addFolder(directory, new File(SharedConstants.DEBUG_LOG_PATH), new File(ObservationLogger.LOG_PATH));
+            zipCreator.close();
+        }
+        catch (ZipException e)
+        {
+            logger.log(Level.SEVERE, "Cannot create the zip file: " + zipName, e);
+        }
         return result;
     }
 

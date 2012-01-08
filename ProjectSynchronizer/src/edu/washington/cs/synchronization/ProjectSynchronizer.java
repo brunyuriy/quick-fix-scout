@@ -21,6 +21,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.JavaCore;
 
 import com.kivancmuslu.www.timer.Timer;
+import com.kivancmuslu.www.zip.ZipException;
 import com.kivancmuslu.www.zip.Zipper;
 
 import edu.washington.cs.synchronization.sync.SynchronizerBufferChangedListener;
@@ -503,9 +504,16 @@ public class ProjectSynchronizer
         if (shadow_ != null)
         {
             Zipper zipper = new Zipper(directory, zipName);
-            zipper.addFolder(new File(shadow_.getLocation().toString()));
-            zipper.close();
-            logger.info("Created snapshot with success.");
+            try
+            {
+                zipper.addFolder(new File(shadow_.getLocation().toString()));
+                zipper.close();
+                logger.info("Created snapshot with success.");
+            }
+            catch (ZipException e)
+            {
+                logger.log(Level.SEVERE, "Cannot create snapshot for project: " + shadow_.getName());
+            }
         }
     }
 
