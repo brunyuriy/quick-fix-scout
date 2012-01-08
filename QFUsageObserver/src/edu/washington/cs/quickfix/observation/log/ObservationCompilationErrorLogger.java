@@ -49,8 +49,12 @@ public class ObservationCompilationErrorLogger extends Thread
         worker_.block();
         worker_.waitUntilSynchronization();
         IProject shadow = Observer.getUsageObserver().getCurrentSynchronizer().getShadowProject();
+        boolean isAutoBuilding = BuilderUtility.isAutoBuilding();
+        BuilderUtility.setAutoBuilding(false);
         BuilderUtility.build(shadow);
         int errors = BuilderUtility.getNumberOfCompilationErrors(shadow);
+        if (isAutoBuilding)
+            BuilderUtility.setAutoBuilding(true);
         if (type_ == Type.BEFORE)
         {
             logger.info("Communication: Setting the number of errors before a proposal has selected.");
