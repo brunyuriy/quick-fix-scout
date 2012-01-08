@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 
 import com.kivancmuslu.www.time.Calendars;
 import com.kivancmuslu.www.zip.ZipException;
+import com.kivancmuslu.www.zip.ZipStatus;
 import com.kivancmuslu.www.zip.Zipper;
 
 import edu.washington.cs.email.AttachmentTooBigException;
@@ -17,6 +18,10 @@ import edu.washington.cs.util.log.LogHandlers;
 
 public class ObservationLogSender
 {
+    private static final long MB = 1024*1024;
+    private static final long ZIP_LIMIT = 20 * MB;
+    // Just for internal testing, don't forget to comment.
+//    private static final long ZIP_LIMIT = 25 * 1024;
     private static final Logger logger = Logger.getLogger(ObservationLogSender.class.getName());
     static
     {
@@ -52,11 +57,11 @@ public class ObservationLogSender
         return sendingLogs_;
     }
 
-    private File createZip(File directory)
+    private ZipStatus createZip(File directory)
     {
         String zipName = Calendars.nowToString(".", "-", ".");
         File result = new File(directory.getParentFile(), zipName + ".zip");
-        Zipper zipCreator = new Zipper(result.getAbsolutePath());
+        Zipper zipCreator = new Zipper(result.getAbsolutePath(), ZIP_LIMIT);
         try
         {
             zipCreator.addFolder(directory, new File(SharedConstants.DEBUG_LOG_PATH), new File(ObservationLogger.LOG_PATH));
@@ -66,7 +71,7 @@ public class ObservationLogSender
         {
             logger.log(Level.SEVERE, "Cannot create the zip file: " + zipName, e);
         }
-        return result;
+        return zipCreator.getStatus();
     }
 
     public void sendLogs()
@@ -81,26 +86,33 @@ public class ObservationLogSender
             {
                 File logDirectory = new File(ObservationLogger.LOG_DIRECTORY_PATH);
                 logger.info("LogSender: Creating zip file.");
-                File zipFile = createZip(logDirectory);
-                if (zipFile.exists())
+                ZipStatus status = createZip(logDirectory);
+                // Delete all the excluded files (since we won't be able to zip them anyways).
+                for (File file: status.getExcludedFiles())
                 {
-                    logger.info("LogSender: Zip file created, sending logs.");
-                    boolean result = sendEmail(zipFile);
-                    if (result)
-                    {
-                        logger.info("LogSender: Logs sent, deleting logs.");
-                        deleteContents(logDirectory, 0);
-                        zipFile.delete();
-                        logger.info("LogSender: Logs deleted.");
-                    }
-                    synchronized (ObservationLogSender.this)
-                    {
-                        sendingLogs_ = false;
-                        ObservationLogSender.this.notifyAll();
-                    }
+                    logger.info("Deleting log file: " + file.getName() + " since the zipped version is too big.");
+                    file.delete();
                 }
-                else
-                    logger.info("LogSender: Not sending the logs, since zip file has no content.");
+                boolean allOK = true;
+                for (File zipFile: status.getCreatedZips())
+                {
+                    logger.info("LogSender: Sending zip file: " + zipFile.getName());
+                    boolean result = sendEmail(zipFile);
+                    allOK = allOK && result;
+                    if (result)
+                        zipFile.delete();
+                }
+                if (allOK)
+                {
+                    logger.info("LogSender: Logs sent, deleting logs.");
+                    deleteContents(logDirectory, 0);
+                    logger.info("LogSender: Logs deleted.");
+                }
+                synchronized (ObservationLogSender.this)
+                {
+                    sendingLogs_ = false;
+                    ObservationLogSender.this.notifyAll();
+                }
             }
         };
         logSender.setDaemon(false);
