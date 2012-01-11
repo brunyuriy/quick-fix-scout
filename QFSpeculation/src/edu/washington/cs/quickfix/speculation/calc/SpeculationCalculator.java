@@ -1,13 +1,18 @@
 package edu.washington.cs.quickfix.speculation.calc;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,7 +45,9 @@ import edu.washington.cs.threading.MortalThread;
 import edu.washington.cs.util.eclipse.BuilderUtility;
 import edu.washington.cs.util.eclipse.EclipseUIUtility;
 import edu.washington.cs.util.eclipse.QuickFixUtility;
+import edu.washington.cs.util.eclipse.SharedConstants;
 import edu.washington.cs.util.eclipse.model.Squiggly;
+import edu.washington.cs.util.eclipse.model.SquigglyDetails;
 
 @SuppressWarnings("restriction")
 public class SpeculationCalculator extends MortalThread implements ProjectModificationListener,
@@ -243,10 +250,165 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             // else, current proposal is worse then the best, ignore.
         }
     }
+    
+    private class BotTreeSearch
+    {
+        public BotTreeSearch()
+        {
+            try
+            {
+                writer_ = new Formatter(new File(new File(SharedConstants.DEBUG_LOG_DIR).getParentFile(), 
+                        "bot-tree-search_" + SharedConstants.UNIQUE_TIME_STAMP + ".txt"));
+            }
+            catch (FileNotFoundException e)
+            {
+                e.printStackTrace();
+            }
+        }
+        
+        private Formatter writer_;
+        
+        public void explore()
+        {
+            BuilderUtility.build(shadowProject_);
+            Squiggly [] compilationErrors = BuilderUtility.calculateCompilationErrors(shadowProject_);
+            write("Original # of compilation errors = " + compilationErrors.length);
+            write();
+            exploreRecursive(new ArrayList<Squiggly>(), new ArrayList<IJavaCompletionProposal>(), new ArrayList<Squiggly[]>());
+            writer_.close();
+        }
+
+        private void exploreRecursive(ArrayList<Squiggly> selectedCompilationErrors, ArrayList <IJavaCompletionProposal> selectedProposals, 
+                ArrayList <Squiggly[]> errors)
+        {
+            Squiggly [] compilationErrors = BuilderUtility.calculateCompilationErrors(shadowProject_);
+            if (compilationErrors.length == 0)
+            {
+                logPath(selectedCompilationErrors, selectedProposals, errors);
+                // backtrack.
+                backtrack(selectedCompilationErrors, selectedProposals, errors);
+                return;
+            }
+            for (Squiggly shadowCompilationError: compilationErrors)
+            {
+                try
+                {
+                    IJavaCompletionProposal [] proposals = QuickFixUtility.computeQuickFix(shadowCompilationError);
+                    for (IJavaCompletionProposal shadowProposal: proposals)
+                    {
+                        Pair<Change, Squiggly []> applicationResult = applyProposal(shadowProposal);
+                        Change undoChange = applicationResult.getValue1();
+                        if (undoChange == null)
+                        {
+                            // Application unsuccessful, we are stuck here.
+                            logPath(selectedCompilationErrors, selectedProposals, errors);
+                            // nobacktrack here...
+                        }
+                        else
+                        {
+                            // Application successful.
+                            selectedCompilationErrors.add(shadowCompilationError);
+                            selectedProposals.add(shadowProposal);
+                            errors.add(applicationResult.getValue2());
+                            exploreRecursive(selectedCompilationErrors, selectedProposals, errors);
+
+                            applyUndo(undoChange);
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                    SquigglyDetails details = shadowCompilationError.computeDetails();
+                    System.out.println("Cannot get proposals for compilation error: " + details.toString());
+                }
+            }
+            backtrack(selectedCompilationErrors, selectedProposals, errors);
+        }
+        
+        private int solutionCounter_ = 0;
+        
+        private void logPath(ArrayList <Squiggly> selectedCompilationErrors,
+                ArrayList <IJavaCompletionProposal> selectedProposals, ArrayList <Squiggly []> errors)
+        {
+            solutionCounter_ ++;
+            write(solutionCounter_ + "th solution:");
+            for (int a = 0; a < selectedCompilationErrors.size(); a++)
+            {
+                Squiggly compilationError = selectedCompilationErrors.get(a);
+                SquigglyDetails compilationErrorDetails = compilationError.computeDetails();
+                write("For compilation error: " + compilationErrorDetails.toString() + 
+                        ", select proposal: " + selectedProposals.get(a).getDisplayString());
+                write("Number of compilation errors reduce to " + errors.get(a).length);
+            }
+            write();
+        }
+
+        private void backtrack(ArrayList <Squiggly> selectedCompilationErrors,
+                ArrayList <IJavaCompletionProposal> selectedProposals, ArrayList <Squiggly []> errors)
+        {
+            if (selectedCompilationErrors.size() != 0)
+            {
+                selectedProposals.remove(selectedProposals.size()-1);
+                selectedCompilationErrors.remove(selectedCompilationErrors.size()-1);
+                errors.remove(errors.size()-1);
+            }
+            else
+                System.out.println("Called backtrack even there is nothing to backtrack.");
+        }
+
+        private Pair<Change, Squiggly[]> applyProposal(IJavaCompletionProposal shadowProposal)
+        {
+            if (SpeculationUtility.isFlaggedProposal(shadowProposal))
+                return new Pair<Change, Squiggly []>(null, Squiggly.NOT_COMPUTED);
+
+            if (shadowProposal instanceof ChangeCorrectionProposal)
+            {
+                ChangeCorrectionProposal shadowChangeCorrection = (ChangeCorrectionProposal) shadowProposal;
+                Change shadowChange = null;
+                try
+                {
+                    shadowChange = shadowChangeCorrection.getChange();
+                    Pair <Change, Squiggly []> result = applyChange(shadowChange);
+                    return result;
+                }
+                catch (CoreException ce)
+                {
+                    System.out.println("Cannot get change for proposal = " + shadowProposal.getDisplayString());
+                }
+            }
+            return new Pair<Change, Squiggly []>(null, Squiggly.UNKNOWN);
+        }
+        
+        private void write(String message)
+        {
+            System.out.println(message);
+            writer_.format("%s%n", message);
+            writer_.flush();
+        }
+        
+        private void write()
+        {
+            write("");
+        }
+    }
 
     @Override
     protected void doWork() throws InterruptedException
     {
+        Scanner reader = new Scanner(System.in);
+        System.out.println("Bot is ready, press enter to start the bot.");
+        reader.nextLine();
+        boolean pAutoBuilding = deactivateAutoBuilding();
+        BuilderUtility.setAutoBuilding(false);
+        BotTreeSearch godBot = new BotTreeSearch();
+        godBot.explore();
+        if (pAutoBuilding)
+            activateAutoBuilding();
+        System.out.println("Bot completed working successfully.");
+        if (true)
+            return;
+        
         if (isDead())
             return;
         Timer.startSession();
