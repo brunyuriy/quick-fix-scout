@@ -21,12 +21,13 @@ import edu.washington.cs.util.eclipse.SharedConstants;
 
 public class ObservationGrabber extends Thread
 {
-    private static int counter = 1;
+    private static final int SNAPSHOT_THRESHOLD = 2;
     private static final Logger logger = Logger.getLogger(ObservationGrabber.class.getName());
     static
     {
         logger.setLevel(Level.INFO);
     }
+    private static int counter = 1;
     private final IProblemLocation [] locations_;
     private final IInvocationContext context_;
 
@@ -70,10 +71,7 @@ public class ObservationGrabber extends Thread
         session.setLocations(locations_);
         session.setProposals(QuickFixUtility.calculateCompletionProposals(context_, locations_));
         logger.info("Communication: Setting the proposals offered by Eclipse");
-        /*
-         * Normally this is already done in a non-UI thread (this), so maybe there is no need to spawn a new thread.
-         * However, I didn't want to directly call 'run'.
-         */
+        
         ProjectSynchronizer synchronizer = Observer.getUsageObserver().getCurrentSynchronizer();
         boolean internalCheck = synchronizer.testSynchronization();
         if (!internalCheck)
@@ -83,9 +81,19 @@ public class ObservationGrabber extends Thread
         }
         else
         {
-            snapshot();
-            Thread compilationErrorLogger = new ObservationCompilationErrorLogger(session, Type.BEFORE);
-            compilationErrorLogger.start();
+            /*
+             * Normally this is already done in a non-UI thread (this), so maybe there is no need to spawn a new thread.
+             * However, I didn't want to directly call 'run'.
+             * Update: I am now calling run since I need the computation in compilation error logger finished before deciding
+             * whether to snapshot or not.
+             */
+            ObservationCompilationErrorLogger compilationErrorLogger = new ObservationCompilationErrorLogger(session, Type.BEFORE);
+            compilationErrorLogger.run();
+            int errors = compilationErrorLogger.getNoCompilationErrors();
+            if (errors >= SNAPSHOT_THRESHOLD)
+                snapshot();
+            else
+                logger.info("Snapshot is not created since the number of compilation errors are: " + errors);
         }
     }
 

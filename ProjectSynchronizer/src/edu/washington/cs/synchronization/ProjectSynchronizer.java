@@ -21,6 +21,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.JavaCore;
 
 import com.kivancmuslu.www.timer.Timer;
+import com.kivancmuslu.www.zip.ZipException;
 import com.kivancmuslu.www.zip.Zipper;
 
 import edu.washington.cs.synchronization.sync.SynchronizerBufferChangedListener;
@@ -61,6 +62,16 @@ public class ProjectSynchronizer
     public static final String PLUG_IN_ID = "edu.washington.cs.synchronization";
     /** logger for debugging. */
     private static final Logger logger = Logger.getLogger(ProjectSynchronizer.class.getName());
+    
+    private static final long MB = 1024*1024;
+    private static final long ZIP_LIMIT = MB * 20;
+    
+    private static double toMB(long bytes)
+    {
+        double result = bytes*1.0/MB;
+        return result;
+    }
+    
     static
     {
         logger.setLevel(Level.INFO);
@@ -503,9 +514,28 @@ public class ProjectSynchronizer
         if (shadow_ != null)
         {
             Zipper zipper = new Zipper(directory, zipName);
-            zipper.addFolder(new File(shadow_.getLocation().toString()));
-            zipper.close();
-            logger.info("Created snapshot with success.");
+            try
+            {
+                zipper.addFolder(new File(shadow_.getLocation().toString()));
+                zipper.close();
+                File zipFile = new File(directory, zipName);
+                if (zipFile.exists())
+                {
+                    if (zipFile.length() > ZIP_LIMIT)
+                    {
+                        String size = String.format("%.2f", toMB(zipFile.length()));
+                        logger.info("Snapshot for project: " + shadow_.getName() + " is deleted because zipped version was " + size + "MB big.");
+                        zipFile.delete();
+                    }
+                    else
+                        logger.info("Created snapshot with success.");
+                }
+                //else, Zip file is not created for some reasons. Since these are shadows, we don't really care.
+            }
+            catch (ZipException e)
+            {
+                logger.log(Level.SEVERE, "Cannot create snapshot for project: " + shadow_.getName());
+            }
         }
     }
 

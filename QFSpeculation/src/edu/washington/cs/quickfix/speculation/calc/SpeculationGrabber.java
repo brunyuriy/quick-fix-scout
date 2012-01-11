@@ -116,18 +116,22 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
         }
         else
         {
-            logger.warning("Locations: ");
+            String ls = System.getProperty("line.separator");
+            StringBuilder extraDebug = new StringBuilder();
+            extraDebug.append("Locations:" + ls);
             for (int a = 0; a < locations_.length; a++)
             {
-                logger.warning("Problem Location # " + (a + 1));
-                logger.warning(locations_[a].toString());
+                extraDebug.append("Problem Location # " + (a + 1) + ls);
+                extraDebug.append(locations_[a].toString() + ls);
             }
-            logger.warning("Successfully cached: ");
+            extraDebug.append("Successfully cached: " + ls);
             for (int a = 0; a < result.size(); a++)
             {
-                logger.warning("Problem Location # " + (a + 1));
-                logger.warning(result.get(a).getLocation().toString());
+                extraDebug.append("Problem Location # " + (a + 1) + ls);
+                extraDebug.append(result.get(a).getLocation().toString() + ls);
             }
+            logger.warning("Precaching problem locations failed. # of locations = " + locations_.length + 
+                    ", cached # of locations = " + result.size() + ls + extraDebug);
             return false;
         }
     }

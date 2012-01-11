@@ -28,6 +28,8 @@ public class ObservationCompilationErrorLogger extends Thread
 
     private final Type type_;
     private final QFSession session_;
+    
+    private int noCompilationErrors_;
 
     public ObservationCompilationErrorLogger(QFSession session, Type type)
     {
@@ -35,8 +37,14 @@ public class ObservationCompilationErrorLogger extends Thread
         notInitialized_ = false;
         type_ = type;
         worker_ = Observer.getUsageObserver().getCurrentTaskWorker();
+        noCompilationErrors_ = -1;
         if (worker_ == null)
             notInitialized_ = true;
+    }
+    
+    public int getNoCompilationErrors()
+    {
+        return noCompilationErrors_;
     }
 
     public void run()
@@ -49,17 +57,21 @@ public class ObservationCompilationErrorLogger extends Thread
         worker_.block();
         worker_.waitUntilSynchronization();
         IProject shadow = Observer.getUsageObserver().getCurrentSynchronizer().getShadowProject();
+        boolean isAutoBuilding = BuilderUtility.isAutoBuilding();
+        BuilderUtility.setAutoBuilding(false);
         BuilderUtility.build(shadow);
-        int errors = BuilderUtility.getNumberOfCompilationErrors(shadow);
+        noCompilationErrors_ = BuilderUtility.getNumberOfCompilationErrors(shadow);
+        if (isAutoBuilding)
+            BuilderUtility.setAutoBuilding(true);
         if (type_ == Type.BEFORE)
         {
             logger.info("Communication: Setting the number of errors before a proposal has selected.");
-            session_.logNumberOfErrorsBefore(errors);
+            session_.logNumberOfErrorsBefore(noCompilationErrors_);
         }
         else if (type_ == Type.AFTER)
         {
             logger.info("Communication: Setting the number of errors after a proposal has selected.");
-            session_.logNumberOfErrorsAfter(errors);
+            session_.logNumberOfErrorsAfter(noCompilationErrors_);
         }
         worker_.unblock();
     }
