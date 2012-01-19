@@ -8,3 +8,4 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Require-Bundle: edu.washington.cs.logging;bundle-version="1.0.0",
  edu.washington.cs.hack;bundle-version="1.0.0"
 Export-Package: edu.washington.cs.quickfix.speculation.hack
+Import-Package: org.eclipse.swt.widgets

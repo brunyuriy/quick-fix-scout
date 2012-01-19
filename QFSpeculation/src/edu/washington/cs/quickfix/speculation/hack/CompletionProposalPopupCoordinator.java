@@ -1,5 +1,7 @@
 package edu.washington.cs.quickfix.speculation.hack;
 
+
+import java.awt.Label;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -10,9 +12,12 @@ import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
 import org.eclipse.jface.text.contentassist.CompletionProposalPopup;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.GC;
 
 import edu.washington.cs.quickfix.speculation.Speculator;
 import edu.washington.cs.quickfix.speculation.calc.SpeculationCalculator;
@@ -247,6 +252,8 @@ public class CompletionProposalPopupCoordinator
         synchronized (lock_)
         {
             table_.setRedraw(false);
+            Display display = table_.getDisplay();//declare display to change the color
+            int index =0;
             tableProposals_.clear();
             TableItem [] items = table_.getItems();
             int knownStyle = items.length > 0 ? items[0].getStyle(): -1;
@@ -254,7 +261,14 @@ public class CompletionProposalPopupCoordinator
             // This is non-trivial, since the calculation re-ordered the proposals.
             ICompletionProposal [] nonProcessedProposals = getNonProcessedProposals(items);
             HashSet <String> addedProposals = new HashSet <String>();
-            // First enter the global best proposals.
+            // First enter the global best proposals.how 
+            
+            //DRAW TAB FOR BEST GLOBAL PROPOSAL
+            TableItem item1 = new TableItem(table_, knownStyle, 0);
+        	Color gr = new Color(display, 100, 200, 100);
+        	item1.setBackground(gr);
+        	item1.setText("BEST PROPOSAL");
+                 
             int gbpSize = 0;
             for (AugmentedCompletionProposal globalBestProposal: globalBestProposals_)
             {
@@ -263,10 +277,11 @@ public class CompletionProposalPopupCoordinator
                     resolve(globalBestProposal);
                     if (!addedProposals.contains(globalBestProposal.getDisplayString()))
                     {
-                        logger.finest("Adding proposal: " + globalBestProposal.getDisplayString() + " as GBP.");
+                    	logger.finest("Adding proposal: " + globalBestProposal.getDisplayString() + " as GBP.");
                         addedProposals.add(globalBestProposal.getDisplayString());
-                        setTableItem(globalBestProposal, gbpSize, knownStyle, true);
+                        setTableItem(globalBestProposal, gbpSize+1, knownStyle, true);
                         gbpSize++;
+                        
                     }
                 }
                 catch (GBPResolutionException e)
@@ -275,30 +290,52 @@ public class CompletionProposalPopupCoordinator
                             + globalBestProposal.getDisplayString(), e);
                 }
             }
-            // Then, enter the local proposals ordered.
+            //TAG FOR BEST PROPOSAL
+           // item1.setText("BEST PROPOSAL ("+gbpSize+")");
+            
+            //DRAW TAB FOR LOCAL PROPOSAL
+            TableItem item2 = new TableItem(table_, knownStyle,gbpSize+1);
+        	Color bl = new Color(display, 200, 100, 100);
+        	item2.setBackground(bl);
+        	item2.setText("SECOND BEST PROPOSAL");
+        	
             int localProposalSize = 0;
             for (AugmentedCompletionProposal localProposal: localProposals_)
             {
                 if (!addedProposals.contains(localProposal.getDisplayString()))
                 {
-                    logger.finest("Adding proposal: " + localProposal.getDisplayString() + " as local proposal.");
+                	logger.finest("Adding proposal: " + localProposal.getDisplayString() + " as local proposal.");
                     addedProposals.add(localProposal.getDisplayString());
-                    setTableItem(localProposal, localProposalSize + gbpSize, knownStyle, false);
-                    localProposalSize ++;
+                    setTableItem(localProposal, localProposalSize + gbpSize+2, knownStyle, false);
+                    localProposalSize++;
                 }
             }
+          //TAG FOR LOCAL PROPOSAL
+           // item2.setText("LOCAL PROPOSAL ("+localProposalSize+")");
+               	
+          //DRAW TAB FOR LOCAL PROPOSAL
+            TableItem item3 = new TableItem(table_, knownStyle, gbpSize+localProposalSize+2);
+        	Color g = new Color(display, 100, 100, 200);
+        	item3.setBackground(g);
+        	item3.setText("NON-PROCESSED PROPOSAL");
             // Then, enter the proposals that we don't have a calculation for.
             int nonProcessedProposalSize = 0;
             for (ICompletionProposal nonProcessedProposal: nonProcessedProposals)
             {
                 if (!addedProposals.contains(nonProcessedProposal.getDisplayString()))
                 {
-                    logger.finest("Adding proposal: " + nonProcessedProposal.getDisplayString() + " as non processed proposal.");
+                	
+                	logger.finest("Adding proposal: " + nonProcessedProposal.getDisplayString() + " as non processed proposal.");
                     addedProposals.add(nonProcessedProposal.getDisplayString());
-                    setTableItem(nonProcessedProposal, nonProcessedProposalSize + gbpSize + localProposalSize, knownStyle);
-                    nonProcessedProposalSize ++;
+                    setTableItem(nonProcessedProposal, nonProcessedProposalSize+gbpSize+localProposalSize+3, knownStyle);
+                    nonProcessedProposalSize++;
                 }
             }
+            
+            //TAG FOR LOCAL PROPOSAL
+            //item3.setText("NON-PROCESSED PROPOSAL ("+nonProcessedProposalSize+")");
+            
+            
             table_.setItemCount(nonProcessedProposalSize + gbpSize + localProposalSize);
             table_.setRedraw(true);
             table_.redraw();
