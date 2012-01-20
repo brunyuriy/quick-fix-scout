@@ -33,6 +33,8 @@ import org.eclipse.ui.IWorkingSet;
 import org.eclipse.ui.IWorkingSetManager;
 import org.eclipse.ui.PlatformUI;
 
+import edu.washington.cs.swing.SwingUtility;
+
 /**
  * This utility class provides static helper methods for resource handling. <br>
  * Currently offered functionality is:
@@ -520,8 +522,8 @@ public class ResourceUtility
             String currentVersion = createExternalVersion(relatedVersions.toArray(new String [relatedVersions.size()]));
             //@formatter:off
             EclipseUIUtility.showInformationDialog("<div align=left>Quick Fix Scout plug-in (" + externalName + " feature) is outdated.<br>" +
-                    "A new version is available at: http://code.google.com/p/quick-fix-scout/downloads/list<br><br>" +
-                    "Installed version = " + installedVersion + ", current version = " + currentVersion + "</div>"
+                    "A new version is available at: " + SwingUtility.makeHyperlink("http://code.google.com/p/quick-fix-scout/downloads/list") +
+                    "<br><br>Installed version = " + installedVersion + ", current version = " + currentVersion + "</div>"
                     , "New Version Available!", 450);
             //@formatter:on
         }

@@ -45,6 +45,8 @@ public class ObservationPreferencePage extends PreferencePage implements IWorkbe
     public static final String QF_OBSERVATION_PLUGIN_ACTIVATED = "QF Observation Plug-in Activated";
     public static final String QF_OBSERVATION_SNAPSHOT_ACTIVATED = "QF Observation Snapshot Activated";
     public static final String QF_OBSERVATION_SEND_LOGS_PERIODICALLY = "QF Observation Send Logs Periodically";
+    public static final String QF_OBSERVATION_SKIP_SEND_LOGS_CONFIRMATION = "QF Observation Skip Send Logs Confirmation";
+    public static final String QF_OBSERVATION_SKIP_SNAPSHOT_CONFIRMATION = "QF Observation Skip Snapshot Confirmation";
     public static ObservationPreferencePage instance_ = new ObservationPreferencePage();
     private static final Logger logger = Logger.getLogger(ObservationPreferencePage.class.getName());
     static
@@ -77,6 +79,16 @@ public class ObservationPreferencePage extends PreferencePage implements IWorkbe
     public boolean shouldSendLogs()
     {
         return preferences_.getBoolean(QF_OBSERVATION_SEND_LOGS_PERIODICALLY);
+    }
+    
+    public boolean shouldSkipConfirmingSendLogs()
+    {
+        return preferences_.getBoolean(QF_OBSERVATION_SKIP_SEND_LOGS_CONFIRMATION);
+    }
+
+    public boolean shouldSkipConfirmingSnapshot()
+    {
+        return preferences_.getBoolean(QF_OBSERVATION_SKIP_SNAPSHOT_CONFIRMATION);
     }
 
     /*
@@ -192,5 +204,26 @@ public class ObservationPreferencePage extends PreferencePage implements IWorkbe
         snapshotActivatedButton_.setSelection(preferences_.get(QF_OBSERVATION_SNAPSHOT_ACTIVATED, false));
         observationActivatedButton_.setSelection(preferences_.get(QF_OBSERVATION_PLUGIN_ACTIVATED, true));
         sendLogsPeriodicallyEditor_.setSelection(preferences_.getBoolean(QF_OBSERVATION_SEND_LOGS_PERIODICALLY));
+    }
+    
+    public boolean getPreferenceValue(String preferenceIdentifier)
+    {
+        return preferences_.getBoolean(preferenceIdentifier);
+    }
+
+    public void activatePreference(String preferenceIdentifier)
+    {
+        setPreference(preferenceIdentifier, true);
+    }
+
+    public void deactivate(String preferenceIdentifier)
+    {
+        setPreference(preferenceIdentifier, false);
+    }
+    
+    private void setPreference(String preferenceIdentifier, boolean value)
+    {
+        preferences_.put(preferenceIdentifier, value);
+        preferences_.save();
     }
 }

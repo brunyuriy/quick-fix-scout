@@ -3,6 +3,8 @@ package edu.washington.cs.quickfix.observation;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.JCheckBox;
+
 
 import org.eclipse.core.commands.operations.OperationHistoryFactory;
 import org.eclipse.core.resources.IFile;
@@ -16,6 +18,7 @@ import edu.washington.cs.quickfix.observation.hack.ObserverHackActionManager;
 import edu.washington.cs.quickfix.observation.log.ObservationLogSender;
 import edu.washington.cs.quickfix.observation.log.ObservationLogger;
 import edu.washington.cs.quickfix.observation.log.ObservationOperationHistoryListener;
+import edu.washington.cs.swing.KDialog;
 import edu.washington.cs.swing.SwingUtility;
 import edu.washington.cs.synchronization.ProjectSynchronizer;
 import edu.washington.cs.synchronization.SynchronizerStarter;
@@ -66,6 +69,9 @@ public class ObservationStarter implements IStartup
 //        DocumentUndoManager undoManager = new DocumentUndoManager(document)
 //        UndoManager2 undoManager = new UndoManager2();
 //        undoManager.addListener(new ObservationUndoManagerListener());
+        
+        checkSnapshot();
+        checkSendLogs();
         sendLogs();
         ResourceUtility.checkForUpdates("Observer", false, DEPENDENT_PLUG_INS);
         ResourceUtility.logSystemInformation(DEPENDENT_PLUG_INS);
@@ -81,6 +87,43 @@ public class ObservationStarter implements IStartup
         }
     }
     
+    private void checkSendLogs()
+    {
+        String message = "Do you wish to enable automatic sending of logs to the Quick Fix Scout developers?" +
+        		"<br>For details, see " + SwingUtility.makeHyperlink("http://kivancmuslu.com/Quick_Fix_Scout/Observer.html");
+        String title = "Send Logs Automatically?";
+        checkPreference(ObservationPreferencePage.QF_OBSERVATION_SEND_LOGS_PERIODICALLY, 
+                ObservationPreferencePage.QF_OBSERVATION_SKIP_SEND_LOGS_CONFIRMATION, message, title);
+    }
+
+    private void checkSnapshot()
+    {
+        String message = "Do you wish to enable snapshot feature?" +
+                "<br>For details, see " + SwingUtility.makeHyperlink("http://kivancmuslu.com/Quick_Fix_Scout/Observer.html");
+        String title = "Activate Snapshot?";
+        checkPreference(ObservationPreferencePage.QF_OBSERVATION_SNAPSHOT_ACTIVATED, 
+                ObservationPreferencePage.QF_OBSERVATION_SKIP_SNAPSHOT_CONFIRMATION, message, title);
+    }
+    
+    private void checkPreference(String yesPreference, String skipPreference, String message, String title)
+    {
+        // Only for debugging purposes.
+        ObservationPreferencePage.getInstance().deactivate(skipPreference);
+        boolean currentValue = ObservationPreferencePage.getInstance().getPreferenceValue(yesPreference);
+        boolean skipValue = ObservationPreferencePage.getInstance().getPreferenceValue(skipPreference);
+        if (currentValue || skipValue)
+            return;
+        JCheckBox neverRemindBox = new JCheckBox("Don't Remind Again");
+        Object [] options = {"Yes", "No", neverRemindBox};
+        String result = (String) KDialog.showOptionDialog(null, message, title, 500, options);
+        if (result == null)
+            return;
+        if (result.equals("Yes"))
+            ObservationPreferencePage.getInstance().activatePreference(yesPreference);
+        if (neverRemindBox.isSelected())
+            ObservationPreferencePage.getInstance().activatePreference(skipPreference);
+    }
+
     private void sendLogs()
     {
         final ObservationLogSender logSender;
