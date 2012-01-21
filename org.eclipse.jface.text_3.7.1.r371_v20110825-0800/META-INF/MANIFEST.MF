@@ -14,22 +14,36 @@ Require-Bundle: org.eclipse.core.runtime;bundle-version="[3.5.0,4.0.0)",
  edu.washington.cs.quickfix.observation.hack;bundle-version="1.0.1",
  edu.washington.cs.quickfix.speculation.hack;bundle-version="1.0.0"
 Bundle-Version: 3.7.1.r371_v20110825-1200
-Export-Package: org.eclipse.jface.contentassist,org.eclipse.jface.cont
- entassist.images,org.eclipse.jface.internal.text;x-internal:=true,org
- .eclipse.jface.internal.text.html;x-friends:="org.eclipse.ui.workbenc
- h.texteditor, org.eclipse.ui.editors, org.eclipse.jdt.debug.ui, org.e
- clipse.jdt.ui, org.eclipse.ant.ui, org.eclipse.ltk.ui.refactoring, or
- g.eclipse.pde.ui",org.eclipse.jface.internal.text.link.contentassist;
- x-internal:=true,org.eclipse.jface.internal.text.revisions;x-internal
- :=true,org.eclipse.jface.internal.text.source;x-internal:=true,org.ec
- lipse.jface.text,org.eclipse.jface.text.contentassist,org.eclipse.jfa
- ce.text.formatter,org.eclipse.jface.text.hyperlink,org.eclipse.jface.
- text.information,org.eclipse.jface.text.link,org.eclipse.jface.text.p
- resentation,org.eclipse.jface.text.quickassist,org.eclipse.jface.text
- .reconciler,org.eclipse.jface.text.revisions,org.eclipse.jface.text.r
- ules,org.eclipse.jface.text.source,org.eclipse.jface.text.source.proj
- ection,org.eclipse.jface.text.source.projection.images,org.eclipse.jf
- ace.text.templates,org.eclipse.jface.text.templates.persistence
+Export-Package: org.eclipse.jface.contentassist,
+ org.eclipse.jface.contentassist.images,
+ org.eclipse.jface.internal.text;x-internal:=true,
+ org.eclipse.jface.internal.text.html;
+  x-friends:="org.eclipse.ant.ui,
+   org.eclipse.jdt.debug.ui,
+   org.eclipse.ltk.ui.refactoring,
+   org.eclipse.pde.ui,
+   org.eclipse.ui.editors,
+   org.eclipse.ui.workbench.texteditor,
+   org.eclipse.jdt.ui_3.7.1.r371_v20110824-0800",
+ org.eclipse.jface.internal.text.link.contentassist;x-internal:=true,
+ org.eclipse.jface.internal.text.revisions;x-internal:=true,
+ org.eclipse.jface.internal.text.source;x-internal:=true,
+ org.eclipse.jface.text,
+ org.eclipse.jface.text.contentassist,
+ org.eclipse.jface.text.formatter,
+ org.eclipse.jface.text.hyperlink,
+ org.eclipse.jface.text.information,
+ org.eclipse.jface.text.link,
+ org.eclipse.jface.text.presentation,
+ org.eclipse.jface.text.quickassist,
+ org.eclipse.jface.text.reconciler,
+ org.eclipse.jface.text.revisions,
+ org.eclipse.jface.text.rules,
+ org.eclipse.jface.text.source,
+ org.eclipse.jface.text.source.projection,
+ org.eclipse.jface.text.source.projection.images,
+ org.eclipse.jface.text.templates,
+ org.eclipse.jface.text.templates.persistence
 Import-Package: com.ibm.icu.text
 Bundle-ManifestVersion: 2
 

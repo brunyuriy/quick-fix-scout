@@ -130,7 +130,7 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
                 extraDebug.append("Problem Location # " + (a + 1) + ls);
                 extraDebug.append(result.get(a).getLocation().toString() + ls);
             }
-            logger.warning("Precaching problem locations failed. # of locations = " + locations_.length + 
+            logger.fine("Precaching problem locations failed. # of locations = " + locations_.length + 
                     ", cached # of locations = " + result.size() + ls + extraDebug);
             return false;
         }

@@ -271,7 +271,7 @@ public class CompletionProposalPopupCoordinator
                 }
                 catch (GBPResolutionException e)
                 {
-                    logger.log(Level.SEVERE, "Cannot resolve global best proposal for shadow proposal = "
+                    logger.log(Level.INFO, "Cannot resolve global best proposal for shadow proposal = "
                             + globalBestProposal.getDisplayString(), e);
                 }
             }
@@ -325,7 +325,7 @@ public class CompletionProposalPopupCoordinator
                 originalCompilationError = originalError;
         }
         if (originalCompilationError == null)
-            throw new GBPResolutionException("Cannot resolve the original compiplation error for shadow proposal = "
+            throw new GBPResolutionException("Cannot resolve the original compilation error for shadow proposal = "
                     + globalBestProposal);
         try
         {
