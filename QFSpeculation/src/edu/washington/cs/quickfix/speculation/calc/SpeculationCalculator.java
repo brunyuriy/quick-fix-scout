@@ -15,10 +15,12 @@ import java.util.logging.Logger;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.ChangeCorrectionProposal;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.LinkedNamesAssistProposal;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
+import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.ltk.core.refactoring.Change;
 
 import com.kivancmuslu.www.timer.Timer;
@@ -47,6 +49,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         SpeculativeAnalysisNotifier
 {
     private Squiggly [] shadowCompilationErrors_;
+    private Map<Squiggly, Squiggly> shadowCompilationErrorResolutionMap_;
     private Map <Squiggly, IJavaCompletionProposal []> shadowProposalsMap_;
     private ReentrantLock shadowProposalsLock_;
     /**
@@ -115,6 +118,8 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         activationRecord_ = new ActivationRecord(true, false);
         timingLock_ = new ReentrantLock();
         
+        shadowCompilationErrorResolutionMap_ = new HashMap <Squiggly, Squiggly>();
+        
         if (typingSessionLength_ == -1)
             updateTypingSessionTime(SpeculationPreferencePage.getInstance().getTypingSessionLength());
     }
@@ -149,11 +154,11 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         // The locations passed may have different references (i.e., we cannot compare object equality).
         for (IProblemLocation loc: locations)
         {
-            for (Squiggly compilationError: speculativeProposalsLocalMap.keySet())
+            for (Squiggly shadowCompilationError: speculativeProposalsLocalMap.keySet())
             {
-                if (SpeculationUtility.sameProblemLocationContent(compilationError.getLocation(), loc))
+                if (SpeculationUtility.sameProblemLocationContent(shadowCompilationError.getLocation(), loc))
                 {
-                    AugmentedCompletionProposal [] proposals = speculativeProposalsLocalMap.get(compilationError);
+                    AugmentedCompletionProposal [] proposals = speculativeProposalsLocalMap.get(shadowCompilationError);
                     if (proposals != null)
                     {
                         for (AugmentedCompletionProposal proposal: proposals)
@@ -183,12 +188,85 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         }
     }
 
-    private synchronized void updateShadowCompilationErrors(Squiggly [] shadowCompilationErrors)
+    private synchronized boolean updateShadowCompilationErrors(Squiggly [] shadowCompilationErrors)
     {
-        if (shadowCompilationErrors == null)
-            return;
-        shadowCompilationErrors_ = shadowCompilationErrors;
+        boolean result = true;
+        if (shadowCompilationErrors_ == null)
+            result = false;
+        else if (shadowCompilationErrors == null)
+            result = false;
+        else if (shadowCompilationErrors_.length != shadowCompilationErrors.length)
+            result = false;
+        else
+        {
+            // The number of compilation errors are the same. Let's check the content.
+            ArrayList<Squiggly> oldCEs = new ArrayList<Squiggly>(Arrays.asList(shadowCompilationErrors_));
+            ArrayList<Squiggly> newCEs = new ArrayList<Squiggly>(Arrays.asList(shadowCompilationErrors));
+            outer: while (oldCEs.size() > 0)
+            {
+                Squiggly oldCE = oldCEs.get(0);
+                ArrayList <Squiggly> matches = new ArrayList <Squiggly>();
+                for (Squiggly newCE: newCEs)
+                {
+                    try
+                    {
+                        if (SpeculationUtility.sameSquigglyContent(oldCE, newCE))
+                            matches.add(newCE);
+                    }
+                    catch (JavaModelException e)
+                    {
+                        // We don't care the exceptions...
+                        result = false;
+                        break outer;
+                    }
+                    catch (BadLocationException e)
+                    {
+                        // We don't care the exceptions...
+                        result = false;
+                        break outer;
+                    }
+                }
+                if (matches.size() == 1)
+                {
+                    // We have found a corresponding pair that matches the current compilation error. 
+                    // Remove them both and continue.
+                    oldCEs.remove(oldCE);
+                    Squiggly match = matches.get(0);
+                    newCEs.remove(match);
+                    shadowCompilationErrorResolutionMap_.put(oldCE, match);
+                }
+                else
+                {
+                    System.out.println("Cannot find a match for compilation error = " + oldCE);
+                    // We couldn't find a pair for the current compilation error. Something has changed.
+                    result = false;
+                    break;
+                }
+            }
+        }
+        if (!result)
+        {
+            shadowCompilationErrorResolutionMap_.clear();
+            shadowCompilationErrors_ = shadowCompilationErrors;
+            for (Squiggly shadowCompilationError: shadowCompilationErrors_)
+            {
+                try
+                {
+                    shadowCompilationError.cacheContext();
+                }
+                catch (JavaModelException e)
+                {
+                    // We don't care the exceptions...
+                }
+                catch (BadLocationException e)
+                {
+                    // We don't care the exceptions...
+                }
+            }
+        }
+        return result;
     }
+    
 
     private synchronized Squiggly [] getShadowCompilationErrors()
     {
@@ -260,11 +338,15 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         currentWorker.waitUntilSynchronization();
         boolean prevAutoBuilding = deactivateAutoBuilding();
         BuilderUtility.setAutoBuilding(false);
-        doAnalysisPreparations();
+        boolean shallSkip = doAnalysisPreparations();
         try
         {
-            doSpeculativeAnalysis();
+            if (!shallSkip)
+                doSpeculativeAnalysis();
+            else
+                logger.info("Speculative analysis for this round is skipped since there is no change on the compilation errors.");
             activationRecord_.deactivate();
+            
         }
         catch (InvalidatedException e)
         {
@@ -277,7 +359,10 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         stopWorking();
         if (activationRecord_.isValid())
         {
-            CompletionProposalPopupCoordinator.getCoordinator().setBestProposals(bestProposals_);
+            if (shallSkip)
+                updateBestProposals();
+            CompletionProposalPopupCoordinator.getCoordinator().setBestProposals(new ArrayList<AugmentedCompletionProposal>(bestProposals_));
+//            System.out.println("Setting best proposals (" + bestProposals_.size() + ")...");
             signalSpeculativeAnalysisComplete();
         }
         logger.info("");
@@ -285,6 +370,19 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         if (prevAutoBuilding)
             activateAutoBuilding();
         logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
+    }
+
+    private void updateBestProposals()
+    {
+        if (shadowCompilationErrorResolutionMap_.size() == 0 || bestProposals_ == null)
+            return;
+        for (AugmentedCompletionProposal bestProposal: bestProposals_)
+        {
+            Squiggly shadowCompilationError = bestProposal.getCompilationError();
+            Squiggly recentShadowCE = shadowCompilationErrorResolutionMap_.get(shadowCompilationError);
+            assert recentShadowCE != null: "Cannot resolve the recent version of the compilation error: " + shadowCompilationError;
+            bestProposal.updateCompilationError(recentShadowCE);
+        }
     }
 
     private boolean deactivateAutoBuilding()
@@ -300,7 +398,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         BuilderUtility.setAutoBuilding(true);
     }
 
-    private void doAnalysisPreparations()
+    private boolean doAnalysisPreparations()
     {
         buildShadowProject();
         Squiggly [] shadowCompilationErrors = null;
@@ -320,7 +418,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         {
             e.printStackTrace();
         }
-        updateShadowCompilationErrors(shadowCompilationErrors);
+        return updateShadowCompilationErrors(shadowCompilationErrors);
     }
 
     private void clearGlobalState()
@@ -373,9 +471,9 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                 addToShadowProposalsMap(shadowCompilationError, shadowProposals);
                 if (shadowProposals != null)
                 {
-                    AugmentedCompletionProposal [] originalCalculatedProposals = processCompilationError(shadowCompilationError);
+                    AugmentedCompletionProposal [] shadowCalculatedProposal = processCompilationError(shadowCompilationError);
                     counter += shadowProposals.length;
-                    addToSpeculationProposalsMap(shadowCompilationError, originalCalculatedProposals);
+                    addToSpeculationProposalsMap(shadowCompilationError, shadowCalculatedProposal);
                     // Signal the quick fix grabbers so that they might attempt to look for the
                     // results..
                     signalSpeculativeAnalysisRoundComplete();
@@ -632,6 +730,9 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         /* i.e., isWorking(), doing the speculative analysis. */
         // if (!isSynched())
         activationRecord_.invalidate();
+        
+        // invalidate global best proposals.
+        CompletionProposalPopupCoordinator.getCoordinator().clearBestProposals();
     }
 
     @Override
@@ -804,8 +905,20 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     {
         speculativeProposalsLock_.lock();
         // speculativePropsoalsMap_ is never null. So this construction is okay.
-        Map <Squiggly, AugmentedCompletionProposal []> result = new HashMap <Squiggly, AugmentedCompletionProposal []>(
-                speculativeProposalsMap_);
+        Map <Squiggly, AugmentedCompletionProposal []> result;
+        if (shadowCompilationErrorResolutionMap_.size() != 0)
+        {
+            result = new HashMap <Squiggly, AugmentedCompletionProposal[]>();
+            for (Squiggly shadowCompilationError: speculativeProposalsMap_.keySet())
+            {
+                Squiggly currentShadowCE = shadowCompilationErrorResolutionMap_.get(shadowCompilationError);
+                result.put(currentShadowCE, speculativeProposalsMap_.get(shadowCompilationError));
+                for (AugmentedCompletionProposal speculativeProposal: speculativeProposalsMap_.get(shadowCompilationError))
+                    speculativeProposal.updateCompilationError(currentShadowCE);
+            }
+        }
+        else
+            result = new HashMap <Squiggly, AugmentedCompletionProposal []>(speculativeProposalsMap_);
         speculativeProposalsLock_.unlock();
         return result;
     }
@@ -818,13 +931,13 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
      * This method can only be called by the speculator (this) thread.
      * 
      * @param shadowCompilationError Currently calculated problem location.
-     * @param originalCalculatedProposals Calculated error information related to this problem location.
+     * @param shadowCalculatedProposals Calculated error information related to this problem location.
      */
     private void addToSpeculationProposalsMap(Squiggly shadowCompilationError,
-            AugmentedCompletionProposal [] originalCalculatedProposals)
+            AugmentedCompletionProposal [] shadowCalculatedProposals)
     {
         speculativeProposalsLock_.lock();
-        speculativeProposalsMap_.put(shadowCompilationError, originalCalculatedProposals);
+        speculativeProposalsMap_.put(shadowCompilationError, shadowCalculatedProposals);
         speculativeProposalsLock_.unlock();
     }
 
@@ -855,8 +968,18 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     public Map <Squiggly, IJavaCompletionProposal []> getProposalsMap()
     {
         shadowProposalsLock_.lock();
-        Map <Squiggly, IJavaCompletionProposal []> result = new HashMap <Squiggly, IJavaCompletionProposal []>(
-                shadowProposalsMap_);
+        Map <Squiggly, IJavaCompletionProposal []> result;
+        if (shadowCompilationErrorResolutionMap_.size() != 0)
+        {
+            result = new HashMap <Squiggly, IJavaCompletionProposal[]>();
+            for (Squiggly shadowCompilationError: shadowProposalsMap_.keySet())
+            {
+                Squiggly currentShadowCE = shadowCompilationErrorResolutionMap_.get(shadowCompilationError);
+                result.put(currentShadowCE, shadowProposalsMap_.get(shadowCompilationError));
+            }
+        }
+        else
+            result = new HashMap <Squiggly, IJavaCompletionProposal []>(shadowProposalsMap_);
         shadowProposalsLock_.unlock();
         return result;
     }

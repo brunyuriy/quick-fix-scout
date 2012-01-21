@@ -12,6 +12,10 @@ import edu.washington.cs.synchronization.ProjectSynchronizer;
 import edu.washington.cs.synchronization.sync.internal.CursorChangedListener;
 import edu.washington.cs.util.log.LogHandlers;
 
+// Source code that is change in Eclipse.
+// 1. AbstractAnnotationHover in org.eclipse.ui
+// 2. CompletionProposalPopup in org.eclipse.jface.text
+
 public class Speculator implements CursorChangedListener
 {
     public static final String PLUG_IN_ID = "edu.washington.cs.quickfix.speculation";

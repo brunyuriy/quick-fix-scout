@@ -17,6 +17,7 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
+import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.TextFileChange;
@@ -80,6 +81,21 @@ public class SpeculationUtility
         if (displayString.startsWith("Rename compilation unit to '") && displayString.endsWith(".java'"))
             return true;
         return false;
+    }
+    
+    public static boolean sameSquigglyContent(Squiggly oldSquiggly, Squiggly newSquiggly) throws JavaModelException, BadLocationException
+    {
+        boolean sameLocationContent = sameProblemLocationContent(oldSquiggly.getLocation(), newSquiggly.getLocation());
+        if (sameLocationContent)
+            return true;
+
+        String context1 = oldSquiggly.getCachedContext();
+        String context2 = newSquiggly.getContext();
+//        System.out.println("Context1 = " + context1 + ", context2 = " + context2);
+        String problemType1 = oldSquiggly.getErrorCode();
+        String problemType2 = newSquiggly.getErrorCode();
+//        System.out.println("Problem type1 = " + problemType1 + ", problem type2 = " + problemType2);
+        return context1.equals(context2) && problemType1.equals(problemType2);
     }
     
     public static boolean sameProblemLocationContent(IProblemLocation location1, IProblemLocation location2)

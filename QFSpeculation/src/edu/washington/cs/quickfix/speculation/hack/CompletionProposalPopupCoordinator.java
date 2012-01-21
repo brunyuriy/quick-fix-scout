@@ -315,7 +315,7 @@ public class CompletionProposalPopupCoordinator
         {
             originalErrors = originalCompilationErrors_;
         }
-        Squiggly shadowCompilationError = globalBestProposal.getCompilationError();
+        Squiggly shadowCompilationError = globalBestProposal.getRecentCompilationError();
         IProblemLocation shadowLocation = shadowCompilationError.getLocation();
         Squiggly originalCompilationError = null;
         for (Squiggly originalError: originalErrors)

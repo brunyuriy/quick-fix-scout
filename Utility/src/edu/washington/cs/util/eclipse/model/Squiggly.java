@@ -46,6 +46,7 @@ public class Squiggly
     // Lazily computed field.
     private SquigglyDetails details_;
     private CompilationUnit compilationUnitNode_;
+    private String cachedContext_ = null;
  
     public Squiggly(IMarker marker)
     {
@@ -55,6 +56,16 @@ public class Squiggly
         severity_ = computeSeverity();
         details_ = null;
         compilationUnitNode_ = null;
+    }
+    
+    public void cacheContext() throws JavaModelException, BadLocationException
+    {
+        cachedContext_ = getContext();
+    }
+    
+    public String getCachedContext() throws JavaModelException, BadLocationException
+    {
+        return cachedContext_ == null ? getContext() : cachedContext_;
     }
     
     private Integer computeSeverity()
