@@ -108,7 +108,7 @@ public class ObservationStarter implements IStartup
     private void checkPreference(String yesPreference, String skipPreference, String message, String title)
     {
         // Only for debugging purposes.
-        ObservationPreferencePage.getInstance().deactivate(skipPreference);
+//        ObservationPreferencePage.getInstance().deactivate(skipPreference);
         boolean currentValue = ObservationPreferencePage.getInstance().getPreferenceValue(yesPreference);
         boolean skipValue = ObservationPreferencePage.getInstance().getPreferenceValue(skipPreference);
         if (currentValue || skipValue)

@@ -21,3 +21,7 @@
 1.5.2:	Updated the implementation so that typing session now really affects the computation delay. (issue 28)
 1.5.3:	Added support for cleaning up the shadow projects (i.e., deleting the shadow projects that are not used anymore) at the beginning of the load phase. (issue 23)
 1.5.4:	Added support for organizing the shadow projects into QFS Working Set at the beginning of the load phase. (issue 24, 25)
+1.5.5:	Integration with the new zip library API. (issue 33, 34)
+1.5.6:	Improvements so that multiple .zip files (in case log directory is big) can be send by e-mail. (issue 34)
+1.5.7:	Changed the welcome message so that it contains live hyperlinks. 
+
