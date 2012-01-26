@@ -546,10 +546,6 @@ public class ResourceUtility
                 preferences_.put(SKIP_UPDATE_DETECTION, true);
                 preferences_.save();
             }
-//            EclipseUIUtility.showInformationDialog("<div align=left>Quick Fix Scout plug-in (" + externalName + " feature) is outdated.<br>" +
-//                    "A new version is available at: " + SwingUtility.makeHyperlink("http://code.google.com/p/quick-fix-scout/downloads/list") +
-//                    "<br><br>Installed version = " + installedVersion + ", current version = " + currentVersion + "</div>"
-//                    , "New Version Available!", 450);
         }
     }
 
