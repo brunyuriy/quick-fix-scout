@@ -11,6 +11,8 @@ import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.JCheckBox;
+
 import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.filesystem.IFileInfo;
 import org.eclipse.core.filesystem.IFileStore;
@@ -59,13 +61,16 @@ public class ResourceUtility
     {
         logger.setLevel(Level.INFO);
     }
+    
+    private static final PreferencesUtility preferences_ = new PreferencesUtility(PLUG_IN_ID);
+    public static final String SKIP_UPDATE_DETECTION = "QF Resource Skip Update Detection";
 
     /**
      * This class cannot be instantiated.
      */
     private ResourceUtility()
     {}
-
+    
     /**************
      * PUBLIC API *
      *************/
@@ -494,6 +499,14 @@ public class ResourceUtility
 
     public static void checkForUpdates(String pluginName, boolean showNetworkError, String... pluginIds)
     {
+        // Open only for debugging.
+//        preferences_.put(SKIP_UPDATE_DETECTION, false);
+//        preferences_.save();
+        
+        boolean skipUpdate = preferences_.getBoolean(SKIP_UPDATE_DETECTION);
+        if (skipUpdate)
+            return;
+        
         String installedVersion = getExternalVersion(pluginIds);
         HashMap <String, String> versionMap = new HashMap <String, String>();
         readVersionMap(showNetworkError, versionMap);
@@ -520,12 +533,23 @@ public class ResourceUtility
             if (pluginName.equals("Speculator"))
                 externalName = "Evaluator";
             String currentVersion = createExternalVersion(relatedVersions.toArray(new String [relatedVersions.size()]));
+            JCheckBox neverRemindBox = new JCheckBox("Don't remind again");
+            Object [] options = new Object[] {"Okay", neverRemindBox};
             //@formatter:off
-            EclipseUIUtility.showInformationDialog("<div align=left>Quick Fix Scout plug-in (" + externalName + " feature) is outdated.<br>" +
+            EclipseUIUtility.showOptionDialog("<div align=left>Quick Fix Scout plug-in (" + externalName + " feature) is outdated.<br>" +
                     "A new version is available at: " + SwingUtility.makeHyperlink("http://code.google.com/p/quick-fix-scout/downloads/list") +
                     "<br><br>Installed version = " + installedVersion + ", current version = " + currentVersion + "</div>"
-                    , "New Version Available!", 450);
+                    , "New Version Available!", 450, options);
             //@formatter:on
+            if (neverRemindBox.isSelected())
+            {
+                preferences_.put(SKIP_UPDATE_DETECTION, true);
+                preferences_.save();
+            }
+//            EclipseUIUtility.showInformationDialog("<div align=left>Quick Fix Scout plug-in (" + externalName + " feature) is outdated.<br>" +
+//                    "A new version is available at: " + SwingUtility.makeHyperlink("http://code.google.com/p/quick-fix-scout/downloads/list") +
+//                    "<br><br>Installed version = " + installedVersion + ", current version = " + currentVersion + "</div>"
+//                    , "New Version Available!", 450);
         }
     }
 

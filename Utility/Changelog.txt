@@ -10,3 +10,4 @@
 1.5.2:	Added support for organizing the shadow projects into QFS Working Set at the beginning of the load phase. (issue 24, 25)
 1.5.3:	Changed the update available message so that it contains live hyperlinks.
 1.5.4:	Added support for caching the context of a squiggly (issue 40).
+1.5.5:	Added don't remind me button for update detections (issue 41).
