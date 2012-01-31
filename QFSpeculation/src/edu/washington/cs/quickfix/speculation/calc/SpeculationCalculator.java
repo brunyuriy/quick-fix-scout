@@ -32,7 +32,6 @@ import edu.washington.cs.quickfix.speculation.calc.model.SpeculativeAnalysisList
 import edu.washington.cs.quickfix.speculation.calc.model.SpeculativeAnalysisNotifier;
 import edu.washington.cs.quickfix.speculation.exception.InvalidatedException;
 import edu.washington.cs.quickfix.speculation.gui.SpeculationPreferencePage;
-import edu.washington.cs.quickfix.speculation.hack.CompletionProposalPopupCoordinator;
 import edu.washington.cs.quickfix.speculation.hack.QuickFixDialogCoordinator;
 import edu.washington.cs.quickfix.speculation.model.Pair;
 import edu.washington.cs.quickfix.speculation.model.SpeculationUtility;
@@ -357,8 +356,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         {
             // This is a known exception, so we don't need to log it (at least not with severity).
             logger.info("Current speculative analysis instance is invalidated.");
-//            activationRecord_.activate();
-//            Thread.sleep(typingSessionLength_);
         }
         finally
         {
@@ -617,6 +614,8 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         if (activationRecord_.isInvalid() || isDead())
             throw new InvalidatedException();
         if (SpeculationUtility.isFlaggedProposal(shadowProposal))
+            return Squiggly.NOT_COMPUTED;
+        if (SpeculationUtility.isInteractiveProposal(shadowProposal))
             return Squiggly.NOT_COMPUTED;
         
         Squiggly [] errors = Squiggly.UNKNOWN;
@@ -1075,11 +1074,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         return BuilderUtility.calculateCompilationErrors(shadowProject_);
     }
     
-//    private Squiggly [] getShadowSquigglies()
-//    {
-//        return BuilderUtility.calculateSquigglies(shadowProject_);
-//    }
-
     private Squiggly [] getOriginalCEs()
     {
         return BuilderUtility.calculateCompilationErrors(synchronizer_.getProject());

@@ -75,10 +75,34 @@ public class SpeculationUtility
     // Flagged proposals are the proposals that force getting out of sync (after undo application)
     // That is why they are not computed during the speculation and represented with (?) instead of
     // N/A in Quick Fix Dialog.
+    // Currently only "Rename compilation unit to <compilation unit name>.java" is the only known such proposal.
     public static boolean isFlaggedProposal(IJavaCompletionProposal proposal)
     {
         String displayString = proposal.getDisplayString();
         if (displayString.startsWith("Rename compilation unit to '") && displayString.endsWith(".java'"))
+            return true;
+        return false;
+    }
+    
+    // interactive proposals are the proposals that require user confirmation or input such as
+    // the following:
+    // That is why they are not computed during the speculation and represented with (?) instead of
+    // N/A in Quick Fix Dialog.
+    // Currently the following proposals are in this category:
+    // 1. "Create class '<class name>'"
+    // 2. "Create interface '<interface name>'"
+    // 3. "Create enum '<enum name>'"
+    // 4. "Create annotation '<annotation name>'"
+    public static boolean isInteractiveProposal(IJavaCompletionProposal proposal)
+    {
+        String displayString = proposal.getDisplayString();
+        if (displayString.startsWith("Create class '"))
+            return true;
+        if (displayString.startsWith("Create interface '"))
+            return true;
+        if (displayString.startsWith("Create enum '"))
+            return true;
+        if (displayString.startsWith("Create annotation '"))
             return true;
         return false;
     }
