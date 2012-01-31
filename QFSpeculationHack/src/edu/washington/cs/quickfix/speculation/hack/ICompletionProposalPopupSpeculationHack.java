@@ -60,4 +60,25 @@ public interface ICompletionProposalPopupSpeculationHack extends IHack
      * @return The selected proposal by the user as object.
      */
     Object getSelectedProposal(int index);
+
+    /**
+     * This method is called by Eclipse whenever a user creates a hover dialog for quick fix.
+     * <br>
+     * The return value must be an object since giving the actual type here would create a cyclic dependency. The class
+     * that overwrites this method will know that it always has to return of type
+     * org.eclipse.jdt.internal.ui.text.java.hover.AbstractAnnotationHover.AnnotationInformationControl.
+     * 
+     * @param annotationInformationControl annotation information control object that creates, updates and handles the popup.
+     */
+    void hoverPopupCreated(Object annotationInformationControl);
+
+    /**
+     * 
+     * The return value must be an object since giving the actual type here would create a cyclic dependency. The class
+     * that overwrites this method will know that it always has to return of type
+     * array of org.eclipse.jface.text.contentassist.ICompletionProposal.
+     * 
+     * @param proposals The proposals set by Eclipse.
+     */
+    void hoverProposalsSet(Object [] proposals);
 }

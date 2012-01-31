@@ -143,13 +143,19 @@ public class Speculator implements CursorChangedListener
         if (currentProject == null || !currentProject.getName().equals(project.getName()))
             speculateProject(file);
         else if (currentProject != null && project.getName().equals(currentProject.getName()))
-            getCurrentCalculator().setCurrentFile(file);
+        {
+            SpeculationCalculator calculator = getCurrentCalculator();
+            if (calculator != null)
+                calculator.setCurrentFile(file);
+        }
     }
 
     @Override
     public void cursorChanged(int offset)
     {
-        getCurrentCalculator().setCursorOffset(offset);
+        SpeculationCalculator calculator = getCurrentCalculator();
+        if (calculator != null)
+            calculator.setCursorOffset(offset);
     }
 
     public void updateTypingSessionTime(int value)

@@ -17,7 +17,7 @@ import edu.washington.cs.quickfix.speculation.Speculator;
 import edu.washington.cs.quickfix.speculation.calc.model.AugmentedCompletionProposal;
 import edu.washington.cs.quickfix.speculation.calc.model.SpeculativeAnalysisListener;
 import edu.washington.cs.quickfix.speculation.gui.SpeculationPreferencePage;
-import edu.washington.cs.quickfix.speculation.hack.CompletionProposalPopupCoordinator;
+import edu.washington.cs.quickfix.speculation.hack.QuickFixDialogCoordinator;
 import edu.washington.cs.quickfix.speculation.model.SpeculationUtility;
 import edu.washington.cs.synchronization.ProjectSynchronizer;
 import edu.washington.cs.util.eclipse.QuickFixUtility;
@@ -183,7 +183,7 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
         for (int a = 0; a < calculatedProposals.size(); a++)
             logger.finer((a + 1) + "-) " + calculatedProposals.get(a).getDisplayString() + " will result with "
                     + calculatedProposals.get(a).getRemainingErrors().length + " compilation errors.");
-        CompletionProposalPopupCoordinator.getCoordinator().updateProposalTable(eclipseProposals_,
+        QuickFixDialogCoordinator.getCoordinator().updateWithSpeculationResults(eclipseProposals_,
                 calculatedProposals.toArray(new AugmentedCompletionProposal [calculatedProposals.size()]),
                 cachedCompilationErrors_.toArray(new Squiggly [cachedCompilationErrors_.size()]));
     }

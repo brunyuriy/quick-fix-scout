@@ -86,12 +86,15 @@ public abstract class MortalThread extends Thread
                 preDoWork();
                 working_ = true;
                 doWork();
-                working_ = false;
-                signalSynchronization();
             }
             catch (Exception e)
             {
                 logger.log(Level.SEVERE, "Due to some exception thread = \"" + name_ + "\" couldn't complete its current work.", e);
+            }
+            finally
+            {
+                working_ = false;
+                signalSynchronization();
             }
         }
         logger.info("Thread \"" + name_ + "\" completed its life cycle.");

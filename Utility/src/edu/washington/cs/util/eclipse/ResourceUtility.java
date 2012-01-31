@@ -200,6 +200,14 @@ public class ResourceUtility
         IFileInfo fileInfo2 = getFileInfo(file2);
         return fileInfo1.getLength() == fileInfo2.getLength();
     }
+    
+    private static boolean isFirstModifiedLater(IFile original, IFile shadow) throws CoreException
+    {
+        IFileInfo originalFileInfo = getFileInfo(original);
+        IFileInfo shadowFileInfo = getFileInfo(shadow);
+        return originalFileInfo.getLastModified() >= shadowFileInfo.getLastModified();
+        
+    }
 
     private static IFileInfo getFileInfo(IFile file) throws CoreException
     {
@@ -220,7 +228,14 @@ public class ResourceUtility
         // Quickly look at the file sizes to see if they differ.
         try
         {
-            if (!areFilesSameSize(file1, file2))
+            if (areFilesSameSize(file1, file2))
+            {
+                if (isFirstModifiedLater(file1, file2))
+                    return false;
+                else
+                    return true;
+            }
+            else
                 return false;
         }
         catch (CoreException e)

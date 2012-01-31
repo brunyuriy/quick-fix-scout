@@ -33,6 +33,7 @@ import edu.washington.cs.quickfix.speculation.calc.model.SpeculativeAnalysisNoti
 import edu.washington.cs.quickfix.speculation.exception.InvalidatedException;
 import edu.washington.cs.quickfix.speculation.gui.SpeculationPreferencePage;
 import edu.washington.cs.quickfix.speculation.hack.CompletionProposalPopupCoordinator;
+import edu.washington.cs.quickfix.speculation.hack.QuickFixDialogCoordinator;
 import edu.washington.cs.quickfix.speculation.model.Pair;
 import edu.washington.cs.quickfix.speculation.model.SpeculationUtility;
 import edu.washington.cs.synchronization.ProjectSynchronizer;
@@ -96,6 +97,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     private Date analysisCompletionTime_ = null;
     private ReentrantLock timingLock_;
     private volatile int typingSessionLength_ = -1;
+    private volatile boolean analysisCompleted_ = false;
 
     public SpeculationCalculator(ProjectSynchronizer synchronizer)
     {
@@ -197,6 +199,8 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             result = false;
         else if (shadowCompilationErrors_.length != shadowCompilationErrors.length)
             result = false;
+        else if (!analysisCompleted_)
+            return false;
         else
         {
             // The number of compilation errors are the same. Let's check the content.
@@ -246,6 +250,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         }
         if (!result)
         {
+            analysisCompleted_ = false;
             shadowCompilationErrorResolutionMap_.clear();
             shadowCompilationErrors_ = shadowCompilationErrors;
             for (Squiggly shadowCompilationError: shadowCompilationErrors_)
@@ -346,30 +351,35 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             else
                 logger.info("Speculative analysis for this round is skipped since there is no change on the compilation errors.");
             activationRecord_.deactivate();
-            
+            analysisCompleted_ = true;
         }
         catch (InvalidatedException e)
         {
             // This is a known exception, so we don't need to log it (at least not with severity).
             logger.info("Current speculative analysis instance is invalidated.");
-            activationRecord_.activate();
-            Thread.sleep(typingSessionLength_);
+//            activationRecord_.activate();
+//            Thread.sleep(typingSessionLength_);
         }
-        currentWorker.unblock();
-        stopWorking();
-        if (activationRecord_.isValid())
+        finally
         {
-            if (shallSkip)
-                updateBestProposals();
-            CompletionProposalPopupCoordinator.getCoordinator().setBestProposals(new ArrayList<AugmentedCompletionProposal>(bestProposals_));
-//            System.out.println("Setting best proposals (" + bestProposals_.size() + ")...");
-            signalSpeculativeAnalysisComplete();
+            if (prevAutoBuilding)
+                activateAutoBuilding();
+            else
+                logger.info("Not activating auto-building since it was deactivated at the beginning of the analysis.");
+            currentWorker.unblock();
+            stopWorking();
+            if (activationRecord_.isValid())
+            {
+                if (shallSkip)
+                    updateBestProposals();
+                QuickFixDialogCoordinator.getCoordinator().setBestProposals(new ArrayList<AugmentedCompletionProposal>(bestProposals_));
+//                System.out.println("Setting best proposals (" + bestProposals_.size() + ")...");
+                signalSpeculativeAnalysisComplete();
+            }
+            logger.info("");
+            Timer.completeSession();
+            logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
         }
-        logger.info("");
-        Timer.completeSession();
-        if (prevAutoBuilding)
-            activateAutoBuilding();
-        logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
     }
 
     private void updateBestProposals()
@@ -380,7 +390,9 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         {
             Squiggly shadowCompilationError = bestProposal.getCompilationError();
             Squiggly recentShadowCE = shadowCompilationErrorResolutionMap_.get(shadowCompilationError);
-            assert recentShadowCE != null: "Cannot resolve the recent version of the compilation error: " + shadowCompilationError;
+            if (recentShadowCE == null)
+                logger.finer("Cannot resolve the recent version of the compilation error: " + shadowCompilationError);
+//            assert recentShadowCE != null: "Cannot resolve the recent version of the compilation error: " + shadowCompilationError;
             bestProposal.updateCompilationError(recentShadowCE);
         }
     }
@@ -428,7 +440,8 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         clearTimings();
         bestProposals_ = new ArrayList <AugmentedCompletionProposal>();
         cachedProposals_.clear();
-        CompletionProposalPopupCoordinator.getCoordinator().clearBestProposals();
+//        QuickFixDialogCoordinator.getCoordinator().clearBestProposals();
+        QuickFixDialogCoordinator.getCoordinator().clear();
     }
 
     private void clearTimings()
@@ -446,7 +459,10 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         logger.info("Speculative analysis started...");
         // TODO Place for this code seems weird. It should be before the analysis preparations.
         if (TEST_SYNCHRONIZATION)
-            testSynchronization();
+        {
+            if (!testSynchronization())
+                throw new InvalidatedException();
+        }
         // TODO handle thrown exception...
         clearGlobalState();
         // The place of signal is very important. Basically, it has to be done after all accessible state is cleared
@@ -732,7 +748,8 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         activationRecord_.invalidate();
         
         // invalidate global best proposals.
-        CompletionProposalPopupCoordinator.getCoordinator().clearBestProposals();
+//        CompletionProposalPopupCoordinator.getCoordinator().clearBestProposals();
+        QuickFixDialogCoordinator.getCoordinator().clear();
     }
 
     @Override
@@ -1021,7 +1038,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         EclipseUIUtility.saveAllEditors(false);
         buildOriginalProject();
         Squiggly [] originalCompilationErrors = getOriginalCEs();
-        CompletionProposalPopupCoordinator.getCoordinator().setOriginalCompilationErrors(originalCompilationErrors);  
+        QuickFixDialogCoordinator.getCoordinator().setOriginalCompilationErrors(originalCompilationErrors);  
     }
 
     public Date getAnalysisCompletionTime()
@@ -1083,8 +1100,8 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         synchronizer_.syncProjects();
     }
 
-    private void testSynchronization()
+    private boolean testSynchronization()
     {
-        synchronizer_.testSynchronization();
+        return synchronizer_.testSynchronization();
     }
 }

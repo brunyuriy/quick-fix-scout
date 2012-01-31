@@ -3,7 +3,6 @@ package edu.washington.cs.quickfix.observation.log.internal;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.logging.Level;
@@ -33,6 +32,8 @@ import edu.washington.cs.synchronization.sync.task.internal.TaskWorker;
 @SuppressWarnings("restriction")
 public class QFSession
 {
+    /** Constant that represents the prefix used for the session type of a Quick Fix session. */
+    static final String SESSION_TYPE_STRING = "Logging Quick Fix session of type = ";
     /** Constant that represents the prefix used for the start of a quick fix session. */
     static final String SESSION_START_STRING = "Quick Fix session started. Current time = ";
     /** Constant that represents the prefix used for the delay before a quick fix session. */
@@ -108,20 +109,20 @@ public class QFSession
     private Date localSpeculationCompletionTime_;
     private Date analysisCompletionTime_;
     
-    @SuppressWarnings("unused")
-    @Deprecated
-    private static final Calendar calendar_ = Calendar.getInstance();
-    
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
+    public static enum QFSessionType { HOVER, DIALOG }
+    private QFSessionType sessionType_;
+    
     public QFSession()
     {
-        this(INVALID_TIME, INVALID_TIME, null, null, INVALID_ERRORS, null, INVALID_ERRORS, INVALID_TIME, INVALID_TIME, INVALID_TIME);
+        this(null, INVALID_TIME, INVALID_TIME, null, null, INVALID_ERRORS, null, INVALID_ERRORS, INVALID_TIME, INVALID_TIME, INVALID_TIME);
     }
-
-    QFSession(Date sessionStartTime, Date delayTime, String [] availableProposals, String [] speculationProposals,
+    
+    QFSession(QFSessionType sessionType, Date sessionStartTime, Date delayTime, String [] availableProposals, String [] speculationProposals,
             int errorsBefore, String selectedProposal, int errorsAfter, Date sessionEndTime, Date localComputationLength, Date analysisLength)
     {
+        sessionType_ = sessionType;
         log_ = new StringBuffer();
         sessionStartTime_ = sessionStartTime;
         delayTime_ = delayTime;
@@ -149,6 +150,11 @@ public class QFSession
         
         localSpeculationCompletionTime_ = localComputationLength;
         analysisCompletionTime_ = analysisLength;
+    }
+    
+    public void setSessionType(QFSessionType sessionType)
+    {
+        sessionType_ = sessionType;
     }
     
     String [] getEclipseProposals()
@@ -442,7 +448,7 @@ public class QFSession
         return log_.toString();
     }
 
-    public void logChangePerformed(String changeName)
+    public synchronized void logChangePerformed(String changeName)
     {
         if (isInvalid())
             return;
@@ -458,7 +464,7 @@ public class QFSession
             catch (CoreException e)
             {}
         }
-        if (selectedProposalString_.equals(changeName))
+        if (selectedProposalString_ != null && selectedProposalString_.equals(changeName))
             proposalsMatch_ = true;
         if (proposalsMatch_)
         {
@@ -477,6 +483,7 @@ public class QFSession
 
     private synchronized void createLog()
     {
+        log(SESSION_TYPE_STRING + sessionType_.toString());
         log(SESSION_START_STRING + makeString(sessionStartTime_));
         log(SESSION_DELAY_STRING + makeString(delayTime_) + SESSION_DELAY_STRING_SEPERATOR
                 + Dates.toReadableString(delayTime_));
@@ -529,16 +536,23 @@ public class QFSession
     private synchronized boolean isLogCompleted()
     {
         StringBuffer log = new StringBuffer();
-        log.append("availableProposals != null ==> " + (availableProposals_ != null) + LINE_SEPARATOR);
-        log.append("sessionStartTime != invalidTime ==> " + (sessionStartTime_ != INVALID_TIME) + LINE_SEPARATOR);
-        log.append("sessionEndTime != invalidTime ==> " + (sessionEndTime_ != INVALID_TIME) + LINE_SEPARATOR);
-        log.append("errorsBefore != invalidErrors ==> " + (errorsBefore_ != INVALID_ERRORS) + LINE_SEPARATOR);
-        log.append("selectedProposal != null ==> " + (selectedProposalString_ != null) + LINE_SEPARATOR);
-        log.append("errorsAfter != invalidErrors ==> " + (errorsAfter_ != INVALID_ERRORS) + LINE_SEPARATOR);
-        logger.finest(log.toString());
-        return availableProposals_ != null && sessionStartTime_ != INVALID_TIME && sessionEndTime_ != INVALID_TIME
-                && errorsBefore_ != INVALID_ERRORS
-                && (selectedProposalString_ == null || errorsAfter_ != INVALID_ERRORS);
+        boolean sessionTypeSet = sessionType_ != null;
+        boolean availableProposalsSet = availableProposals_ != null;
+        boolean startTimeSet = sessionStartTime_ != INVALID_TIME;
+        boolean endTimeSet = sessionEndTime_ != INVALID_TIME;
+        boolean errorsBeforeSet = errorsBefore_ != INVALID_ERRORS;
+        boolean selectedProposalSet = selectedProposal_ != null;
+        boolean errorsAfterSet = errorsAfter_ != INVALID_ERRORS;
+        log.append("sessionType != null ==> " + sessionTypeSet + LINE_SEPARATOR);
+        log.append("availableProposals != null ==> " + availableProposalsSet + LINE_SEPARATOR);
+        log.append("sessionStartTime != invalidTime ==> " + startTimeSet + LINE_SEPARATOR);
+        log.append("sessionEndTime != invalidTime ==> " + endTimeSet + LINE_SEPARATOR);
+        log.append("errorsBefore != invalidErrors ==> " + errorsBeforeSet + LINE_SEPARATOR);
+        log.append("selectedProposal != null ==> " + selectedProposalSet + LINE_SEPARATOR);
+        log.append("errorsAfter != invalidErrors ==> " + errorsAfterSet + LINE_SEPARATOR);
+        logger.finer(log.toString());
+        return sessionTypeSet && availableProposalsSet && startTimeSet && endTimeSet && errorsBeforeSet
+                && (selectedProposalString_ == null || errorsAfterSet);
     }
 
     private class LogFinalizer extends Thread
