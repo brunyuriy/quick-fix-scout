@@ -105,7 +105,7 @@ public class QFSession
     // Locations are needed so that later on I can retrieve speculation proposals.
     private IProblemLocation [] locations_;
     
-    private boolean isSpeculationRunning_;
+    private Boolean isSpeculationRunning_;
     private Date localSpeculationCompletionTime_;
     private Date analysisCompletionTime_;
     
@@ -116,16 +116,19 @@ public class QFSession
     
     public QFSession()
     {
-        this(null, INVALID_TIME, INVALID_TIME, null, null, INVALID_ERRORS, null, INVALID_ERRORS, INVALID_TIME, INVALID_TIME, INVALID_TIME);
+        this(null, INVALID_TIME, INVALID_TIME, null, null, null, INVALID_ERRORS, null, INVALID_ERRORS, INVALID_TIME,
+                INVALID_TIME, INVALID_TIME);
     }
     
-    QFSession(QFSessionType sessionType, Date sessionStartTime, Date delayTime, String [] availableProposals, String [] speculationProposals,
-            int errorsBefore, String selectedProposal, int errorsAfter, Date sessionEndTime, Date localComputationLength, Date analysisLength)
+    QFSession(QFSessionType sessionType, Date sessionStartTime, Date delayTime, Boolean speculationRunning,
+            String [] availableProposals, String [] speculationProposals, int errorsBefore, String selectedProposal,
+            int errorsAfter, Date sessionEndTime, Date localComputationLength, Date analysisLength)
     {
         sessionType_ = sessionType;
         log_ = new StringBuffer();
         sessionStartTime_ = sessionStartTime;
         delayTime_ = delayTime;
+        isSpeculationRunning_ = speculationRunning;
         availableProposals_ = availableProposals;
         speculationProposals_ = speculationProposals;
         errorsBefore_ = errorsBefore;
@@ -134,7 +137,6 @@ public class QFSession
         sessionEndTime_ = sessionEndTime;
         invalid_ = false;
         logConstructed_ = false;
-        isSpeculationRunning_ = false;
         selectedProposal_ = null;
         locations_ = null;
         
@@ -152,175 +154,6 @@ public class QFSession
         analysisCompletionTime_ = analysisLength;
     }
     
-    public void setSessionType(QFSessionType sessionType)
-    {
-        sessionType_ = sessionType;
-    }
-    
-    String [] getEclipseProposals()
-    {
-        return availableProposals_;
-    }
-    
-    String [] getSpeculationProposals()
-    {
-        return speculationProposals_;
-    }
-    
-    boolean isSessionCompleted()
-    {
-        return selectedProposalString_ != null || selectedProposal_ != null;
-    }
-
-    Action isFirstProposalSelected()
-    {
-        if (!isSessionCompleted())
-            return Action.NOT_AVAILABLE;
-        
-        if (availableProposals_ == null || availableProposals_.length == 0)
-            return Action.FALSE;
-        
-        boolean result = availableProposals_[0].equals(selectedProposalString_)
-                || (speculationProposals_ != null && speculationProposals_.length > 0 && getProposalPart(speculationProposals_[0])
-                        .equals(selectedProposalString_));
-        return Action.FromBoolean(result);
-    }
-    
-    private String getProposalPart(String speculationProposal)
-    {
-        return speculationProposal.substring(speculationProposal.indexOf(')') + 1).trim();
-    }
-    
-    private int getCompilationErrorPart(String speculationProposal)
-    {
-        return Integer.parseInt(speculationProposal.substring(1,speculationProposal.indexOf(')')).trim());
-    }
-    
-    public static enum Action
-    {
-        TRUE("TRUE"),
-        FALSE("FALSE"),
-        NOT_AVAILABLE("N/A");
-        
-        private String value_;
-        
-        private Action(String value)
-        {
-            value_ = value;
-        }
-        
-        public String toString()
-        {
-            return value_;
-        }
-        
-        public Action or(Action other)
-        {
-            if (this == NOT_AVAILABLE || other == NOT_AVAILABLE)
-                return NOT_AVAILABLE;
-            if (this == TRUE || other == TRUE)
-                return TRUE;
-            return FALSE;
-        }
-        
-        public Action negate()
-        {
-            return this == Action.TRUE ? Action.FALSE : (this == Action.FALSE ? Action.TRUE : Action.NOT_AVAILABLE);
-        }
-        
-        public static Action FromBoolean(boolean value)
-        {
-            return value ? Action.TRUE : Action.FALSE;
-        }
-    }
-    
-    Action isSmartProposalSelected()
-    {
-        if (!isSessionCompleted())
-            return Action.NOT_AVAILABLE;
-        if (speculationProposals_ == null)
-            return Action.FALSE;
-        ArrayList <String> smartProposals = new ArrayList <String>();
-        HashSet <String> eclipseProposals = new HashSet <String>(Arrays.asList(availableProposals_));
-        for (String speculationProposal: speculationProposals_)
-        {
-            String proposalPart = getProposalPart(speculationProposal);
-            if (!eclipseProposals.contains(proposalPart))
-                smartProposals.add(proposalPart);
-        }
-        return Action.FromBoolean(smartProposals.contains(selectedProposalString_));
-    }
-
-    Action isBestProposalSelected()
-    {
-        // This is not completely true since more than the first offering can be the best by Eclipse.
-        Action result = isSmartProposalSelected().or(isFirstProposalSelected());
-        if (result == Action.NOT_AVAILABLE)
-            return result;
-        if (result == Action.FALSE && speculationProposals_ != null)
-        {
-            int compilationError = -1;
-            int bestCompilationError = Integer.MAX_VALUE;
-            for (String speculationProposal: speculationProposals_)
-            {
-                int currentCompilationError = getCompilationErrorPart(speculationProposal);
-                String proposalPart = getProposalPart(speculationProposal);
-                if (proposalPart.equals(selectedProposalString_))
-                    compilationError = currentCompilationError;
-                bestCompilationError = Math.min(bestCompilationError, currentCompilationError);
-            }
-            if (compilationError != -1 && compilationError == bestCompilationError)
-                result = Action.TRUE;
-        }
-        return result;
-    }
-
-    Action isOtherProposalSelected()
-    {
-        return isFirstProposalSelected().negate();
-    }
-
-    // TODO Get this and categorize the proposals being selected.
-    String getSelectedProposalString()
-    {
-        return selectedProposalString_;
-    }
-
-    Date getStartTime()
-    {
-        return sessionStartTime_;
-    }
-
-    Date getCompletionTime()
-    {
-        return sessionEndTime_;
-    }
-
-    Date getDelayTime()
-    {
-        return delayTime_;
-    }
-
-    Date getLength()
-    {
-        return Dates.subtract(sessionEndTime_, sessionStartTime_);
-    }
-
-    int getNumberOfProposalsOfferedByEclipse()
-    {
-        return availableProposals_.length;
-    }
-
-    int getErrorsBefore()
-    {
-        return errorsBefore_;
-    }
-
-    int getErrorsAfter()
-    {
-        return errorsAfter_;
-    }
-
     private void log(String log)
     {
         logger.finer("Logging: " + log);
@@ -475,6 +308,11 @@ public class QFSession
             logger.warning("Selected proposal and change performed does not match! Selected proposal = "
                     + selectedProposalString_ + ", change performed = " + changeName);
     }
+    
+    public void setSessionType(QFSessionType sessionType)
+    {
+        sessionType_ = sessionType;
+    }
 
     private String makeString(Date date)
     {
@@ -589,4 +427,251 @@ public class QFSession
     {
         analysisCompletionTime_ = time;
     }
+    
+    /** JUST ADDED FOR LOG ANALYSES, NOT USED IN THE PLUG-IN */
+    
+    /*******************************
+     ************ GETTERS **********
+     *******************************/
+    
+    Action isGlobalBestProposalSelected()
+    {
+        // If the session is not completed, then no meaning to compute this.
+        if (!isSessionCompleted())
+            return Action.NOT_AVAILABLE;
+        if (isSpeculationRunning_ == null)
+        {
+            // If the speculative analysis information is not available and speculation proposals
+            // are not recorded, then we assume that we could not record this information.
+            if (speculationProposals_ == null)
+                return Action.NOT_AVAILABLE;
+        }
+        else if (!isSpeculationRunning_)
+            // if the speculation was not running, then this cannot be computed.
+            return Action.NOT_AVAILABLE;
+        // At this moment, the speculation is guaranteed to be running (i.e., either the flag is set
+        // or speculative proposals are set).
+        if (speculationProposals_ == null)
+            // if speculative proposals are not set, it means the speculation was running, however the
+            // user closed the dialog without waiting for the speculation results.
+            return Action.FALSE;
+        ArrayList <String> globalBestProposals = getGlobalBestProposals();
+        return Action.FromBoolean(globalBestProposals.contains(selectedProposalString_));
+    }
+
+    Action isBestProposalSelected()
+    {
+        // if global best proposal is selected or first proposal is selected, then we know
+        // it is guaranteed that the selected proposal is the best proposal. We also know that
+        // if there is no speculation information, and the first proposal is not selected, then
+        // there is no way to know.
+        Action result = isGlobalBestProposalSelected().or(isFirstProposalSelected());
+        if (result == Action.FALSE && speculationProposals_ != null)
+        {
+            // However, if there is speculation information, we could still determine whether it is
+            // the best or not.
+            int compilationError = -1;
+            int bestCompilationError = Integer.MAX_VALUE;
+            ArrayList <String> globalBestProposals = getGlobalBestProposals();
+            for (String speculationProposal: speculationProposals_)
+            {
+                int currentCompilationError = getCompilationErrorPart(speculationProposal);
+                String proposalPart = getProposalPart(speculationProposal);
+                if (!globalBestProposals.contains(proposalPart))
+                {
+                    // We have to make sure that we are not including global best proposal's compilation
+                    // error information to our calculation.
+                    if (proposalPart.equals(selectedProposalString_))
+                        compilationError = currentCompilationError;
+                    bestCompilationError = Math.min(bestCompilationError, currentCompilationError);
+                }
+            }
+            assert compilationError == -1 || bestCompilationError == Integer.MAX_VALUE || compilationError >= bestCompilationError;
+            if (compilationError != -1 && compilationError == bestCompilationError)
+                // If the number of compilation errors for the selected proposal is equal to the number of lowest compilation errors
+                // then, we return true.
+                result = Action.TRUE;
+        }
+        return result;
+    }
+    
+    Action isFirstProposalSelected()
+    {
+        // If session is not completed, there is no way to measure this.
+        if (!isSessionCompleted())
+            return Action.NOT_AVAILABLE;
+        
+        // If no proposals are offered, there is no way to compute this.
+        if (availableProposals_ == null || availableProposals_.length == 0)
+            return Action.NOT_AVAILABLE;
+        
+        // Look at the first offered Eclipse proposal and first offered speculation proposal and see if the selected
+        // proposal is equal to one of them.
+        boolean result = availableProposals_[0].equals(selectedProposalString_)
+                || (speculationProposals_ != null && speculationProposals_.length > 0 && getProposalPart(speculationProposals_[0])
+                        .equals(selectedProposalString_));
+        return Action.FromBoolean(result);
+    }
+
+    Action isOtherProposalSelected()
+    {
+        for (int a = 1; a < availableProposals_.length; a++)
+        {
+            if (availableProposals_[a].equals(selectedProposalString_))
+                return Action.TRUE;
+        }
+        return Action.FALSE;
+//        return isFirstProposalSelected().negate();
+    }
+    
+    boolean isGlobalBestProposalGenerated()
+    {
+        return getGlobalBestProposals().size() != 0;
+    }
+
+    String getSelectedProposalString()
+    {
+        return selectedProposalString_;
+    }
+
+    Date getStartTime()
+    {
+        return sessionStartTime_;
+    }
+
+    Date getCompletionTime()
+    {
+        return sessionEndTime_;
+    }
+
+    Date getDelayTime()
+    {
+        return delayTime_;
+    }
+
+    Date getLength()
+    {
+        return Dates.subtract(sessionEndTime_, sessionStartTime_);
+    }
+    
+    int getNumberOfProposalsOfferedByEclipse()
+    {
+        return availableProposals_.length;
+    }
+
+    int getErrorsBefore()
+    {
+        return errorsBefore_;
+    }
+
+    int getErrorsAfter()
+    {
+        return errorsAfter_;
+    }
+    
+    Boolean isSpeculationRunning()
+    {
+        return isSpeculationRunning_;
+    }
+    
+    String [] getEclipseProposals()
+    {
+        return availableProposals_;
+    }
+    
+    String [] getSpeculationProposals()
+    {
+        return speculationProposals_;
+    }
+    
+    boolean isSessionCompleted()
+    {
+        return selectedProposalString_ != null || selectedProposal_ != null;
+    }
+    
+    /********************************
+     ********* INTERNAL API *********
+     *******************************/
+    
+    private String getProposalPart(String speculationProposal)
+    {
+        return speculationProposal.substring(speculationProposal.indexOf(')') + 1).trim();
+    }
+    
+    private int getCompilationErrorPart(String speculationProposal)
+    {
+        return Integer.parseInt(speculationProposal.substring(1,speculationProposal.indexOf(')')).trim());
+    }
+    
+    private ArrayList <String> getGlobalBestProposals()
+    {
+        if (speculationProposals_ == null)
+            return new ArrayList <String>();
+        
+        ArrayList <String> result = new ArrayList <String>();
+        HashSet <String> eclipseProposals = new HashSet <String>(Arrays.asList(availableProposals_));
+        for (String speculationProposal: speculationProposals_)
+        {
+            String proposalPart = getProposalPart(speculationProposal);
+            if (!eclipseProposals.contains(proposalPart))
+                result.add(proposalPart);
+        }
+        return result;
+    }
+    
+    static enum Action
+    {
+        TRUE("TRUE"),
+        FALSE("FALSE"),
+        NOT_AVAILABLE("N/A");
+        
+        private String value_;
+        
+        private Action(String value)
+        {
+            value_ = value;
+        }
+        
+        public String toString()
+        {
+            return value_;
+        }
+        
+        public Action or(Action other)
+        {
+            if (this == NOT_AVAILABLE || other == NOT_AVAILABLE)
+                return NOT_AVAILABLE;
+            if (this == TRUE || other == TRUE)
+                return TRUE;
+            return FALSE;
+        }
+        
+        public Action negate()
+        {
+            return this == Action.TRUE ? Action.FALSE : (this == Action.FALSE ? Action.TRUE : Action.NOT_AVAILABLE);
+        }
+        
+        public static Action FromBoolean(boolean value)
+        {
+            return value ? Action.TRUE : Action.FALSE;
+        }
+    }
+
+    void assertProposalSelection()
+    {
+        StringBuilder log = new StringBuilder();
+        String ls = System.getProperty("line.separator");
+        log.append("Selected proposal: " + selectedProposalString_ + ls);
+        log.append("Eclipse proposals:" + ls);
+        for (String proposal: availableProposals_)
+            log.append("\t" + proposal + ls);
+        if (speculationProposals_ != null)
+        {
+            log.append("Speculation proposals:" + ls);
+            for (String proposal: speculationProposals_)
+                log.append("\t" + proposal + ls);
+        }
+        System.err.println(log);
+    }
+    
 }
