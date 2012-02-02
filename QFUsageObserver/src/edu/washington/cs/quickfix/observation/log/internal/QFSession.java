@@ -505,12 +505,17 @@ public class QFSession
         if (availableProposals_ == null || availableProposals_.length == 0)
             return Action.NOT_AVAILABLE;
         
-        // Look at the first offered Eclipse proposal and first offered speculation proposal and see if the selected
-        // proposal is equal to one of them.
-        boolean result = availableProposals_[0].equals(selectedProposalString_)
-                || (speculationProposals_ != null && speculationProposals_.length > 0 && getProposalPart(speculationProposals_[0])
-                        .equals(selectedProposalString_));
-        return Action.FromBoolean(result);
+        // Look whether the speculation analysis is running and/or we have speculation results. If so, look if the
+        // selected proposal is the same as the first speculation proposal.
+        if (speculationProposals_ != null && speculationProposals_.length > 0)
+        {
+            if (selectedProposalString_.equals(speculationProposals_[0]))
+                return Action.TRUE;
+        }
+        
+        // If there is no speculation information, then look whether the first selected proposal is equal to the first
+        // Eclipse proposal or not.
+        return Action.FromBoolean(selectedProposalString_.equals(availableProposals_[0]));
     }
 
     Action isOtherProposalSelected()
