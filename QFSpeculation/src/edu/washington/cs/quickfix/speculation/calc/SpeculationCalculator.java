@@ -252,21 +252,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             analysisCompleted_ = false;
             shadowCompilationErrorResolutionMap_.clear();
             shadowCompilationErrors_ = shadowCompilationErrors;
-            for (Squiggly shadowCompilationError: shadowCompilationErrors_)
-            {
-                try
-                {
-                    shadowCompilationError.cacheContext();
-                }
-                catch (JavaModelException e)
-                {
-                    // We don't care the exceptions...
-                }
-                catch (BadLocationException e)
-                {
-                    // We don't care the exceptions...
-                }
-            }
         }
         return result;
     }
@@ -340,8 +325,8 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
          */
         logger.fine("Waiting until sync thread is done.");
         currentWorker.waitUntilSynchronization();
+        activationRecord_.activate();
         boolean prevAutoBuilding = deactivateAutoBuilding();
-        BuilderUtility.setAutoBuilding(false);
         boolean shallSkip = doAnalysisPreparations();
         try
         {
@@ -356,7 +341,8 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         {
             // This is a known exception, so we don't need to log it (at least not with severity).
             logger.info("Current speculative analysis instance is invalidated.");
-        }
+            activationRecord_.deactivate();
+            }
         finally
         {
             if (prevAutoBuilding)
@@ -616,6 +602,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         if (SpeculationUtility.isFlaggedProposal(shadowProposal))
             return Squiggly.NOT_COMPUTED;
         if (SpeculationUtility.isInteractiveProposal(shadowProposal))
+//            return new Squiggly[1];
             return Squiggly.NOT_COMPUTED;
         
         Squiggly [] errors = Squiggly.UNKNOWN;

@@ -87,6 +87,7 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
                     "Cannot get the corresponding resource for compilation unit = " + unit.getElementName(), e);
         }
         eclipseProposals_ = QuickFixUtility.calculateCompletionProposals(context_, locations_);
+        
         if (!calculator_.isSynched())
             calculator_.addListener(this);
         attemptToRetrieveResults();

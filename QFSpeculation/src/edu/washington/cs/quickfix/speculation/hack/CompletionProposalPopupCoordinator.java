@@ -125,6 +125,7 @@ public class CompletionProposalPopupCoordinator
             int localProposalSize = 0;
             for (AugmentedCompletionProposal localProposal: localProposals_)
             {
+                assert localProposal != null: "Received a local proposals that is null";
                 if (!addedProposals.contains(localProposal.getDisplayString()))
                 {
                     logger.finest("Adding proposal: " + localProposal.getDisplayString() + " as local proposal.");
@@ -176,8 +177,8 @@ public class CompletionProposalPopupCoordinator
         item.setData(proposal);
         String displayInformation = proposal.getDisplayString();
         if (!displayInformation.startsWith("(N/A) "))
-            // displayInformation = "(2) " + displayInformation;
-            displayInformation = "(N/A) " + displayInformation;
+             displayInformation = "(2) " + displayInformation;
+//            displayInformation = "(N/A) " + displayInformation;
         item.setText(displayInformation);
     }
     

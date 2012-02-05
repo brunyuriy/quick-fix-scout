@@ -119,10 +119,10 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
             int noErrorsAfter = errorsAfter_.length;
             // Things are worse.
             if (noErrorsAfter > errorBefore_)
-                result = new Color(item.getDisplay(), 200, 0, 0);
+                result = new Color(item.getDisplay(), 150, 0, 0);
             // Things are better.
             else if (noErrorsAfter < errorBefore_)
-                result = new Color(item.getDisplay(), 0, 200, 0);
+                result = new Color(item.getDisplay(), 0, 150, 0);
             // No change.
             else
                 result = null;
@@ -445,7 +445,9 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     {
         if (errorsAfter_ == Squiggly.UNKNOWN)
             return "N/A";
+//            return "2";
         else if (errorsAfter_ == Squiggly.NOT_COMPUTED)
+//            return "2";
             return "?";
         
         return errorsAfter_.length + "";
@@ -457,8 +459,20 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
         {
             // Here, I cannot use the exact offset information since after the application of the proposal, the line
             // that the current proposal applied to changes. So the errors coming after that line change offset.
-            if (SpeculationUtility.areOnTheSameLine(errorAfter, compilationError))
+            try
+            {
+                if (SpeculationUtility.sameSquigglyContent(errorAfter, compilationError))
+//                  if (SpeculationUtility.areOnTheSameLine(errorAfter, compilationError))
+                      return false;
+            }
+            catch (JavaModelException e)
+            {
                 return false;
+            }
+            catch (BadLocationException e)
+            {
+                return false;
+            }
         }
         return true;
     }

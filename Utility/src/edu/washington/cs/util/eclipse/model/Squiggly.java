@@ -56,11 +56,19 @@ public class Squiggly
         severity_ = computeSeverity();
         details_ = null;
         compilationUnitNode_ = null;
-    }
-    
-    public void cacheContext() throws JavaModelException, BadLocationException
-    {
-        cachedContext_ = getContext();
+        
+        try
+        {
+            cachedContext_ = getContext();
+        }
+        catch (JavaModelException e)
+        {
+            e.printStackTrace();
+        }
+        catch (BadLocationException e)
+        {
+            e.printStackTrace();
+        }
     }
     
     public String getCachedContext() throws JavaModelException, BadLocationException
