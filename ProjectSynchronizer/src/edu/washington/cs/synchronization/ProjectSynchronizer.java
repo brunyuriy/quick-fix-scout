@@ -326,11 +326,10 @@ public class ProjectSynchronizer
             worker_.unblock();
             // Block the worker so that during the comparison, we won't get changes.
             worker_.block();
-            logger.info("Waiting until sync thread is done.");
+            logger.info("Waiting until the worker thread is done.");
             // Wait until the worker is completely blocked.
             worker_.waitUntilSynchronization();
             // worker_.clear();
-            logger.finest("Started syncing projects.");
             // Refresh the projects just in case.
             ResourceUtility.syncWithFileSystemIfNecessary(original_);
             ResourceUtility.syncWithFileSystemIfNecessary(shadow_);

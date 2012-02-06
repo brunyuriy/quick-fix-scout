@@ -221,8 +221,6 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
 
     private String contexify(String result) throws JavaModelException, BadLocationException
     {
-        logger_.info("Contexifying global best proposal: " + result);
-        
         // The proposals that does not need extra context first...
         // 'package' proposals
         if (result.startsWith("Remove package declaration "))

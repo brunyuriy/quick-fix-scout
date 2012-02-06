@@ -62,5 +62,9 @@ public class ActivationRecord
         }
     }
 
-
+    public synchronized void reset()
+    {
+        active_ = false;
+        valid_ = true;
+    }
 }

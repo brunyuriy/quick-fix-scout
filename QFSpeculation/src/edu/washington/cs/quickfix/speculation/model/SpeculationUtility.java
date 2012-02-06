@@ -36,7 +36,7 @@ import edu.washington.cs.util.exception.NotInitializedException;
 public class SpeculationUtility
 {
     // Logger.
-    private static final Logger compilationErrorComparisonLogger_ = Logger.getLogger(SpeculationUtility.class.getName());
+    private static final Logger compilationErrorComparisonLogger_ = Logger.getLogger(SpeculationUtility.class.getName() + ".ce.compare");
     static
     {
         compilationErrorComparisonLogger_.setLevel(Level.WARNING);

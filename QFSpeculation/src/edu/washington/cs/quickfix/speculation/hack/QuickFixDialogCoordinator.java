@@ -22,10 +22,18 @@ public class QuickFixDialogCoordinator
 {
     private static final QuickFixDialogCoordinator instance_ = new QuickFixDialogCoordinator();
 
+    private static final Logger proposalResolutionLogger_ = Logger.getLogger(QuickFixDialogCoordinator.class.getName());
+    static
+    {
+        proposalResolutionLogger_.setLevel(Level.WARNING);
+        // logger.setLevel(Level.FINER);
+        // logger.setLevel(Level.FINEST);
+    }
+    
     private static final Logger logger = Logger.getLogger(QuickFixDialogCoordinator.class.getName());
     static
     {
-        logger.setLevel(Level.FINE);
+        logger.setLevel(Level.INFO);
         // logger.setLevel(Level.FINER);
         // logger.setLevel(Level.FINEST);
     }
@@ -242,7 +250,7 @@ public class QuickFixDialogCoordinator
                 log.append("Eclipse proposals: " + ls);
                 for (ICompletionProposal proposal: eclipseProposals)
                     log.append(proposal.getDisplayString() + ls);
-                logger.warning(log.toString());
+                proposalResolutionLogger_.info(log.toString());
             }
             else
                 // For eclipse proposals, it is okay to pass 'null' as compilation error since we are only using

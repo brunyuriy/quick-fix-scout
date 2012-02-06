@@ -16,6 +16,7 @@ import edu.washington.cs.quickfix.observation.gui.ObservationPreferencePage;
 import edu.washington.cs.quickfix.observation.log.internal.QFSession;
 import edu.washington.cs.quickfix.observation.log.internal.QFSession.QFSessionType;
 import edu.washington.cs.util.eclipse.SharedConstants;
+import edu.washington.cs.util.log.CommonLoggers;
 
 public class ObservationLogger
 {
@@ -97,7 +98,7 @@ public class ObservationLogger
     {
         if (currentSession_ != null)
         {
-            logger.info("Communication: Popup close message received.");
+            CommonLoggers.getCommunicationLogger().info("Popup close message received.");
             ISpeculatorObserverBridge bridge = BridgeActionManager.getInstance().getSpeculatorObserverBridge();
             if (bridge != null)
             {
@@ -125,12 +126,12 @@ public class ObservationLogger
     {
         if (currentSession_.isInvalid())
         {
-            logger.info("Communication: Session is invalidated, selected proposal is ignored.");
+            CommonLoggers.getCommunicationLogger().info("Session is invalidated, selected proposal is ignored.");
             return null;
         }
         else
         {
-            logger.info("Communication: Selected proposal (" + (proposal == null ? "null" : proposal.getDisplayString()) + ") is set.");
+            CommonLoggers.getCommunicationLogger().info("Selected proposal (" + (proposal == null ? "null" : proposal.getDisplayString()) + ") is set.");
             currentSession_.logProposalSelected(proposal);
             return currentSession_;
         }
@@ -153,7 +154,7 @@ public class ObservationLogger
     {
         if (currentSession_ == null)
             currentSession_ = new QFSession();
-        logger.info("Communication: QF " + type.toString() + " popup created.");
+        CommonLoggers.getCommunicationLogger().info("QF " + type.toString() + " popup created.");
         currentSession_.setSessionType(type);
         currentSession_.logPopupCreated();
     }

@@ -56,7 +56,7 @@ public class ResourceUtility
     public static final String PLUG_IN_ID = "edu.washington.cs.util";
     public static final String VERSION_URL = "http://www.kivancmuslu.com/Quick_Fix_Scout_Files/version.txt";
     /** Logger for debugging. */
-    private static final Logger fileComparisonLogger_ = Logger.getLogger(ResourceUtility.class.getName());
+    private static final Logger fileComparisonLogger_ = Logger.getLogger(ResourceUtility.class.getName() + ".file.comparison");
     static
     {
         fileComparisonLogger_.setLevel(Level.WARNING);

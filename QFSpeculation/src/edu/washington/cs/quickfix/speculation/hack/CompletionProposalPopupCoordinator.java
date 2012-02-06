@@ -1,6 +1,7 @@
 package edu.washington.cs.quickfix.speculation.hack;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -12,6 +13,7 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
 
 import edu.washington.cs.quickfix.speculation.calc.model.AugmentedCompletionProposal;
+import edu.washington.cs.util.log.CommonLoggers;
 //@formatter:off
 /*
  * Facts:
@@ -39,7 +41,7 @@ public class CompletionProposalPopupCoordinator
     private ArrayList <ICompletionProposal> tableProposals_ = new ArrayList <ICompletionProposal>();
 
     private ArrayList<AugmentedCompletionProposal> globalBestProposals_;
-    private AugmentedCompletionProposal [] localProposals_;
+    private ArrayList <AugmentedCompletionProposal> localProposals_;
     
     private Object lock_ = new Object();
 
@@ -61,8 +63,8 @@ public class CompletionProposalPopupCoordinator
         }
         synchronized(lock_)
         {
-            globalBestProposals_ = globalBestProposals;
-            localProposals_ = localProposals;
+            globalBestProposals_ = new ArrayList <AugmentedCompletionProposal>(globalBestProposals);
+            localProposals_ = new ArrayList <AugmentedCompletionProposal>(Arrays.asList(localProposals));
         }
         // Cannnot synchronize this since this will be done inside another thread.
         updateProposalTableInternalInUIThread();
@@ -77,7 +79,6 @@ public class CompletionProposalPopupCoordinator
             @Override
             public void run()
             {
-                System.out.println("updating proposals internal");
                 updateProposalTableInternal();
             }
         });
@@ -117,7 +118,8 @@ public class CompletionProposalPopupCoordinator
                 }
                 catch (GBPResolutionException e)
                 {
-                    logger.log(Level.INFO, "Cannot resolve global best proposal for shadow proposal = "
+                    // This is known when the proposals from Eclipse is not retrieved yet. So, just pass.
+                    logger.log(Level.FINE, "Cannot resolve global best proposal for shadow proposal = "
                             + globalBestProposal.getDisplayString(), e);
                 }
             }
@@ -147,10 +149,6 @@ public class CompletionProposalPopupCoordinator
                     nonProcessedProposalSize++;
                 }
             }
-            // TableItem seperator = new TableItem(table_, knownStyle, nonProcessedProposalSize + gbpSize +
-            // localProposalSize);
-            // seperator.setText("_________________ Kivanc _____________");
-            // table_.setItemCount(nonProcessedProposalSize + gbpSize + localProposalSize + 1);
             table_.setItemCount(nonProcessedProposalSize + gbpSize + localProposalSize);
             table_.setRedraw(true);
             table_.redraw();
@@ -177,8 +175,8 @@ public class CompletionProposalPopupCoordinator
         item.setData(proposal);
         String displayInformation = proposal.getDisplayString();
         if (!displayInformation.startsWith("(N/A) "))
-             displayInformation = "(2) " + displayInformation;
-//            displayInformation = "(N/A) " + displayInformation;
+//             displayInformation = "(2) " + displayInformation;
+            displayInformation = "(N/A) " + displayInformation;
         item.setText(displayInformation);
     }
     
@@ -260,7 +258,7 @@ public class CompletionProposalPopupCoordinator
      */
     public void tableUpdated()
     {
-        logger.fine("Communication: table updated message is received.");
+        CommonLoggers.getCommunicationLogger().fine("Table updated message is received.");
         if (localProposals_ != null)
             updateProposalTableInternal();
         else

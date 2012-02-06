@@ -23,6 +23,7 @@ import edu.washington.cs.quickfix.observation.log.ObservationCompilationErrorLog
 import edu.washington.cs.quickfix.observation.log.ObservationLogger;
 import edu.washington.cs.quickfix.observation.log.ObservationCompilationErrorLogger.Type;
 import edu.washington.cs.synchronization.sync.task.internal.TaskWorker;
+import edu.washington.cs.util.log.CommonLoggers;
 
 /**
  * Data structure abstraction that represents a quick fix session.
@@ -241,14 +242,14 @@ public class QFSession
     {
         if (isInvalid())
         {
-            logger.info("Communication: Session is invalid, close message is discarded.");
+            CommonLoggers.getCommunicationLogger().info("Session is invalid, close message is discarded.");
             return;
         }
         Date currentTime = new Date();
         sessionEndTime_ = currentTime;
         if (sessionStartTime_ == INVALID_TIME)
         {
-            logger.info("Communication: Popup close detected without a popup is created, ignoring event.");
+            CommonLoggers.getCommunicationLogger().info("Popup close detected without a popup is created, ignoring event.");
             return;
         }
         Thread thread = new LogFinalizer();
@@ -397,7 +398,7 @@ public class QFSession
     {
         public void run()
         {
-            logger.info("Communication: Log Finalizer is running.");
+            CommonLoggers.getCommunicationLogger().info("Log Finalizer is running.");
             while (!isLogCompleted())
             {
                 try
@@ -414,7 +415,7 @@ public class QFSession
             }
             createLog();
             ObservationLogger.getLogger().log(QFSession.this);
-            logger.info("Communication: Session logged with success.");
+            CommonLoggers.getCommunicationLogger().info("Session logged with success.");
         }
     }
 
