@@ -318,6 +318,14 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             // else, current proposal is worse then the best, ignore.
         }
     }
+    
+    private TaskWorker synchronizeWithTaskWorker()
+    {
+        TaskWorker currentWorker = synchronizer_.getTaskWorker();
+        currentWorker.block();
+        currentWorker.waitUntilSynchronization();
+        return currentWorker;
+    }
 
     @Override
     protected void doWork() throws InterruptedException
@@ -325,42 +333,63 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         if (isDead())
             return;
         Timer.startSession();
-        TaskWorker currentWorker = synchronizer_.getTaskWorker();
-        currentWorker.block();
-        /*
-         * Stop the current synchronizer thread, and calculate the quick fixes and their results in the shadow project.
-         */
-        logger.fine("Waiting until sync thread is done.");
-        currentWorker.waitUntilSynchronization();
+        TaskWorker currentWorker = synchronizeWithTaskWorker();
+        // We make sure to deactivate auto-building so that from this point on it will not collide with our calculations.
         boolean prevAutoBuilding = deactivateAutoBuilding();
-        boolean shallSkip = doAnalysisPreparations();
-        activationRecord_.reset();
+        boolean shallSkip = false;
         try
         {
+            if (TEST_SYNCHRONIZATION)
+                // Note that test synchronization method puts the projects in sync even if they aren't.
+                // Since we haven't done any calculation yet, wee can assume everything is okay even if it wasn't.
+                testSynchronization();
+            Squiggly [] shadowCompilationErrors = computeShadowCompilationErrors();
+            shallSkip = updateShadowCompilationErrors(shadowCompilationErrors);
+            // Reset the activation record so that the current round will be valid and speculator will be deactivated
+            // before the next round.
+            activationRecord_.reset();
             if (!shallSkip)
+                // If we detect no change in the content of the compilation errors, then there is no need to run the
+                // speculative analysis again. Just skip the analysis, we will return the results from the mapping.
                 doSpeculativeAnalysis();
             else
                 logger.info("Speculative analysis for this round is skipped since there is no change on the compilation errors.");
         }
         catch (InvalidatedException e)
         {
+            // If for some reason, the analysis is invalidated (meaning the contents of the projects has changed), 
+            // then it means that we should not wait for the next change in the project, we need to reactivate
+            // the calculator for the next round.
+            activationRecord_.activate();
             // This is a known exception, so we don't need to log it (at least not with severity).
             logger.info("Current speculative analysis instance is invalidated.");
         }
         finally
         {
+            // Everything about the analysis is completed at this moment good or bad. We first reactivate the auto-building
+            // if it was active at the beginning.
             if (prevAutoBuilding)
                 activateAutoBuilding();
             else
                 logger.info("Not activating auto-building since it was deactivated at the beginning of the analysis.");
+            // Unblock the task worker so that any changes done to the other project can be applied to the shadow.
             currentWorker.unblock();
+            // signal that the thread completed the analysis and the results can be grabbed.
+            // TODO Do we really need this? Doesn't signal analysis round completed after each compilation error kind of do it?
             stopWorking();
+            // This extra check on activation record is needed because we can also enter this block into the exceptional path.
+            // We also cannot move this up above in 'try' since it needs to be done after the auto-building reactivation, worker
+            // unblock, etc.
             if (activationRecord_.isValid())
             {
+                // if everything went well, 
                 if (shallSkip)
+                    // and we didn't need to do any analysis this round, we need to update the best proposals, because their
+                    // location might have been changed. We basically re-map them looking at the mapping.
                     updateBestProposals();
+                // set the best proposals to the dialogs (if they are open).
                 QuickFixDialogCoordinator.getCoordinator().setBestProposals(new ArrayList<AugmentedCompletionProposal>(bestProposals_));
-//                System.out.println("Setting best proposals (" + bestProposals_.size() + ")...");
+                // signal analysis completion.
                 signalSpeculativeAnalysisComplete();
             }
             logger.info("");
@@ -397,7 +426,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         BuilderUtility.setAutoBuilding(true);
     }
 
-    private boolean doAnalysisPreparations()
+    private Squiggly [] computeShadowCompilationErrors()
     {
         buildShadowProject();
         Squiggly [] shadowCompilationErrors = null;
@@ -417,7 +446,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         {
             e.printStackTrace();
         }
-        return updateShadowCompilationErrors(shadowCompilationErrors);
+        return shadowCompilationErrors;
     }
 
     private void clearGlobalState()
@@ -444,12 +473,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         if (activationRecord_.isInvalid() || isDead())
             throw new InvalidatedException();
         logger.info("Speculative analysis started...");
-        // TODO Place for this code seems weird. It should be before the analysis preparations.
-        if (TEST_SYNCHRONIZATION)
-        {
-            if (!testSynchronization())
-                throw new InvalidatedException();
-        }
         // The place of signal is very important. Basically, it has to be done after all accessible state is cleared
         // to defaults.
         signalSpeculativeAnalysisStart();
@@ -734,6 +757,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         /* i.e., isWorking(), doing the speculative analysis. */
         // if (!isSynched())
         activationRecord_.invalidate();
+        activationRecord_.activate();
         
         // invalidate global best proposals.
 //        CompletionProposalPopupCoordinator.getCoordinator().clearBestProposals();

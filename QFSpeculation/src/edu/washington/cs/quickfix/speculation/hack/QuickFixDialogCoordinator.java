@@ -22,7 +22,7 @@ public class QuickFixDialogCoordinator
 {
     private static final QuickFixDialogCoordinator instance_ = new QuickFixDialogCoordinator();
 
-    private static final Logger proposalResolutionLogger_ = Logger.getLogger(QuickFixDialogCoordinator.class.getName());
+    private static final Logger proposalResolutionLogger_ = Logger.getLogger(QuickFixDialogCoordinator.class.getName() + ".proposal.resolution");
     static
     {
         proposalResolutionLogger_.setLevel(Level.WARNING);

@@ -22,7 +22,7 @@ import edu.washington.cs.util.log.CommonLoggers;
 
 public class ObservationGrabber extends Thread
 {
-    private static final int SNAPSHOT_THRESHOLD = 2;
+    private static final int SNAPSHOT_THRESHOLD = ProjectSynchronizer.CONTOLLED_EXPERIMENT ? 0: 2;
     private static final Logger logger = Logger.getLogger(ObservationGrabber.class.getName());
     static
     {

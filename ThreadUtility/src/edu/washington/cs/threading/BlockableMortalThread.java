@@ -88,7 +88,7 @@ public abstract class BlockableMortalThread extends MortalThread
         {
             synchronized (blockCondition_)
             {
-                System.err.println("Blocking itself...");
+//                System.err.println("Blocking itself...");
                 blockCondition_.wait();
             }
         }

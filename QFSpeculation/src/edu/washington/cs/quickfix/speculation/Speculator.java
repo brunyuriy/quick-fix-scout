@@ -93,6 +93,7 @@ public class Speculator implements CursorChangedListener
 
         public Runner(IProject project, IFile file)
         {
+            logger.info("Creating a speculator for project: " + project.getName());
             project_ = project;
             initialFile_ = file;
         }

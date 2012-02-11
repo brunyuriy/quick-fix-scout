@@ -66,6 +66,8 @@ public class ProjectSynchronizer
     private static final long MB = 1024*1024;
     private static final long ZIP_LIMIT = MB * 20;
     
+    public static final boolean CONTOLLED_EXPERIMENT = false;
+    
     private static double toMB(long bytes)
     {
         double result = bytes*1.0/MB;
@@ -326,7 +328,7 @@ public class ProjectSynchronizer
             worker_.unblock();
             // Block the worker so that during the comparison, we won't get changes.
             worker_.block();
-            logger.info("Waiting until the worker thread is done.");
+            logger.fine("Waiting until the worker thread is done.");
             // Wait until the worker is completely blocked.
             worker_.waitUntilSynchronization();
             // worker_.clear();
@@ -351,7 +353,7 @@ public class ProjectSynchronizer
         finally
         {
             Timer.completeSession();
-            logger.info("Synchronizing projects took: " + Timer.getTimeAsString());
+            logger.fine("Synchronizing projects took: " + Timer.getTimeAsString());
             /*
              * Since when this happens we are invalidating the calculation and will apply the new coming change we don't
              * need to check this again and resync if it happens.
@@ -555,7 +557,7 @@ public class ProjectSynchronizer
                         zipFile.delete();
                     }
                     else
-                        logger.info("Created snapshot with success.");
+                        logger.fine("Created snapshot with success.");
                 }
                 //else, Zip file is not created for some reasons. Since these are shadows, we don't really care.
             }
@@ -627,7 +629,7 @@ public class ProjectSynchronizer
             {
                 if (internalCheck_)
                 {
-                    logger.warning("File " + shadow.getName() + " has different content in project"
+                    logger.warning("File " + shadow.getName() + " has different content in project "
                             + original.getProject().getName() + "!");
                     internalResult_ = false;
                 }
