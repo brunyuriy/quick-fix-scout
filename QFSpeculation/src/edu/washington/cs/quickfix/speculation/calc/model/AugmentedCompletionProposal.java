@@ -182,7 +182,7 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     {
         return "(" + resolveErrorsAfter() + ") ";
     }
-
+    
     private String getDisplayStringWithContext(boolean gbp)
     {
         if (proposal_ == null)
