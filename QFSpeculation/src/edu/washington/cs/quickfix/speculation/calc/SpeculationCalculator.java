@@ -747,7 +747,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     @Override
     public void projectModified()
     {
-        logger.info("Calculator is notified by the worker.");
+        logger.fine("Calculator is notified by the worker.");
         activationRecord_.activate();
     }
 
@@ -757,10 +757,12 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         /* i.e., isWorking(), doing the speculative analysis. */
         // if (!isSynched())
         activationRecord_.invalidate();
-        activationRecord_.activate();
+        // Very important: never activate the activation record here!
+        // If done, speculative analysis starts again with every key stroke, which is
+        // something we don't want. It is guaranteed that projectModified() method
+        // will be eventually called and we will be re-activated again.
         
-        // invalidate global best proposals.
-//        CompletionProposalPopupCoordinator.getCoordinator().clearBestProposals();
+        // invalidate current calculation.
         QuickFixDialogCoordinator.getCoordinator().clear();
     }
 
@@ -771,6 +773,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         processRemoveList();
         for (SpeculativeAnalysisListener listener: speculativeAnalysisListeners_)
             listener.speculativeAnalysisRoundCompleted();
+//        Thread.yield();
         speculativeAnalysisListenersLock_.unlock();
     }
 

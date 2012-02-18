@@ -23,6 +23,10 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     public static final int NOT_AVAILABLE = -1;
     private final Squiggly [] errorsAfter_;
     
+    private boolean gbp_;
+    // Lazily initialized fields.
+    private String finalDisplayString_;
+    
     private final static Logger logger_ = Logger.getLogger(AugmentedCompletionProposal.class.getName());
     static
     {
@@ -36,6 +40,12 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
         compilationError_ = compilationError;
         errorsAfter_ = errorsAfter;
         recentCompilationError_ = null;
+        gbp_ = false;
+    }
+    
+    public void makeGBP()
+    {
+        gbp_ = true;
     }
     
     public void setProposal(ICompletionProposal proposal)
@@ -96,15 +106,21 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
      * Table item must be 'nonnull'. The caller thread must be a UI thread (has access to change table item
      * information).
      */
-    public void setYourselfAsTableItem(TableItem item, boolean gbp)
+    public void setYourselfAsTableItem(TableItem item)
     {
-        String text = getFinalDisplayString(gbp);
+        String text = finalDisplayString_ != null ? finalDisplayString_ : getFinalDisplayString();
         item.setData(proposal_);
         item.setImage(proposal_.getImage());
         item.setText(text);
         Color foregroundColor = decideColor(item);
         if (foregroundColor != null)
             item.setForeground(foregroundColor);
+    }
+    
+    public void cacheDisplayFields()
+    {
+        if (finalDisplayString_ == null)
+            finalDisplayString_ = getFinalDisplayString();
     }
 
     private Color decideColor(TableItem item)
@@ -170,23 +186,18 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     
     public String getFinalDisplayString()
     {
-        return getFinalDisplayString(false);
-    }
-
-    public String getFinalDisplayString(boolean gbp)
-    {
-        String gbpInformation = getGBPInformation(gbp);
+        String gbpInformation = getGBPInformation();
         String prefix = getPrefix();
-        String displayString = getDisplayStringWithContext(gbp);
+        String displayString = getDisplayStringWithContext();
         String text = prefix + gbpInformation + displayString;
         return text;
     }
     
-    private String getGBPInformation(boolean gbp)
+    private String getGBPInformation()
     {
         Squiggly ce = getRecentCompilationError();
         SquigglyDetails ced = (ce == null ? null : getCompilationError().computeDetails());
-        String result = gbp ? ((ced == null ? "!" : ced.toString()) + ": ") : "";
+        String result = gbp_ ? ((ced == null ? "!" : ced.toString()) + ": ") : "";
         return result;
     }
 
@@ -195,13 +206,13 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
         return "(" + resolveErrorsAfter() + ") ";
     }
 
-    private String getDisplayStringWithContext(boolean gbp)
+    private String getDisplayStringWithContext()
     {
         if (proposal_ == null)
             return "null";
         
         String result = proposal_.getDisplayString();
-        if (gbp)
+        if (gbp_)
         {
             try
             {

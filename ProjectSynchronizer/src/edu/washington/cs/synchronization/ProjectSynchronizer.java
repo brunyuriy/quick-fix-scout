@@ -542,9 +542,9 @@ public class ProjectSynchronizer
     {
         if (shadow_ != null)
         {
-            Zipper zipper = new Zipper(directory, zipName);
             try
             {
+                Zipper zipper = new Zipper(directory, zipName);
                 zipper.addFolder(new File(shadow_.getLocation().toString()));
                 zipper.close();
                 File zipFile = new File(directory, zipName);

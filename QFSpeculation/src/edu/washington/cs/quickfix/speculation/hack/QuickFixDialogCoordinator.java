@@ -193,6 +193,11 @@ public class QuickFixDialogCoordinator
         {
             if (!currentDisplayStrings.contains(proposal.getDisplayString()))
             {
+//                System.out.println("Calculated: ");
+//                for (String displayString: currentDisplayStrings)
+//                    System.out.println(displayString);
+//                System.out.println("Comparing: " + proposal.getDisplayString());
+//                System.out.println(proposal);
                 boolean fixesAtLeastOne = false;
                 for (Squiggly compilationError: compilationErrors)
                 {
