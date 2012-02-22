@@ -153,6 +153,7 @@ public class ObservationLogSender
         catch (Exception e)
         {
             logger.log(Level.SEVERE, "Cannot send e-mail due to exception." + e);
+            result = false;
         }
         return result;
     }

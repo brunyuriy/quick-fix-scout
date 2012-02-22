@@ -1,3 +1,4 @@
 0.9.0: 	Initial release.
 0.9.1: 	Implemented a new exception when the attachment size is too big so that this can be handled differently by the clients. 
 		Currently only Gmail implements this feature (> 24 mb).
+0.9.2:	Minor point update for the release.

@@ -661,6 +661,15 @@ public class QFSession
         {
             return value ? Action.TRUE : Action.FALSE;
         }
+        
+        public Boolean toBoolean()
+        {
+            if (this == Action.FALSE)
+                return false;
+            if (this == Action.TRUE)
+                return true;
+            return null;
+        }
     }
 
     void assertProposalSelection()

@@ -1,2 +1,3 @@
-0.9.0: Initial Release with helper methods.
-1.0.0: Complete Javadoc documentation and split the common parts of usage observer hack and speculation hack plug-ins into a new hack plug-in. 
+0.9.0: 	Initial Release with helper methods.
+1.0.0: 	Complete Javadoc documentation and split the common parts of usage observer hack and speculation hack plug-ins into a new hack plug-in. 
+1.1.0:	Added required hooks for hover operations.

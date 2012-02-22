@@ -35,3 +35,4 @@
 1.1.1:	Improvements so that multiple .zip files (in case log directory is big) can be send by e-mail. (issue 34)
 1.1.2:	Added check at the beginning of the plug-in whether auto-sending logs is enabled or not. If not, a message is shown that asks if the user wants to enable this feature. (issue 37)
 1.1.3:	Added check at the beginning of the plug-in whether snapshot feature is enabled or not. If not, a message is shown that asks if the user wants to enable this feature. (issue 38)
+1.1.4:	Minor point update for the release.

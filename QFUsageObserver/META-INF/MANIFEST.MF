@@ -1,5 +1,5 @@
 Bundle-SymbolicName: edu.washington.cs.quickfix.observation;singleton=true
-Bundle-Version: 1.1.3
+Bundle-Version: 1.1.4
 Bundle-Name: Quick Fix Observation
 Bundle-Vendor: Kivanc Muslu
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

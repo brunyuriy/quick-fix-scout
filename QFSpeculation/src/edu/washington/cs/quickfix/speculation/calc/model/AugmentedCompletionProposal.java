@@ -454,9 +454,9 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     {
         if (errorsAfter_ == Squiggly.UNKNOWN)
             return "N/A";
-//            return "2";
+//            return "1";
         else if (errorsAfter_ == Squiggly.NOT_COMPUTED)
-//            return "2";
+//            return "1";
             return "?";
         
         return errorsAfter_.length + "";

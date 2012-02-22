@@ -625,9 +625,10 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         if (activationRecord_.isInvalid() || isDead())
             throw new InvalidatedException();
         if (SpeculationUtility.isFlaggedProposal(shadowProposal))
+//            return new Squiggly[2];
             return Squiggly.NOT_COMPUTED;
         if (SpeculationUtility.isInteractiveProposal(shadowProposal))
-//            return new Squiggly[1];
+//            return new Squiggly[2];
             return Squiggly.NOT_COMPUTED;
         
         Squiggly [] errors = Squiggly.UNKNOWN;

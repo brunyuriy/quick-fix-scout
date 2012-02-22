@@ -24,4 +24,4 @@
 1.5.5:	Integration with the new zip library API. (issue 33, 34)
 1.5.6:	Improvements so that multiple .zip files (in case log directory is big) can be send by e-mail. (issue 34)
 1.5.7:	Changed the welcome message so that it contains live hyperlinks. 
-
+1.5.8:	Minor point update for the release.

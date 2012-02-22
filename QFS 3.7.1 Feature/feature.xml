@@ -2,7 +2,7 @@
 <feature
       id="edu.washington.cs.qfs_371"
       label="Quick Fix Scout 3.7.1"
-      version="0.1.0"
+      version="0.2.0"
       provider-name="Kivanc Muslu">
 
    <description url="http://quick-fix-scout.googlecode.com/">
@@ -126,13 +126,6 @@ quick fix proposals.
 
    <plugin
          id="org.eclipse.jface.text"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.eclipse.jdt.ui"
          download-size="0"
          install-size="0"
          version="0.0.0"
