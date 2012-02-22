@@ -1,7 +1,7 @@
 package edu.washington.cs.quickfix.speculation.hack;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,10 +22,18 @@ public class QuickFixDialogCoordinator
 {
     private static final QuickFixDialogCoordinator instance_ = new QuickFixDialogCoordinator();
 
+    private static final Logger proposalResolutionLogger_ = Logger.getLogger(QuickFixDialogCoordinator.class.getName() + ".proposal.resolution");
+    static
+    {
+        proposalResolutionLogger_.setLevel(Level.WARNING);
+        // logger.setLevel(Level.FINER);
+        // logger.setLevel(Level.FINEST);
+    }
+    
     private static final Logger logger = Logger.getLogger(QuickFixDialogCoordinator.class.getName());
     static
     {
-        logger.setLevel(Level.FINE);
+        logger.setLevel(Level.INFO);
         // logger.setLevel(Level.FINER);
         // logger.setLevel(Level.FINEST);
     }
@@ -174,16 +182,22 @@ public class QuickFixDialogCoordinator
             calculatedProposals = calculatedProposals_;
             compilationErrors = compilationErrors_;
             bestProposals = bestProposals_;
+            globalBestProposals_.clear();
         }
         
+        ArrayList <AugmentedCompletionProposal> gbps = new ArrayList <AugmentedCompletionProposal>();
         HashSet <String> currentDisplayStrings = new HashSet <String>();
         for (AugmentedCompletionProposal proposal: calculatedProposals)
             currentDisplayStrings.add(proposal.getDisplayString());
-        globalBestProposals_.clear();
         for (AugmentedCompletionProposal proposal: bestProposals)
         {
             if (!currentDisplayStrings.contains(proposal.getDisplayString()))
             {
+//                System.out.println("Calculated: ");
+//                for (String displayString: currentDisplayStrings)
+//                    System.out.println(displayString);
+//                System.out.println("Comparing: " + proposal.getDisplayString());
+//                System.out.println(proposal);
                 boolean fixesAtLeastOne = false;
                 for (Squiggly compilationError: compilationErrors)
                 {
@@ -191,15 +205,20 @@ public class QuickFixDialogCoordinator
                         fixesAtLeastOne = true;
                 }
                 if (fixesAtLeastOne)
-                    globalBestProposals_.add(proposal);
+                    gbps.add(proposal);
             }
+        }
+        
+        synchronized(lock_)
+        {
+            globalBestProposals_ = gbps;
         }
     }
 
     // TODO proposals are completely contained by augmented proposals. Not needed.
     // This todo does not make sense, I wonder if I tried to mean eclipseProposals are contained by
     // augmentedProposals?
-    private boolean constructLocalProposalsInternally()
+    private void constructLocalProposalsInternally()
     {
         AugmentedCompletionProposal [] calculatedProposals;
         IJavaCompletionProposal [] eclipseProposals;
@@ -207,51 +226,50 @@ public class QuickFixDialogCoordinator
         {
             calculatedProposals = calculatedProposals_;
             eclipseProposals = eclipseProposals_;
+            localProposals_ = null;
         }
         
-        synchronized (lock_)
+        calculateGBPs();
+        ArrayList <AugmentedCompletionProposal> localProposals = new ArrayList <AugmentedCompletionProposal>();
+        for (int a = 0; a < calculatedProposals.length; a++)
         {
-            calculateGBPs();
-            int calculatedProposalsSize = calculatedProposals.length;
-            localProposals_ = new AugmentedCompletionProposal [calculatedProposalsSize];
-            for (int a = 0; a < localProposals_.length; a++)
+            AugmentedCompletionProposal calculatedProposal = calculatedProposals[a];
+            Squiggly [] errorAfter = calculatedProposal.getRemainingErrors();
+            int errorBefore = calculatedProposal.getErrorBefore();
+            ICompletionProposal eclipseProposal = (SpeculationCalculator.TEST_TRANSFORMATION) ? calculatedProposal
+                    .getProposal() : null;
+            if (eclipseProposal == null)
             {
-                AugmentedCompletionProposal calculatedProposal = calculatedProposals[a];
-                Squiggly [] errorAfter = calculatedProposal.getRemainingErrors();
-                int errorBefore = calculatedProposal.getErrorBefore();
-                ICompletionProposal eclipseProposal = (SpeculationCalculator.TEST_TRANSFORMATION) ? calculatedProposal
-                        .getProposal() : null;
-                if (eclipseProposal == null)
+                for (ICompletionProposal eclipseProp: eclipseProposals)
                 {
-                    for (ICompletionProposal eclipseProp: eclipseProposals)
-                    {
-                        if (eclipseProp.getDisplayString().equals(calculatedProposal.getDisplayString()))
-                            eclipseProposal = eclipseProp;
-                    }
+                    if (eclipseProp.getDisplayString().equals(calculatedProposal.getDisplayString()))
+                        eclipseProposal = eclipseProp;
                 }
-                if (eclipseProposal == null)
-                {
-                    StringBuilder log = new StringBuilder();
-                    String ls = System.getProperty("line.separator");
-                    log.append("Couldn't find the corresponding eclipse proposal for calculated proposal: "
-                        + calculatedProposal + ". Retrying in 10 ms");
-                    log.append("Eclipse proposals: " + ls);
-                    for (ICompletionProposal proposal: eclipseProposals)
-                        log.append(proposal.getDisplayString() + ls);
-                    logger.warning(log.toString());
-                    return false;
-                }
+            }
+            if (eclipseProposal == null)
+            {
+                String ls = System.getProperty("line.separator");
+                StringBuilder log = new StringBuilder();
+                log.append("Couldn't find the corresponding eclipse proposal for calculated proposal: "
+                        + calculatedProposal);
+                log.append("Eclipse proposals: " + ls);
+                for (ICompletionProposal proposal: eclipseProposals)
+                    log.append(proposal.getDisplayString() + ls);
+                proposalResolutionLogger_.info(log.toString());
+            }
+            else
                 // For eclipse proposals, it is okay to pass 'null' as compilation error since we are only using
                 // location for
                 // best proposals.
-                localProposals_[a] = new AugmentedCompletionProposal(eclipseProposal, null, errorAfter, errorBefore);
-            }
-            Arrays.sort(localProposals_);
-            logger.finest("Constructed the following modified strings for the invoked quick fix:");
-            for (AugmentedCompletionProposal proposal: localProposals_)
-                logger.finest(proposal.toString());
-            
-            return true;
+                localProposals.add(new AugmentedCompletionProposal(eclipseProposal, null, errorAfter, errorBefore));
+        }
+        Collections.sort(localProposals);
+        logger.finest("Constructed the following modified strings for the invoked quick fix:");
+        for (AugmentedCompletionProposal proposal: localProposals)
+            logger.finest(proposal.toString());
+        synchronized (lock_)
+        {
+            localProposals_ = localProposals.toArray(new AugmentedCompletionProposal [localProposals.size()]);
         }
     }
     
@@ -300,7 +318,7 @@ public class QuickFixDialogCoordinator
             boolean found = false;
             for (AugmentedCompletionProposal prop: localProposals_)
             {
-                if (prop.getDisplayString().equals(displayInformation))
+                if (prop != null && prop.getDisplayString().equals(displayInformation))
                     found = true;
             }
             if (!found)

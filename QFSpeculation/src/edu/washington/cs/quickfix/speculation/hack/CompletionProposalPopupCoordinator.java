@@ -1,6 +1,7 @@
 package edu.washington.cs.quickfix.speculation.hack;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -12,6 +13,7 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
 
 import edu.washington.cs.quickfix.speculation.calc.model.AugmentedCompletionProposal;
+import edu.washington.cs.util.log.CommonLoggers;
 //@formatter:off
 /*
  * Facts:
@@ -39,7 +41,7 @@ public class CompletionProposalPopupCoordinator
     private ArrayList <ICompletionProposal> tableProposals_ = new ArrayList <ICompletionProposal>();
 
     private ArrayList<AugmentedCompletionProposal> globalBestProposals_;
-    private AugmentedCompletionProposal [] localProposals_;
+    private ArrayList <AugmentedCompletionProposal> localProposals_;
     
     private Object lock_ = new Object();
 
@@ -61,109 +63,147 @@ public class CompletionProposalPopupCoordinator
         }
         synchronized(lock_)
         {
-            globalBestProposals_ = globalBestProposals;
-            localProposals_ = localProposals;
+            globalBestProposals_ = new ArrayList <AugmentedCompletionProposal>(globalBestProposals);
+            localProposals_ = new ArrayList <AugmentedCompletionProposal>(Arrays.asList(localProposals));
         }
         // Cannnot synchronize this since this will be done inside another thread.
         updateProposalTableInternalInUIThread();
     }
 
+    private void computeTableValues(HashSet <String> addedProposals, ArrayList <AugmentedCompletionProposal> globalBestProposals,
+            ArrayList <AugmentedCompletionProposal> localProposals, ArrayList <ICompletionProposal> tableProposals)
+    {
+        if (!isCurrentPopupActive())
+            return;
+        
+        ArrayList <AugmentedCompletionProposal> gbps;
+        ArrayList <AugmentedCompletionProposal> lps;
+        synchronized(lock_)
+        {
+            gbps = globalBestProposals_;
+            lps = localProposals_;
+        }
+        ArrayList NotFixingGlobalProposal = new ArrayList();
+        ArrayList NotFixingLocalProposal = new ArrayList();
+        // First enter the global best proposals.
+        for (AugmentedCompletionProposal globalBestProposal: gbps)
+        {
+            try
+            {
+                QuickFixDialogCoordinator.getCoordinator().resolve(globalBestProposal);
+                if (!addedProposals.contains(globalBestProposal.getDisplayString()))
+                {
+                    logger.finest("Adding proposal: " + globalBestProposal.getDisplayString() + " as GBP.");
+                    globalBestProposal.makeGBP();
+                    globalBestProposal.cacheDisplayFields();
+                    if globalBestProposal.canFix(globalBestProposal.getCompilationError());
+                    tableProposals.add(globalBestProposal.getProposal());
+                    addedProposals.add(globalBestProposal.getDisplayString());
+                    globalBestProposals.add(globalBestProposal);
+                }
+            }
+            catch (GBPResolutionException e)
+            {
+                // This is known when the proposals from Eclipse is not retrieved yet. So, just pass.
+                logger.log(Level.FINE, "Cannot resolve global best proposal for shadow proposal = "
+                        + globalBestProposal.getDisplayString(), e);
+            }
+        }
+        // Then, enter the local proposals ordered.
+        for (AugmentedCompletionProposal localProposal: lps)
+        {
+            assert localProposal != null: "Received a local proposals that is null";
+            if (!addedProposals.contains(localProposal.getDisplayString()))
+            {
+                logger.finest("Adding proposal: " + localProposal.getDisplayString() + " as local proposal.");
+                //localProposal.cacheDisplayFields();
+                tableProposals.add(localProposal.getProposal());
+                addedProposals.add(localProposal.getDisplayString());
+                localProposals.add(localProposal);
+            }
+        }
+    }
+    
     private void updateProposalTableInternalInUIThread()
     {
         if (!isCurrentPopupActive())
             return;
+        
+        final HashSet <String> addedProposals = new HashSet <String>();
+        final ArrayList<AugmentedCompletionProposal> globalBestProposals = new ArrayList <AugmentedCompletionProposal>();
+        final ArrayList<AugmentedCompletionProposal> localProposals = new ArrayList <AugmentedCompletionProposal>();
+        final ArrayList<ICompletionProposal> tableProposals = new ArrayList <ICompletionProposal>();
+        computeTableValues(addedProposals, globalBestProposals, localProposals, tableProposals);
+        
         Display.getDefault().syncExec(new Runnable()
         {
             @Override
             public void run()
             {
-                System.out.println("updating proposals internal");
-                updateProposalTableInternal();
+                updateProposalTableInternal(addedProposals, globalBestProposals, localProposals, tableProposals);
             }
         });
     }
     
-    private void updateProposalTableInternal()
+    private void updateProposalTableInternal(HashSet <String> addedProposals, ArrayList<AugmentedCompletionProposal> globalBestProposals,
+            ArrayList <AugmentedCompletionProposal> localProposals, ArrayList <ICompletionProposal> tableProposals)
     {
         if (!isCurrentPopupActive())
         {
             logger.finer("Current popup is no longer active, not updating the UI.");
             return;
         }
+        Table table;
         synchronized(lock_)
         {
-            table_.setRedraw(false);
+            table = table_;
             tableProposals_.clear();
-            TableItem [] items = table_.getItems();
-            int knownStyle = items.length > 0 ? items[0].getStyle() : -1;
-            // Here we need to decide which proposals are not included by our computation.
-            // This is non-trivial, since the calculation re-ordered the proposals.
-            ICompletionProposal [] nonProcessedProposals = getNonProcessedProposals(items);
-            HashSet <String> addedProposals = new HashSet <String>();
-            // First enter the global best proposals.
-            int gbpSize = 0;
-            for (AugmentedCompletionProposal globalBestProposal: globalBestProposals_)
-            {
-                try
-                {
-                    QuickFixDialogCoordinator.getCoordinator().resolve(globalBestProposal);
-                    if (!addedProposals.contains(globalBestProposal.getDisplayString()))
-                    {
-                        logger.finest("Adding proposal: " + globalBestProposal.getDisplayString() + " as GBP.");
-                        addedProposals.add(globalBestProposal.getDisplayString());
-                        setTableItem(globalBestProposal, gbpSize, knownStyle, true);
-                        gbpSize++;
-                    }
-                }
-                catch (GBPResolutionException e)
-                {
-                    logger.log(Level.INFO, "Cannot resolve global best proposal for shadow proposal = "
-                            + globalBestProposal.getDisplayString(), e);
-                }
-            }
-            // Then, enter the local proposals ordered.
-            int localProposalSize = 0;
-            for (AugmentedCompletionProposal localProposal: localProposals_)
-            {
-                if (!addedProposals.contains(localProposal.getDisplayString()))
-                {
-                    logger.finest("Adding proposal: " + localProposal.getDisplayString() + " as local proposal.");
-                    addedProposals.add(localProposal.getDisplayString());
-                    setTableItem(localProposal, localProposalSize + gbpSize, knownStyle, false);
-                    localProposalSize++;
-                }
-            }
-            // Then, enter the proposals that we don't have a calculation for.
-            int nonProcessedProposalSize = 0;
-            for (ICompletionProposal nonProcessedProposal: nonProcessedProposals)
-            {
-                if (!addedProposals.contains(nonProcessedProposal.getDisplayString()))
-                {
-                    logger.finest("Adding proposal: " + nonProcessedProposal.getDisplayString()
-                            + " as non processed proposal.");
-                    addedProposals.add(nonProcessedProposal.getDisplayString());
-                    setTableItem(nonProcessedProposal, nonProcessedProposalSize + gbpSize + localProposalSize, knownStyle);
-                    nonProcessedProposalSize++;
-                }
-            }
-            // TableItem seperator = new TableItem(table_, knownStyle, nonProcessedProposalSize + gbpSize +
-            // localProposalSize);
-            // seperator.setText("_________________ Kivanc _____________");
-            // table_.setItemCount(nonProcessedProposalSize + gbpSize + localProposalSize + 1);
-            table_.setItemCount(nonProcessedProposalSize + gbpSize + localProposalSize);
-            table_.setRedraw(true);
-            table_.redraw();
         }
+        
+        table.setRedraw(false);
+        TableItem [] items = table.getItems();
+        int knownStyle = items.length > 0 ? items[0].getStyle() : -1;
+        // Here we need to decide which proposals are not included by our computation.
+        // This is non-trivial, since the calculation re-ordered the proposals.
+        ICompletionProposal [] nonProcessedProposals = getNonProcessedProposals(items);
+        // First enter the global best proposals.
+        for (int a = 0; a < globalBestProposals.size(); a++)
+            setTableItem(globalBestProposals.get(a), a, knownStyle);
+        // Then, enter the local proposals ordered.
+        for (int a = 0; a < localProposals.size(); a++)
+            setTableItem(localProposals.get(a), globalBestProposals.size() + a, knownStyle);
+
+        // Then, enter the proposals that we don't have a calculation for.
+        int nonProcessedProposalSize = 0;
+        for (ICompletionProposal nonProcessedProposal: nonProcessedProposals)
+        {
+            if (!addedProposals.contains(nonProcessedProposal.getDisplayString()))
+            {
+                logger.finest("Adding proposal: " + nonProcessedProposal.getDisplayString()
+                        + " as non processed proposal.");
+                addedProposals.add(nonProcessedProposal.getDisplayString());
+                tableProposals.add(nonProcessedProposal);
+                setTableItem(nonProcessedProposal, nonProcessedProposalSize + globalBestProposals.size() + localProposals.size(), knownStyle);
+                nonProcessedProposalSize++;
+            }
+        }
+        table.setItemCount(nonProcessedProposalSize + globalBestProposals.size() + localProposals.size());
+        
+        synchronized(lock_)
+        {
+            tableProposals_ = tableProposals;
+        }
+        table.setRedraw(true);
+        table.redraw();
     }
 
-    private void setTableItem(AugmentedCompletionProposal proposal, int index, int knownStyle, boolean gbp)
+    private void setTableItem(AugmentedCompletionProposal proposal, int index, int knownStyle)
     {
         TableItem item = (table_.getItemCount() > index) ? table_.getItem(index) : null;
         // This can happen due to newly added items.
         if (item == null)
             item = new TableItem(table_, knownStyle, index);
-        tableProposals_.add(proposal.getProposal());
-        proposal.setYourselfAsTableItem(item, gbp);
+        proposal.setYourselfAsTableItem(item);
     }
 
     private void setTableItem(ICompletionProposal proposal, int index, int knownStyle)
@@ -172,11 +212,10 @@ public class CompletionProposalPopupCoordinator
         // This can happen due to newly added items.
         if (item == null)
             item = new TableItem(table_, knownStyle, index);
-        tableProposals_.add(proposal);
         item.setData(proposal);
         String displayInformation = proposal.getDisplayString();
         if (!displayInformation.startsWith("(N/A) "))
-            // displayInformation = "(2) " + displayInformation;
+//             displayInformation = "(2) " + displayInformation;
             displayInformation = "(N/A) " + displayInformation;
         item.setText(displayInformation);
     }
@@ -195,7 +234,7 @@ public class CompletionProposalPopupCoordinator
                 proposals.add(proposal);
             }
             else
-                logger.warning("Got a proposal that is not iCompletionProposal. proposal.getClass() = "
+                logger.fine("Got a proposal that is not iCompletionProposal. proposal.getClass() = "
                     + (data == null ? "null" : data.getClass()));
         }
         return QuickFixDialogCoordinator.getCoordinator().getNonProcessedProposals(proposals.toArray(new ICompletionProposal[proposals.size()]));
@@ -259,9 +298,16 @@ public class CompletionProposalPopupCoordinator
      */
     public void tableUpdated()
     {
-        logger.fine("Communication: table updated message is received.");
+        CommonLoggers.getCommunicationLogger().fine("Table updated message is received.");
         if (localProposals_ != null)
-            updateProposalTableInternal();
+        {
+            final HashSet <String> addedProposals = new HashSet <String>();
+            final ArrayList<AugmentedCompletionProposal> globalBestProposals = new ArrayList <AugmentedCompletionProposal>();
+            final ArrayList<AugmentedCompletionProposal> localProposals = new ArrayList <AugmentedCompletionProposal>();
+            final ArrayList<ICompletionProposal> tableProposals = new ArrayList <ICompletionProposal>();
+            computeTableValues(addedProposals, globalBestProposals, localProposals, tableProposals);
+            updateProposalTableInternal(addedProposals, localProposals, localProposals, tableProposals);
+        }
         else
             QuickFixDialogCoordinator.getCoordinator().awake();
     }
