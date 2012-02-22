@@ -4,6 +4,7 @@ import org.eclipse.jface.text.contentassist.ICompletionProposal;
 
 import edu.washington.cs.quickfix.observation.hack.ICompletionProposalPopupUsageHack;
 import edu.washington.cs.quickfix.observation.log.ObservationLogger;
+import edu.washington.cs.quickfix.observation.log.internal.QFSession.QFSessionType;
 
 public class CompletionProposalPopupUsageExecutor implements ICompletionProposalPopupUsageHack
 {
@@ -24,7 +25,7 @@ public class CompletionProposalPopupUsageExecutor implements ICompletionProposal
     @Override
     public void proposalTableSet()
     {
-        ObservationLogger.getLogger().logPopupCreated();
+        ObservationLogger.getLogger().logPopupCreated(QFSessionType.DIALOG);
     }
 
     @Override
@@ -39,5 +40,17 @@ public class CompletionProposalPopupUsageExecutor implements ICompletionProposal
         // This cannot fail!
         ICompletionProposal proposal = (ICompletionProposal) proposalObject;
         ObservationLogger.getLogger().logProposalSelected(proposal);
+    }
+
+    @Override
+    public void hoverPopupCreated()
+    {
+        ObservationLogger.getLogger().logPopupCreated(QFSessionType.HOVER);
+    }
+
+    @Override
+    public void hoverPopupClosed()
+    {
+        ObservationLogger.getLogger().logPopupClosed();
     }
 }

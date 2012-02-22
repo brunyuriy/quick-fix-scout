@@ -12,6 +12,10 @@ import edu.washington.cs.synchronization.ProjectSynchronizer;
 import edu.washington.cs.synchronization.sync.internal.CursorChangedListener;
 import edu.washington.cs.util.log.LogHandlers;
 
+// Source code that is change in Eclipse.
+// 1. AbstractAnnotationHover in org.eclipse.ui
+// 2. CompletionProposalPopup in org.eclipse.jface.text
+
 public class Speculator implements CursorChangedListener
 {
     public static final String PLUG_IN_ID = "edu.washington.cs.quickfix.speculation";
@@ -139,13 +143,19 @@ public class Speculator implements CursorChangedListener
         if (currentProject == null || !currentProject.getName().equals(project.getName()))
             speculateProject(file);
         else if (currentProject != null && project.getName().equals(currentProject.getName()))
-            getCurrentCalculator().setCurrentFile(file);
+        {
+            SpeculationCalculator calculator = getCurrentCalculator();
+            if (calculator != null)
+                calculator.setCurrentFile(file);
+        }
     }
 
     @Override
     public void cursorChanged(int offset)
     {
-        getCurrentCalculator().setCursorOffset(offset);
+        SpeculationCalculator calculator = getCurrentCalculator();
+        if (calculator != null)
+            calculator.setCursorOffset(offset);
     }
 
     public void updateTypingSessionTime(int value)

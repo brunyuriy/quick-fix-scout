@@ -17,7 +17,7 @@ import edu.washington.cs.quickfix.speculation.Speculator;
 import edu.washington.cs.quickfix.speculation.calc.model.AugmentedCompletionProposal;
 import edu.washington.cs.quickfix.speculation.calc.model.SpeculativeAnalysisListener;
 import edu.washington.cs.quickfix.speculation.gui.SpeculationPreferencePage;
-import edu.washington.cs.quickfix.speculation.hack.CompletionProposalPopupCoordinator;
+import edu.washington.cs.quickfix.speculation.hack.QuickFixDialogCoordinator;
 import edu.washington.cs.quickfix.speculation.model.SpeculationUtility;
 import edu.washington.cs.synchronization.ProjectSynchronizer;
 import edu.washington.cs.util.eclipse.QuickFixUtility;
@@ -130,8 +130,8 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
                 extraDebug.append("Problem Location # " + (a + 1) + ls);
                 extraDebug.append(result.get(a).getLocation().toString() + ls);
             }
-            logger.warning("Precaching problem locations failed. # of locations = " + locations_.length + 
-                    ", cached # of locations = " + result.size() + ls + extraDebug);
+            logger.fine("Precaching problem locations failed. # of locations = " + locations_.length
+                    + ", cached # of locations = " + result.size() + ls + extraDebug);
             return false;
         }
     }
@@ -172,7 +172,7 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
             for (int a = 0; a < proposals.length; a++)
             {
                 // Sometimes due to multiple error locations, the same proposal can be generated from different error
-                // locations. Here, we filter them and make sure that they are shown as one proposal in the UI. 
+                // locations. Here, we filter them and make sure that they are shown as one proposal in the UI.
                 if (!doesInclude(calculatedProposals, augmentedProposals[a]))
                     calculatedProposals.add(augmentedProposals[a]);
             }
@@ -183,7 +183,7 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
         for (int a = 0; a < calculatedProposals.size(); a++)
             logger.finer((a + 1) + "-) " + calculatedProposals.get(a).getDisplayString() + " will result with "
                     + calculatedProposals.get(a).getRemainingErrors().length + " compilation errors.");
-        CompletionProposalPopupCoordinator.getCoordinator().updateProposalTable(eclipseProposals_,
+        QuickFixDialogCoordinator.getCoordinator().updateWithSpeculationResults(eclipseProposals_,
                 calculatedProposals.toArray(new AugmentedCompletionProposal [calculatedProposals.size()]),
                 cachedCompilationErrors_.toArray(new Squiggly [cachedCompilationErrors_.size()]));
     }
@@ -191,9 +191,10 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
     private boolean doesInclude(ArrayList <AugmentedCompletionProposal> calculatedProposals,
             AugmentedCompletionProposal augmentedCompletionProposal)
     {
-        for(AugmentedCompletionProposal calculatedProposal: calculatedProposals)
+        for (AugmentedCompletionProposal calculatedProposal: calculatedProposals)
         {
-            if (calculatedProposal.getProposal().getDisplayString().equals(augmentedCompletionProposal.getProposal().getDisplayString()))
+            if (calculatedProposal.getProposal().getDisplayString()
+                    .equals(augmentedCompletionProposal.getProposal().getDisplayString()))
                 return true;
         }
         return false;

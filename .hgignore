@@ -7,6 +7,11 @@ QFSpeculation/QuickFixSpeculation.target
 QFUsageObserver/sample_logs
 QFDebugAnalyzer
 Analysis
+QFS 3.7.1 Update Site/web/site.css
 syntax: regexp
 .*/doc/.*
 .*/javadoc\.xml
+.*/features/.*
+.*/plugins/.*
+.*artifacts.jar
+.*content.jar

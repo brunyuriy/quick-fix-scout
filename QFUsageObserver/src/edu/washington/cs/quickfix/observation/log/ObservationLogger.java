@@ -14,6 +14,7 @@ import edu.washington.cs.quickfix.bridge.BridgeActionManager;
 import edu.washington.cs.quickfix.bridge.ISpeculatorObserverBridge;
 import edu.washington.cs.quickfix.observation.gui.ObservationPreferencePage;
 import edu.washington.cs.quickfix.observation.log.internal.QFSession;
+import edu.washington.cs.quickfix.observation.log.internal.QFSession.QFSessionType;
 import edu.washington.cs.util.eclipse.SharedConstants;
 
 public class ObservationLogger
@@ -84,14 +85,6 @@ public class ObservationLogger
         logWriter_.close();
     }
 
-    public synchronized void logPopupCreated()
-    {
-        if (currentSession_ == null)
-            currentSession_ = new QFSession();
-        logger.info("Communication: QF popup created.");
-        currentSession_.logPopupCreated();
-    }
-
     public synchronized void logChangePerformed(String name)
     {
         if (previousSession_ != null)
@@ -137,7 +130,7 @@ public class ObservationLogger
         }
         else
         {
-            logger.info("Communication: Selected proposal is set.");
+            logger.info("Communication: Selected proposal (" + (proposal == null ? "null" : proposal.getDisplayString()) + ") is set.");
             currentSession_.logProposalSelected(proposal);
             return currentSession_;
         }
@@ -154,5 +147,14 @@ public class ObservationLogger
         if (currentSession_ == null)
             currentSession_ = new QFSession();
         return currentSession_;
+    }
+    
+    public synchronized void logPopupCreated(QFSessionType type)
+    {
+        if (currentSession_ == null)
+            currentSession_ = new QFSession();
+        logger.info("Communication: QF " + type.toString() + " popup created.");
+        currentSession_.setSessionType(type);
+        currentSession_.logPopupCreated();
     }
 }

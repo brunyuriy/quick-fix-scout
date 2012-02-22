@@ -73,6 +73,8 @@ public class ObservationGrabber extends Thread
         logger.info("Communication: Setting the proposals offered by Eclipse");
         
         ProjectSynchronizer synchronizer = Observer.getUsageObserver().getCurrentSynchronizer();
+        if (synchronizer == null)
+            return;
         boolean internalCheck = synchronizer.testSynchronization();
         if (!internalCheck)
         {

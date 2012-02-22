@@ -33,4 +33,14 @@ public interface ICompletionProposalPopupUsageHack extends IHack
      * @param proposal Completion proposal that is selected.
      */
     void proposalSelected(Object proposal);
+
+    /**
+     * This method is called by Eclipse whenever a new hover popup is created and shown to the user.
+     */
+    void hoverPopupCreated();
+
+    /**
+     * This method is called by Eclipse whever an existing hover popup is closed.
+     */
+    void hoverPopupClosed();
 }

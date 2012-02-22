@@ -21,4 +21,23 @@ public class SwingUtility
         else
             return "<html><div align=justify width=" + width + ">" + text + "</div></html>";
     }
+    
+    static String makeHTML(String text, String style, int width)
+    {
+        if (text.startsWith("<html>"))
+            return text;
+        else
+            return "<html><div align=justify style=\"" + style + "\" width=" + width + ">" + text + "</div></html>";
+    }
+    
+    public static String makeHyperlink(String text, String link)
+    {
+        return "<a href=\"" + link + "\">" + text + "</a>";
+    }
+    
+    public static String makeHyperlink(String text)
+    {
+        return makeHyperlink(text, text);
+    }
+
 }

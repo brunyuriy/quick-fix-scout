@@ -8,3 +8,6 @@
 1.5.0:	Added support for deactivating, reactivating and joining with the Eclipse auto builder. (issue 20)
 1.5.1:	Added support for cleaning up the shadow projects (i.e., deleting the shadow projects that are not used anymore) at the beginning of the load phase. (issue 23)
 1.5.2:	Added support for organizing the shadow projects into QFS Working Set at the beginning of the load phase. (issue 24, 25)
+1.5.3:	Changed the update available message so that it contains live hyperlinks.
+1.5.4:	Added support for caching the context of a squiggly (issue 40).
+1.5.5:	Added don't remind me button for update detections (issue 41).

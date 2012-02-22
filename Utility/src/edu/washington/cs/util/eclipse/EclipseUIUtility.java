@@ -109,6 +109,29 @@ public class EclipseUIUtility
             }
         }.start();
     }
+    
+    private static Object optionDialogResult_;
+    
+    public static Object showOptionDialog(final String message, final String title, final int width, final Object [] options)
+    {
+        Thread runner = new Thread()
+        {
+            public void run()
+            {
+                optionDialogResult_ = KDialog.showOptionDialog(null, message, title, width, options);
+            }
+        };
+        runner.start();
+        try
+        {
+            runner.join();
+        }
+        catch (InterruptedException e)
+        {
+            e.printStackTrace();
+        }
+        return optionDialogResult_;
+    }
 
     /**
      * Internal variable that is used to represent the file that is active and open in the current Eclipse editor.

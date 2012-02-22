@@ -138,7 +138,7 @@ public class ObservationLogSender
                     "quickfix.speculation@gmail.com", "kivancmuslu@gmail.com", "Sending Failure: '"
                             + System.getProperty("user.name") + "' quick fix observer logs",
                     "Sending failed, probably big log size!\n\n");
-            KDialog.showError(null, "Sending logs automatically failed possibly due to size of the created zip file (> 10 mb.)" +
+            KDialog.showError(null, "Sending logs automatically failed possibly due to size of the created zip file (> 20 mb.)" +
             		"<br>Please get rid of the big log files (either delete, or copy them somewhere else) in your ~HOME/Quick_Fix_Usage" +
             		" directory and try again.<br><br>Thank you for your patience.", "Cannot Sends Logs Automatically", 500); 
             try

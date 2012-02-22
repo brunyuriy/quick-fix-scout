@@ -464,6 +464,11 @@ public class ProjectSynchronizer
             {
                 IBuffer originalBuffer = originalUnit.getBuffer();
                 IBuffer shadowBuffer = shadowUnit.getBuffer();
+                if (!originalBuffer.hasUnsavedChanges())
+                {
+//                    System.out.println("Not doing a buffer sync since there is no unsaved changes.");
+                    return false;
+                }
                 String originalContents = originalBuffer.getContents();
                 String shadowContents = shadowBuffer.getContents();
                 if (!originalContents.equals(shadowContents))
@@ -609,6 +614,7 @@ public class ProjectSynchronizer
                 ResourceUtility.copyFile(original, shadow);
                 // ResourceUtility.deleteResource(shadow);
                 // ResourceUtility.copyResource(original, shadow);
+                syncBuffers(original, shadow);
             }
             // else, it means that the files are already in sync.
         }

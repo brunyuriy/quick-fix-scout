@@ -59,3 +59,5 @@
 		Eclipse auto builder won't clash with the incremental build calls done on the shadow project. (issue 20)
 1.3.0:	Updated the implementation so that typing session now really affects the computation delay. (issue 28)
 1.3.1:	Removed dependency for Speculation Converter.
+1.4.1:	Added heuristic based optimization that uses previous speculative analysis results in case there is no change in the compilation errors in the project (number and content).
+		It is not perfect, but it is a start. (issue 40)

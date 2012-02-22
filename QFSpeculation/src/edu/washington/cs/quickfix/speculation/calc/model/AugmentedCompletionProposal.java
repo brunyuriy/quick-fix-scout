@@ -19,6 +19,7 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     private ICompletionProposal proposal_;
     private final int errorBefore_;
     private final Squiggly compilationError_;
+    private Squiggly recentCompilationError_;
     public static final int NOT_AVAILABLE = -1;
     private final Squiggly [] errorsAfter_;
     
@@ -34,6 +35,7 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
         errorBefore_ = errorBefore;
         compilationError_ = compilationError;
         errorsAfter_ = errorsAfter;
+        recentCompilationError_ = null;
     }
     
     public void setProposal(ICompletionProposal proposal)
@@ -44,6 +46,16 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     public Squiggly getCompilationError()
     {
         return compilationError_;
+    }
+    
+    public Squiggly getRecentCompilationError()
+    {
+        return recentCompilationError_ == null ? compilationError_ : recentCompilationError_;
+    }
+    
+    public void updateCompilationError(Squiggly compilationError)
+    {
+        recentCompilationError_ = compilationError;
     }
     
     public Squiggly [] getRemainingErrors()
@@ -172,7 +184,7 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     
     private String getGBPInformation(boolean gbp)
     {
-        Squiggly ce = getCompilationError();
+        Squiggly ce = getRecentCompilationError();
         SquigglyDetails ced = (ce == null ? null : getCompilationError().computeDetails());
         String result = gbp ? ((ced == null ? "!" : ced.toString()) + ": ") : "";
         return result;

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Swing Utility
 Bundle-SymbolicName: edu.washington.cs.swing
-Bundle-Version: 0.1.0
+Bundle-Version: 0.3.0
 Bundle-Vendor: Kivanc Muslu
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Export-Package: edu.washington.cs.swing

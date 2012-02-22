@@ -12,6 +12,7 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 
 import edu.washington.cs.swing.KDialog;
+import edu.washington.cs.swing.SwingUtility;
 import edu.washington.cs.synchronization.sync.SynchronizerCursorListener;
 import edu.washington.cs.synchronization.sync.SynchronizerFileBufferListener;
 import edu.washington.cs.synchronization.sync.SynchronizerResourceChangeListener;
@@ -88,28 +89,18 @@ public class SynchronizerStarter implements IStartup
     {
         PreferencesUtility prefs_ = new PreferencesUtility(ProjectSynchronizer.PLUG_IN_ID);
         // Open the comment for testing.
-//         prefs_.put(WELCOME_MESSAGE_ID, false);
+//        prefs_.put(WELCOME_MESSAGE_ID, false);
         boolean welcome = prefs_.getBoolean(WELCOME_MESSAGE_ID);
         if (!welcome)
         {
             String ls = "<br>";
             //@formatter:off
-            /*
-             * Actual message: 
-             * Thank you for installing QuickFixScout, developed by Kivanc Muslu.
-             * 
-             * To enable or disable features, use the preferences menu.
-             * QuickFixScout will create several extra projects (names will start with DO_NOT_DELETE) in your workspace. Please don't touch these projects.  I recommend you switch to "working sets view" for this reason.  
-             * 
-             * For more information about the plug-in, or to give feedback, please visit: <website>.
-             * Please note that this message will only show once for each of your Workspaces.
-             */
             String message = "Thank you for installing Quick Fix Scout, developed by Kivanc Muslu." + ls + ls
             + "- To enable or disable features, use the preferences menu." + ls
             + "- Quick Fix Scout will create several extra projects (names will start with <b>DO_NOT_DELETE</b>) in your workspace"
             + ", which are hidden by default. Please <b>don't touch</b> these projects. ." + ls + ls
             + "For more information about the plug-in, or to give feedback, please visit: " + ls + 
-            "http://www.kivancmuslu.com/Quick_Fix_Scout" + ls
+            SwingUtility.makeHyperlink("http://www.kivancmuslu.com/Quick_Fix_Scout") + ls
             + "<b>Note: </b> This message will only show <b>once</b> for each of your Workspaces."
             ;
             // messagePane.setIcon(null);
