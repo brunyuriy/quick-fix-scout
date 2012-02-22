@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Hack
+Bundle-SymbolicName: edu.washington.cs.hack
+Bundle-Version: 1.0.0
+Bundle-Vendor: Kivanc Muslu
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Require-Bundle: org.eclipse.core.runtime;bundle-version="3.6.0",
+ edu.washington.cs.logging;bundle-version="1.0.0"
+Export-Package: edu.washington.cs.hack

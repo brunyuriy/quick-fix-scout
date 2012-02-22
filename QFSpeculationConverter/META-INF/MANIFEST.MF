@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: QFSpeculationConverter
+Bundle-SymbolicName: edu.washington.cs.quickfix.speculation.converter
+Bundle-Version: 0.2.0
+Bundle-Vendor: Kivanc Muslu
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Require-Bundle: org.eclipse.jdt.core;bundle-version="3.6.1",
+ org.eclipse.core.resources;bundle-version="3.6.0",
+ org.eclipse.jdt.ui;bundle-version="3.6.1",
+ org.eclipse.core.runtime;bundle-version="3.6.0",
+ org.eclipse.jface.text;bundle-version="3.6.1",
+ org.eclipse.ltk.core.refactoring;bundle-version="3.5.100",
+ org.eclipse.swt;bundle-version="3.6.1",
+ org.eclipse.jdt.core.manipulation;bundle-version="1.3.0"
+Export-Package: edu.cs.washington.quickfix.speculation.converter

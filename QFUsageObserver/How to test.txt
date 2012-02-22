@@ -1,0 +1,57 @@
+Test 0: Auto completion should work.
+	Test Scenario
+		1. Open a project (not important which one).
+		2. Try many auto completions and make sure that they work as expected.
+
+Test 1: Synchronization and a small but normal usage.
+	Test Scenario
+		1. Create a new project called Test.
+		2. Create a new class called Test.java
+		3. Write a main method that defines an integer array and sorts that array using bubble sort.
+		4. Make a mistake at the end of implementation intentionally.
+		5. Execute the quick fix that would fix this mistake.
+		6. Select a wrong proposal.
+		7. Undo
+		8. Select the correct proposal.
+	What to Check
+		1. Make sure that at the end shadow project and the normal project are at sync.
+		2. Make sure that in the log, you have the first quick fix selection, the undo and the second quick fix selection.
+		3. Make sure that there are no exceptions during the run of the program.
+		4. Make sure that number of errors before and after are calculated correctly in the log.
+
+Test2: Big project, logging test.
+	Test Scenario
+		1. Open Crystal project.
+		2. Change Constants.java to Constantz.java
+		3. Select different proposals from 2 different files and undo them.
+		4. Select 2 different proposals from the same file and undo them.
+		5. Select 2 different proposals from the same file, only add new line in the middle and undo them.
+		6. Select 2 different proposals from the same file, add some code or comment in the middle and undo them.
+		7. Open a quick fix, but don't select a proposal.
+	What to Check
+		1. The log file should include all selected proposals and undoes except the first undo of the last test. 
+		2. Make sure that there are no exceptions during the run of the program.
+		
+Test3: Activation/Deactivation
+	Test Scenario
+		1. Deactivate the plug-in.
+		2. Open a project
+		3. Select a quick-fix, make an undo, etc.
+		4. Activate the plug-in
+		5. Select a quick-fix, make an undo, etc.
+	What to Check:
+		1. After '2' no usage log should be created.
+		2. After '5' usage logs should be created.
+
+Test3: Sending logs:
+	Test Scenario 1:
+		1. Select send logs periodically.
+		2. Quit Eclipse
+		3. Reopen it.
+	What to Check:
+		1. After 3, all logs except the ones for the current run, should be e-mailed to me and deleted.
+	Test Scenario 2:
+		1. Press 'Send Logs Now' button.
+	What to Check:
+		1. All logs except the ones for the current run, should be e-mailed to me and deleted.
+	

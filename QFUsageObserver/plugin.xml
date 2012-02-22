@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.jdt.ui.quickFixProcessors">
+      <quickFixProcessor
+            class="edu.washington.cs.quickfix.observation.log.ObservationProcessor"
+            id="quickFixUsageProcessor"
+            name="Quick Fix Usage Processor">
+      </quickFixProcessor>
+   </extension>
+   <extension
+         point="edu.washington.cs.quickfix.observation.hack.correctionProposalPopupUsageHack">
+      <hack
+            handlerClass="edu.washington.cs.quickfix.observation.hack.CompletionProposalPopupUsageExecutor"
+            id="correctionProposalPopupUsageExecutor">
+      </hack>
+   </extension>
+   <extension
+         point="org.eclipse.ui.startup">
+      <startup
+            class="edu.washington.cs.quickfix.observation.ObservationStarter">
+      </startup>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="edu.washington.cs.quickfix.observation.gui.ObservationPreferencePage"
+            id="quickFixObserver"
+            name="Quick Fix Observer">
+      </page>
+   </extension>
+
+</plugin>

@@ -1,0 +1,5 @@
+Since javax.mail must be created as a plug-in from the scratch using the mail.jar (there is no source), that project must be created in each computer using the following steps:
+- File/New/Project
+- Choose Plug-in from existing JAR archives
+- Select mail.jar
+- Name the project name and plug-in id as javax.mail (this is important since it is referred as this).
