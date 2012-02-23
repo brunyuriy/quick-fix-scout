@@ -27,6 +27,20 @@ quick fix proposals.
    </url>
 
    <plugin
+         id="com.kivancmuslu.www.time"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="com.kivancmuslu.www.zip"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
          id="edu.washington.cs.email"
          download-size="0"
          install-size="0"
@@ -111,14 +125,7 @@ quick fix proposals.
          unpack="false"/>
 
    <plugin
-         id="com.kivancmuslu.www.time"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="com.kivancmuslu.www.zip"
+         id="javax.mail"
          download-size="0"
          install-size="0"
          version="0.0.0"
