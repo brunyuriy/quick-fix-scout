@@ -545,6 +545,7 @@ public class ProjectSynchronizer
             try
             {
                 Zipper zipper = new Zipper(directory, zipName);
+                zipper.excludePrefixes(".hg");
                 zipper.addFolder(new File(shadow_.getLocation().toString()));
                 zipper.close();
                 File zipFile = new File(directory, zipName);

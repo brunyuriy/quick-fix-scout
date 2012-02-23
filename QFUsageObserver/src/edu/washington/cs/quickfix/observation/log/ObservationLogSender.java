@@ -64,7 +64,8 @@ public class ObservationLogSender
         Zipper zipCreator = new Zipper(result.getAbsolutePath(), ZIP_LIMIT);
         try
         {
-            zipCreator.addFolder(directory, new File(SharedConstants.DEBUG_LOG_PATH), new File(ObservationLogger.LOG_PATH));
+            zipCreator.excludeFiles(new File(SharedConstants.DEBUG_LOG_PATH), new File(ObservationLogger.LOG_PATH));
+            zipCreator.addFolder(directory);
             zipCreator.close();
         }
         catch (ZipException e)
