@@ -261,7 +261,7 @@ public class QuickFixDialogCoordinator
                 // For eclipse proposals, it is okay to pass 'null' as compilation error since we are only using
                 // location for
                 // best proposals.
-                localProposals.add(new AugmentedCompletionProposal(eclipseProposal, null, errorAfter, errorBefore));
+                localProposals.add(new AugmentedCompletionProposal(eclipseProposal, calculatedProposal.getCompilationError(), errorAfter, errorBefore));
         }
         Collections.sort(localProposals);
         logger.finest("Constructed the following modified strings for the invoked quick fix:");
