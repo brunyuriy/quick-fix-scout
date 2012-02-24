@@ -56,6 +56,11 @@ public class ResourceUtility
     public static final String PLUG_IN_ID = "edu.washington.cs.util";
     public static final String VERSION_URL = "http://www.kivancmuslu.com/Quick_Fix_Scout_Files/version.txt";
     /** Logger for debugging. */
+    private static final Logger fileComparisonLogger_ = Logger.getLogger(ResourceUtility.class.getName() + ".file.comparison");
+    static
+    {
+        fileComparisonLogger_.setLevel(Level.WARNING);
+    }
     private static final Logger logger = Logger.getLogger(ResourceUtility.class.getName());
     static
     {
@@ -225,22 +230,33 @@ public class ResourceUtility
      */
     public static boolean areFilesIdentical(IFile file1, IFile file2)
     {
+        fileComparisonLogger_.info("Comparing files: " + file1.getName() + " vs. " + file2.getName());
         // Quickly look at the file sizes to see if they differ.
         try
         {
             if (areFilesSameSize(file1, file2))
             {
+                fileComparisonLogger_.info("Files have the same size.");
                 if (isFirstModifiedLater(file1, file2))
+                {
+                    fileComparisonLogger_.info("The original file is modified later than the shadow file, returning false.");
                     return false;
+                }
                 else
-                    return true;
+                {
+//                    fileComparisonLogger_.info("The original file is modified earlier than the shadow file, returning true.");
+//                    return true;
+                }
             }
             else
+            {
+                fileComparisonLogger_.info("Files does not have the same size, returning false.");
                 return false;
+            }
         }
         catch (CoreException e)
         {
-            logger.log(Level.WARNING,
+            fileComparisonLogger_.log(Level.WARNING,
                     "Tried to check file sizes for files " + file1.getName() + " and " + file2.getName()
                             + " and it failed. However, this was an optimization and does not affect the execution.", e);
         }
@@ -281,11 +297,11 @@ public class ResourceUtility
         }
         catch (CoreException e)
         {
-            logger.log(Level.SEVERE, "Cannot get contents of file (original or shadow) = " + file1.getName(), e);
+            fileComparisonLogger_.log(Level.SEVERE, "Cannot get contents of file (original or shadow) = " + file1.getName(), e);
         }
         catch (IOException e)
         {
-            logger.log(Level.SEVERE, "Cannot read contents of file (original or shadow) = " + file1.getName(), e);
+            fileComparisonLogger_.log(Level.SEVERE, "Cannot read contents of file (original or shadow) = " + file1.getName(), e);
         }
         finally
         {
@@ -298,7 +314,7 @@ public class ResourceUtility
             }
             catch (IOException e)
             {
-                logger.log(Level.SEVERE,
+                fileComparisonLogger_.log(Level.SEVERE,
                         "Cannot close input stream for file (original or shadow) = " + file1.getName(), e);
             }
         }

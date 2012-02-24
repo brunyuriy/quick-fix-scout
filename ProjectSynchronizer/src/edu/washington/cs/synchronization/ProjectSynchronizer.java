@@ -66,6 +66,8 @@ public class ProjectSynchronizer
     private static final long MB = 1024*1024;
     private static final long ZIP_LIMIT = MB * 20;
     
+    public static final boolean CONTOLLED_EXPERIMENT = false;
+    
     private static double toMB(long bytes)
     {
         double result = bytes*1.0/MB;
@@ -300,15 +302,14 @@ public class ProjectSynchronizer
      * Returns <code>true</code> if there is no task (i.e., original project is in sync with the shadow project) at the
      * beginning of the synchronization, <code>false</code> otherwise.
      * 
-     * @return <code>true</code> if there is no task at the beginning of the synchronization, <code>false</code>
-     *         otherwise.
-     */
-    /*
-     * FIXME This method is quite buggy when user tries to change the original project during synchronization. This
-     * about this!
+     * @return <code>true</code> if nothing has changed between two projects during the synchronization, 
+     * <code>false</code> otherwise.
      */
     public boolean syncProjects()
     {
+        if (!original_.isOpen())
+            return false;
+            
         boolean result = true;
         if (internalCheck_)
         {
@@ -317,41 +318,64 @@ public class ProjectSynchronizer
         }
         Timer.startSession();
         boolean blocked = worker_.isBlocked();
-        result = worker_.isEmpty();
-        worker_.unblock();
-        worker_.block();
-        logger.info("Waiting until sync thread is done.");
-        worker_.waitUntilSynchronization();
-        // worker_.clear();
-        logger.finest("Started syncing projects.");
-        ResourceUtility.syncWithFileSystemIfNecessary(original_);
-        ResourceUtility.syncWithFileSystemIfNecessary(shadow_);
-        if (!shadow_.exists())
-            createShadow();
-        else
+        try
         {
-            syncContainers(original_, shadow_);
-            cleanContainers(original_, shadow_);
-        }
-        Timer.completeSession();
-        logger.info("Synchronizing projects took: " + Timer.getTimeAsString());
-        /*
-         * Since when this happens we are invalidating the calculation and will apply the new coming change we don't
-         * need to check this again and resync if it happens.
-         */
-        if (!worker_.isEmpty())
-        {
-            result = false;
-            // result = internalResult_;
-            logger.warning("While syncing projects, the original project changed through a buffer change event.");
-            syncProjects();
-            return result;
-        }
-        if (!blocked)
+            // Initially the result is equal to the emptiness of the work queue. If the queue
+            // is empty, the project should supposed to be in sync.
+            result = worker_.isEmpty();
+            // In case the worker is blocked and there are changes in the queue, unblock it so that
+            // these changes are also synced.
             worker_.unblock();
-        // if (blocked)
-        // worker_.block();
-        return result && internalResult_;
+            // Block the worker so that during the comparison, we won't get changes.
+            worker_.block();
+            logger.fine("Waiting until the worker thread is done.");
+            // Wait until the worker is completely blocked.
+            worker_.waitUntilSynchronization();
+            // worker_.clear();
+            // Refresh the projects just in case.
+            ResourceUtility.syncWithFileSystemIfNecessary(original_);
+            ResourceUtility.syncWithFileSystemIfNecessary(shadow_);
+            if (!shadow_.exists())
+                createShadow();
+            else
+            {
+                // Sync and clean the projects.
+                syncContainers(original_, shadow_);
+                cleanContainers(original_, shadow_);
+            }
+        } catch (Exception e)
+        {
+            // If there is an exception during sync, we return false no matter what.
+            logger.log(Level.WARNING, "Could not sync projects: " + original_.getName() + " due to exception.", e);
+            result = false;
+            internalResult_ = false;
+        }
+        finally
+        {
+            Timer.completeSession();
+            logger.fine("Synchronizing projects took: " + Timer.getTimeAsString());
+            /*
+             * Since when this happens we are invalidating the calculation and will apply the new coming change we don't
+             * need to check this again and resync if it happens.
+             */
+            if (!worker_.isEmpty())
+            {
+                result = false;
+                logger.warning("While syncing projects, the original project changed through a buffer change event.");
+                syncProjects();
+            }
+            else
+            {
+                if (!blocked)
+                    worker_.unblock();
+                // if (blocked)
+                // worker_.block();
+            }
+            // At the end the result depends on the initial result and the internal check (did we detect any
+            // problems during the sync check).
+            result =  result && internalResult_;
+        }
+        return result;
     }
 
     /**
@@ -518,9 +542,9 @@ public class ProjectSynchronizer
     {
         if (shadow_ != null)
         {
-            Zipper zipper = new Zipper(directory, zipName);
             try
             {
+                Zipper zipper = new Zipper(directory, zipName);
                 zipper.addFolder(new File(shadow_.getLocation().toString()));
                 zipper.close();
                 File zipFile = new File(directory, zipName);
@@ -533,7 +557,7 @@ public class ProjectSynchronizer
                         zipFile.delete();
                     }
                     else
-                        logger.info("Created snapshot with success.");
+                        logger.fine("Created snapshot with success.");
                 }
                 //else, Zip file is not created for some reasons. Since these are shadows, we don't really care.
             }
@@ -605,7 +629,7 @@ public class ProjectSynchronizer
             {
                 if (internalCheck_)
                 {
-                    logger.warning("File " + shadow.getName() + " has different content in project"
+                    logger.warning("File " + shadow.getName() + " has different content in project "
                             + original.getProject().getName() + "!");
                     internalResult_ = false;
                 }

@@ -47,6 +47,7 @@ public class CompletionProposalPopupCoordinator
 
     // singleton
     private CompletionProposalPopupCoordinator() {}
+  
 
     public static synchronized CompletionProposalPopupCoordinator getCoordinator()
     {
@@ -69,7 +70,11 @@ public class CompletionProposalPopupCoordinator
         // Cannnot synchronize this since this will be done inside another thread.
         updateProposalTableInternalInUIThread();
     }
-
+    
+    
+   
+    
+    
     private void computeTableValues(HashSet <String> addedProposals, ArrayList <AugmentedCompletionProposal> globalBestProposals,
             ArrayList <AugmentedCompletionProposal> localProposals, ArrayList <ICompletionProposal> tableProposals)
     {
@@ -78,13 +83,16 @@ public class CompletionProposalPopupCoordinator
         
         ArrayList <AugmentedCompletionProposal> gbps;
         ArrayList <AugmentedCompletionProposal> lps;
+        ArrayList <AugmentedCompletionProposal> notFixingGlobalProposal 
+        						= new ArrayList<AugmentedCompletionProposal>(); //GBP not fixing local compilation error
+        ArrayList<AugmentedCompletionProposal>notFixingLocalProposal 
+        						= new ArrayList <AugmentedCompletionProposal>(); //Local Proposal not fixing local compilation error
         synchronized(lock_)
         {
             gbps = globalBestProposals_;
             lps = localProposals_;
         }
-        ArrayList NotFixingGlobalProposal = new ArrayList();
-        ArrayList NotFixingLocalProposal = new ArrayList();
+        
         // First enter the global best proposals.
         for (AugmentedCompletionProposal globalBestProposal: gbps)
         {
@@ -96,7 +104,10 @@ public class CompletionProposalPopupCoordinator
                     logger.finest("Adding proposal: " + globalBestProposal.getDisplayString() + " as GBP.");
                     globalBestProposal.makeGBP();
                     globalBestProposal.cacheDisplayFields();
-                    if globalBestProposal.canFix(globalBestProposal.getCompilationError());
+                    //if GBP cannot not fix the local error, add it to the array list
+                    if (globalBestProposal.doNoTFixLocalError())                    	
+                    	notFixingGlobalProposal.add(globalBestProposal);
+                    
                     tableProposals.add(globalBestProposal.getProposal());
                     addedProposals.add(globalBestProposal.getDisplayString());
                     globalBestProposals.add(globalBestProposal);
@@ -109,6 +120,8 @@ public class CompletionProposalPopupCoordinator
                         + globalBestProposal.getDisplayString(), e);
             }
         }
+        
+        
         // Then, enter the local proposals ordered.
         for (AugmentedCompletionProposal localProposal: lps)
         {
@@ -117,12 +130,18 @@ public class CompletionProposalPopupCoordinator
             {
                 logger.finest("Adding proposal: " + localProposal.getDisplayString() + " as local proposal.");
                 //localProposal.cacheDisplayFields();
+                //if the local proposal cannot not fix the local error, add it to the array list
+                if (localProposal.doNoTFixLocalError())         
+                      	notFixingLocalProposal.add(localProposal);
+                
                 tableProposals.add(localProposal.getProposal());
                 addedProposals.add(localProposal.getDisplayString());
                 localProposals.add(localProposal);
             }
         }
     }
+  
+    
     
     private void updateProposalTableInternalInUIThread()
     {

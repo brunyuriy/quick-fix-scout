@@ -23,6 +23,10 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     public static final int NOT_AVAILABLE = -1;
     private final Squiggly [] errorsAfter_;
     
+    private boolean gbp_;
+    // Lazily initialized fields.
+    private String finalDisplayString_;
+    
     private final static Logger logger_ = Logger.getLogger(AugmentedCompletionProposal.class.getName());
     static
     {
@@ -36,6 +40,12 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
         compilationError_ = compilationError;
         errorsAfter_ = errorsAfter;
         recentCompilationError_ = null;
+        gbp_ = false;
+    }
+    
+    public void makeGBP()
+    {
+        gbp_ = true;
     }
     
     public void setProposal(ICompletionProposal proposal)
@@ -96,15 +106,24 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
      * Table item must be 'nonnull'. The caller thread must be a UI thread (has access to change table item
      * information).
      */
-    public void setYourselfAsTableItem(TableItem item, boolean gbp)
+    public void setYourselfAsTableItem(TableItem item)
     {
-        String text = getFinalDisplayString(gbp);
+        String text = finalDisplayString_ != null ? finalDisplayString_ : getFinalDisplayString();
         item.setData(proposal_);
         item.setImage(proposal_.getImage());
         item.setText(text);
+        //testing purpose
+        if (this.doNoTFixLocalError())
+        	item.setText("**"+text);
         Color foregroundColor = decideColor(item);
         if (foregroundColor != null)
             item.setForeground(foregroundColor);
+    }
+    
+    public void cacheDisplayFields()
+    {
+        if (finalDisplayString_ == null)
+            finalDisplayString_ = getFinalDisplayString();
     }
 
     private Color decideColor(TableItem item)
@@ -119,10 +138,10 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
             int noErrorsAfter = errorsAfter_.length;
             // Things are worse.
             if (noErrorsAfter > errorBefore_)
-                result = new Color(item.getDisplay(), 200, 0, 0);
+                result = new Color(item.getDisplay(), 150, 0, 0);
             // Things are better.
             else if (noErrorsAfter < errorBefore_)
-                result = new Color(item.getDisplay(), 0, 200, 0);
+                result = new Color(item.getDisplay(), 0, 150, 0);
             // No change.
             else
                 result = null;
@@ -170,23 +189,18 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     
     public String getFinalDisplayString()
     {
-        return getFinalDisplayString(false);
-    }
-
-    public String getFinalDisplayString(boolean gbp)
-    {
-        String gbpInformation = getGBPInformation(gbp);
+        String gbpInformation = getGBPInformation();
         String prefix = getPrefix();
-        String displayString = getDisplayStringWithContext(gbp);
+        String displayString = getDisplayStringWithContext();
         String text = prefix + gbpInformation + displayString;
         return text;
     }
     
-    private String getGBPInformation(boolean gbp)
+    private String getGBPInformation()
     {
         Squiggly ce = getRecentCompilationError();
         SquigglyDetails ced = (ce == null ? null : getCompilationError().computeDetails());
-        String result = gbp ? ((ced == null ? "!" : ced.toString()) + ": ") : "";
+        String result = gbp_ ? ((ced == null ? "!" : ced.toString()) + ": ") : "";
         return result;
     }
 
@@ -195,13 +209,19 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
         return "(" + resolveErrorsAfter() + ") ";
     }
     
-    private String getDisplayStringWithContext(boolean gbp)
+    //return false if the proposal does not fix the local compilation error
+    public boolean doNoTFixLocalError()
+    {
+    	return !(this.canFix(this.getCompilationError()));
+    } 
+    
+    private String getDisplayStringWithContext()
     {
         if (proposal_ == null)
             return "null";
         
         String result = proposal_.getDisplayString();
-        if (gbp)
+        if (gbp_)
         {
             try
             {
@@ -221,8 +241,6 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
 
     private String contexify(String result) throws JavaModelException, BadLocationException
     {
-        logger_.info("Contexifying global best proposal: " + result);
-        
         // The proposals that does not need extra context first...
         // 'package' proposals
         if (result.startsWith("Remove package declaration "))
@@ -445,7 +463,9 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     {
         if (errorsAfter_ == Squiggly.UNKNOWN)
             return "N/A";
+//            return "2";
         else if (errorsAfter_ == Squiggly.NOT_COMPUTED)
+//            return "2";
             return "?";
         
         return errorsAfter_.length + "";
@@ -457,8 +477,20 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
         {
             // Here, I cannot use the exact offset information since after the application of the proposal, the line
             // that the current proposal applied to changes. So the errors coming after that line change offset.
-            if (SpeculationUtility.areOnTheSameLine(errorAfter, compilationError))
+            try
+            {
+                if (SpeculationUtility.sameSquigglyContent(errorAfter, compilationError))
+//                  if (SpeculationUtility.areOnTheSameLine(errorAfter, compilationError))
+                      return false;
+            }
+            catch (JavaModelException e)
+            {
                 return false;
+            }
+            catch (BadLocationException e)
+            {
+                return false;
+            }
         }
         return true;
     }

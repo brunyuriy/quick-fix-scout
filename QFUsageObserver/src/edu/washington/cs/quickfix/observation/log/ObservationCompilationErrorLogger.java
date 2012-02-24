@@ -1,26 +1,18 @@
 package edu.washington.cs.quickfix.observation.log;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import org.eclipse.core.resources.IProject;
 
 import edu.washington.cs.quickfix.observation.Observer;
 import edu.washington.cs.quickfix.observation.log.internal.QFSession;
 import edu.washington.cs.synchronization.sync.task.internal.TaskWorker;
 import edu.washington.cs.util.eclipse.BuilderUtility;
+import edu.washington.cs.util.log.CommonLoggers;
 
 public class ObservationCompilationErrorLogger extends Thread
 {
     private final TaskWorker worker_;
     private boolean notInitialized_;
     
-    private static final Logger logger = Logger.getLogger(ObservationCompilationErrorLogger.class.getName());
-    static
-    {
-        logger.setLevel(Level.INFO);
-    }
-
     public static enum Type
     {
         AFTER, BEFORE
@@ -65,12 +57,12 @@ public class ObservationCompilationErrorLogger extends Thread
             BuilderUtility.setAutoBuilding(true);
         if (type_ == Type.BEFORE)
         {
-            logger.info("Communication: Setting the number of errors before a proposal has selected.");
+            CommonLoggers.getCommunicationLogger().info("Setting the number of errors before a proposal has selected.");
             session_.logNumberOfErrorsBefore(noCompilationErrors_);
         }
         else if (type_ == Type.AFTER)
         {
-            logger.info("Communication: Setting the number of errors after a proposal has selected.");
+            CommonLoggers.getCommunicationLogger().info("Setting the number of errors after a proposal has selected.");
             session_.logNumberOfErrorsAfter(noCompilationErrors_);
         }
         worker_.unblock();
