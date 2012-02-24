@@ -112,10 +112,14 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
         item.setData(proposal_);
         item.setImage(proposal_.getImage());
         item.setText(text);
+      //testing purpose
+       if (this.doNoTFixLocalError())
+        	item.setText("*"+text);
         Color foregroundColor = decideColor(item);
         if (foregroundColor != null)
             item.setForeground(foregroundColor);
     }
+    
     
     public void cacheDisplayFields()
     {
@@ -205,7 +209,13 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     {
         return "(" + resolveErrorsAfter() + ") ";
     }
-
+    
+    //return false if the proposal does not fix the local compilation error
+    public boolean doNoTFixLocalError()
+    {
+    		return !(this.canFix(this.getCompilationError()));
+    } 	
+    
     private String getDisplayStringWithContext()
     {
         if (proposal_ == null)
@@ -454,9 +464,9 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     {
         if (errorsAfter_ == Squiggly.UNKNOWN)
             return "N/A";
-//            return "1";
+//            return "2";
         else if (errorsAfter_ == Squiggly.NOT_COMPUTED)
-//            return "1";
+//            return "2";
             return "?";
         
         return errorsAfter_.length + "";

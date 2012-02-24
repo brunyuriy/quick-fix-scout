@@ -47,6 +47,7 @@ public class CompletionProposalPopupCoordinator
 
     // singleton
     private CompletionProposalPopupCoordinator() {}
+  
 
     public static synchronized CompletionProposalPopupCoordinator getCoordinator()
     {
@@ -69,7 +70,11 @@ public class CompletionProposalPopupCoordinator
         // Cannnot synchronize this since this will be done inside another thread.
         updateProposalTableInternalInUIThread();
     }
-
+    
+    
+   
+    
+    
     private void computeTableValues(HashSet <String> addedProposals, ArrayList <AugmentedCompletionProposal> globalBestProposals,
             ArrayList <AugmentedCompletionProposal> localProposals, ArrayList <ICompletionProposal> tableProposals)
     {
@@ -78,6 +83,10 @@ public class CompletionProposalPopupCoordinator
         
         ArrayList <AugmentedCompletionProposal> gbps;
         ArrayList <AugmentedCompletionProposal> lps;
+        ArrayList <AugmentedCompletionProposal> notFixingGlobalProposal 
+        						= new ArrayList<AugmentedCompletionProposal>(); //GBP not fixing local compilation error
+        ArrayList<AugmentedCompletionProposal>notFixingLocalProposal 
+        						= new ArrayList <AugmentedCompletionProposal>(); //Local Proposal not fixing local compilation error
         synchronized(lock_)
         {
             gbps = globalBestProposals_;
@@ -95,6 +104,10 @@ public class CompletionProposalPopupCoordinator
                     logger.finest("Adding proposal: " + globalBestProposal.getDisplayString() + " as GBP.");
                     globalBestProposal.makeGBP();
                     globalBestProposal.cacheDisplayFields();
+                  //if GBP cannot not fix the local error, add it to the array list
+                    if (globalBestProposal.doNoTFixLocalError())                    	
+                    	notFixingGlobalProposal.add(globalBestProposal);
+                    
                     tableProposals.add(globalBestProposal.getProposal());
                     addedProposals.add(globalBestProposal.getDisplayString());
                     globalBestProposals.add(globalBestProposal);
@@ -107,6 +120,8 @@ public class CompletionProposalPopupCoordinator
                         + globalBestProposal.getDisplayString(), e);
             }
         }
+        
+        
         // Then, enter the local proposals ordered.
         for (AugmentedCompletionProposal localProposal: lps)
         {
@@ -114,13 +129,19 @@ public class CompletionProposalPopupCoordinator
             if (!addedProposals.contains(localProposal.getDisplayString()))
             {
                 logger.finest("Adding proposal: " + localProposal.getDisplayString() + " as local proposal.");
-                localProposal.cacheDisplayFields();
+                //localProposal.cacheDisplayFields();
+                //if the local proposal cannot not fix the local error, add it to the array list
+                if (localProposal.doNoTFixLocalError())         
+                      notFixingLocalProposal.add(localProposal);
+                
                 tableProposals.add(localProposal.getProposal());
                 addedProposals.add(localProposal.getDisplayString());
                 localProposals.add(localProposal);
             }
         }
     }
+  
+    
     
     private void updateProposalTableInternalInUIThread()
     {
@@ -170,7 +191,7 @@ public class CompletionProposalPopupCoordinator
         // Then, enter the local proposals ordered.
         for (int a = 0; a < localProposals.size(); a++)
             setTableItem(localProposals.get(a), globalBestProposals.size() + a, knownStyle);
-
+        System.out.println(globalBestProposals.size());
         // Then, enter the proposals that we don't have a calculation for.
         int nonProcessedProposalSize = 0;
         for (ICompletionProposal nonProcessedProposal: nonProcessedProposals)
@@ -202,6 +223,8 @@ public class CompletionProposalPopupCoordinator
         if (item == null)
             item = new TableItem(table_, knownStyle, index);
         proposal.setYourselfAsTableItem(item);
+        //TESTING PURPOS
+        System.out.println(proposal.getRecentCompilationError() == null);
     }
 
     private void setTableItem(ICompletionProposal proposal, int index, int knownStyle)
