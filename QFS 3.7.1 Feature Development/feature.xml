@@ -2,7 +2,7 @@
 <feature
       id="edu.washington.cs.qfs_371_dev"
       label="Quick Fix Scout 3.7.1"
-      version="0.2.2"
+      version="0.2.3"
       provider-name="Kivanc Muslu">
 
    <description url="http://quick-fix-scout.googlecode.com/">
