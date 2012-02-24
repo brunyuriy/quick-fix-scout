@@ -110,6 +110,8 @@ public class ProjectSynchronizer
     private final String prefix_;
     private boolean internalCheck_ = false;
     private boolean internalResult_ = true;
+    
+    private final static String [] VCPrefixes = new String [] {".bzr", ".git", ".svn", ".hg", "CVS"};
 
     /**
      * Returns <code>true</code> if the given project is created as a shadow project, <code>false</code> otherwise.
@@ -545,7 +547,7 @@ public class ProjectSynchronizer
             try
             {
                 Zipper zipper = new Zipper(directory, zipName);
-                zipper.excludePrefixes(".hg");
+                zipper.excludePrefixes(VCPrefixes);
                 zipper.addFolder(new File(shadow_.getLocation().toString()));
                 zipper.close();
                 File zipFile = new File(directory, zipName);

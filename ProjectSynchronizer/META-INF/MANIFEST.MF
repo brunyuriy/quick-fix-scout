@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Project Synchronizer
 Bundle-SymbolicName: edu.washington.cs.synchronization;singleton:=true
-Bundle-Version: 1.5.9
+Bundle-Version: 1.6.0
 Bundle-Vendor: Kivanc Muslu
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Require-Bundle: org.eclipse.jdt.core;bundle-version="3.6.1",
