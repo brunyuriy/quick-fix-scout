@@ -51,15 +51,12 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     private Squiggly [] shadowCompilationErrors_;
     private Map<Squiggly, Squiggly> shadowCompilationErrorResolutionMap_;
     private Map <Squiggly, IJavaCompletionProposal []> shadowProposalsMap_;
-    private ReentrantLock shadowProposalsLock_;
     /**
      * Mapping that stores the current calculation information. <br>
      * This field is protected by {@link #speculativeProposalsLock_}.
      */
     // Speculative proposals map is from shadow compilation errors to original augmented completion proposals.
     private Map <Squiggly, AugmentedCompletionProposal []> speculativeProposalsMap_;
-    /** Lock that protected field: {@link #speculativeProposalsMap_}. */
-    private ReentrantLock speculativeProposalsLock_;
     private IProject shadowProject_;
 //    private IJavaCompletionProposalConverter proposalConverter_;
     private static final Logger logger = Logger.getLogger(SpeculationCalculator.class.getName());
@@ -96,7 +93,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     private Date analysisCompletionTime_ = null;
     private ReentrantLock timingLock_;
     private volatile int typingSessionLength_ = -1;
-    private volatile boolean analysisCompleted_ = false;
 
     public SpeculationCalculator(ProjectSynchronizer synchronizer)
     {
@@ -114,8 +110,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         speculativeAnalysisListenersLock_ = new ReentrantLock();
         synchronizer_.getTaskWorker().addProjectChangeListener(this);
         // Initialize locks
-        speculativeProposalsLock_ = new ReentrantLock();
-        shadowProposalsLock_ = new ReentrantLock();
         activationRecord_ = new ActivationRecord(true, false);
         timingLock_ = new ReentrantLock();
         
@@ -189,21 +183,27 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         }
     }
 
-    private synchronized boolean updateShadowCompilationErrors(Squiggly [] shadowCompilationErrors)
+    private boolean updateShadowCompilationErrors(Squiggly [] shadowCompilationErrors)
     {
+        Squiggly [] currentCompilationErrors;
+        synchronized(this)
+        {
+            currentCompilationErrors = shadowCompilationErrors_;
+            shadowCompilationErrorResolutionMap_.clear();
+        }
+        
         boolean result = true;
-        if (shadowCompilationErrors_ == null)
+        if (shadowCompilationErrors == null)
             result = false;
-        else if (shadowCompilationErrors == null)
+        else if (currentCompilationErrors == null)
             result = false;
-        else if (shadowCompilationErrors_.length != shadowCompilationErrors.length)
+        else if (currentCompilationErrors.length != shadowCompilationErrors.length)
             result = false;
-        else if (!analysisCompleted_)
-            return false;
         else
         {
+            HashMap <Squiggly, Squiggly> ceResolutionMap = new HashMap <Squiggly, Squiggly>();
             // The number of compilation errors are the same. Let's check the content.
-            ArrayList<Squiggly> oldCEs = new ArrayList<Squiggly>(Arrays.asList(shadowCompilationErrors_));
+            ArrayList<Squiggly> oldCEs = new ArrayList<Squiggly>(Arrays.asList(currentCompilationErrors));
             ArrayList<Squiggly> newCEs = new ArrayList<Squiggly>(Arrays.asList(shadowCompilationErrors));
             outer: while (oldCEs.size() > 0)
             {
@@ -236,7 +236,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                     oldCEs.remove(oldCE);
                     Squiggly match = matches.get(0);
                     newCEs.remove(match);
-                    shadowCompilationErrorResolutionMap_.put(oldCE, match);
+                    ceResolutionMap.put(oldCE, match);
                 }
                 else
                 {
@@ -246,31 +246,24 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                     break;
                 }
             }
-        }
-        if (!result)
-        {
-            analysisCompleted_ = false;
-            shadowCompilationErrorResolutionMap_.clear();
-            shadowCompilationErrors_ = shadowCompilationErrors;
-            for (Squiggly shadowCompilationError: shadowCompilationErrors_)
+            if (result)
             {
-                try
+                synchronized(this)
                 {
-                    shadowCompilationError.cacheContext();
-                }
-                catch (JavaModelException e)
-                {
-                    // We don't care the exceptions...
-                }
-                catch (BadLocationException e)
-                {
-                    // We don't care the exceptions...
+                    shadowCompilationErrorResolutionMap_ = ceResolutionMap;
                 }
             }
         }
+        if (!result)
+        {
+            synchronized(this)
+            {
+                shadowCompilationErrors_ = shadowCompilationErrors;
+            }
+            clearGlobalState();
+        }
         return result;
     }
-    
 
     private synchronized Squiggly [] getShadowCompilationErrors()
     {
@@ -325,6 +318,14 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             // else, current proposal is worse then the best, ignore.
         }
     }
+    
+    private TaskWorker synchronizeWithTaskWorker()
+    {
+        TaskWorker currentWorker = synchronizer_.getTaskWorker();
+        currentWorker.block();
+        currentWorker.waitUntilSynchronization();
+        return currentWorker;
+    }
 
     @Override
     protected void doWork() throws InterruptedException
@@ -332,45 +333,63 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         if (isDead())
             return;
         Timer.startSession();
-        activationRecord_ = new ActivationRecord();
-        TaskWorker currentWorker = synchronizer_.getTaskWorker();
-        currentWorker.block();
-        /*
-         * Stop the current synchronizer thread, and calculate the quick fixes and their results in the shadow project.
-         */
-        logger.fine("Waiting until sync thread is done.");
-        currentWorker.waitUntilSynchronization();
+        TaskWorker currentWorker = synchronizeWithTaskWorker();
+        // We make sure to deactivate auto-building so that from this point on it will not collide with our calculations.
         boolean prevAutoBuilding = deactivateAutoBuilding();
-        BuilderUtility.setAutoBuilding(false);
-        boolean shallSkip = doAnalysisPreparations();
+        boolean shallSkip = false;
         try
         {
+            if (TEST_SYNCHRONIZATION)
+                // Note that test synchronization method puts the projects in sync even if they aren't.
+                // Since we haven't done any calculation yet, wee can assume everything is okay even if it wasn't.
+                testSynchronization();
+            Squiggly [] shadowCompilationErrors = computeShadowCompilationErrors();
+            shallSkip = updateShadowCompilationErrors(shadowCompilationErrors);
+            // Reset the activation record so that the current round will be valid and speculator will be deactivated
+            // before the next round.
+            activationRecord_.reset();
             if (!shallSkip)
+                // If we detect no change in the content of the compilation errors, then there is no need to run the
+                // speculative analysis again. Just skip the analysis, we will return the results from the mapping.
                 doSpeculativeAnalysis();
             else
                 logger.info("Speculative analysis for this round is skipped since there is no change on the compilation errors.");
-            activationRecord_.deactivate();
-            analysisCompleted_ = true;
         }
         catch (InvalidatedException e)
         {
+            // If for some reason, the analysis is invalidated (meaning the contents of the projects has changed), 
+            // then it means that we should not wait for the next change in the project, we need to reactivate
+            // the calculator for the next round.
+            activationRecord_.activate();
             // This is a known exception, so we don't need to log it (at least not with severity).
             logger.info("Current speculative analysis instance is invalidated.");
         }
         finally
         {
+            // Everything about the analysis is completed at this moment good or bad. We first reactivate the auto-building
+            // if it was active at the beginning.
             if (prevAutoBuilding)
                 activateAutoBuilding();
             else
                 logger.info("Not activating auto-building since it was deactivated at the beginning of the analysis.");
+            // Unblock the task worker so that any changes done to the other project can be applied to the shadow.
             currentWorker.unblock();
+            // signal that the thread completed the analysis and the results can be grabbed.
+            // TODO Do we really need this? Doesn't signal analysis round completed after each compilation error kind of do it?
             stopWorking();
+            // This extra check on activation record is needed because we can also enter this block into the exceptional path.
+            // We also cannot move this up above in 'try' since it needs to be done after the auto-building reactivation, worker
+            // unblock, etc.
             if (activationRecord_.isValid())
             {
+                // if everything went well, 
                 if (shallSkip)
+                    // and we didn't need to do any analysis this round, we need to update the best proposals, because their
+                    // location might have been changed. We basically re-map them looking at the mapping.
                     updateBestProposals();
+                // set the best proposals to the dialogs (if they are open).
                 QuickFixDialogCoordinator.getCoordinator().setBestProposals(new ArrayList<AugmentedCompletionProposal>(bestProposals_));
-//                System.out.println("Setting best proposals (" + bestProposals_.size() + ")...");
+                // signal analysis completion.
                 signalSpeculativeAnalysisComplete();
             }
             logger.info("");
@@ -407,7 +426,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         BuilderUtility.setAutoBuilding(true);
     }
 
-    private boolean doAnalysisPreparations()
+    private Squiggly [] computeShadowCompilationErrors()
     {
         buildShadowProject();
         Squiggly [] shadowCompilationErrors = null;
@@ -427,7 +446,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         {
             e.printStackTrace();
         }
-        return updateShadowCompilationErrors(shadowCompilationErrors);
+        return shadowCompilationErrors;
     }
 
     private void clearGlobalState()
@@ -437,7 +456,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         clearTimings();
         bestProposals_ = new ArrayList <AugmentedCompletionProposal>();
         cachedProposals_.clear();
-//        QuickFixDialogCoordinator.getCoordinator().clearBestProposals();
+        QuickFixDialogCoordinator.getCoordinator().clearBestProposals();
         QuickFixDialogCoordinator.getCoordinator().clear();
     }
 
@@ -454,14 +473,6 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         if (activationRecord_.isInvalid() || isDead())
             throw new InvalidatedException();
         logger.info("Speculative analysis started...");
-        // TODO Place for this code seems weird. It should be before the analysis preparations.
-        if (TEST_SYNCHRONIZATION)
-        {
-            if (!testSynchronization())
-                throw new InvalidatedException();
-        }
-        // TODO handle thrown exception...
-        clearGlobalState();
         // The place of signal is very important. Basically, it has to be done after all accessible state is cleared
         // to defaults.
         signalSpeculativeAnalysisStart();
@@ -616,6 +627,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         if (SpeculationUtility.isFlaggedProposal(shadowProposal))
             return Squiggly.NOT_COMPUTED;
         if (SpeculationUtility.isInteractiveProposal(shadowProposal))
+//            return new Squiggly[1];
             return Squiggly.NOT_COMPUTED;
         
         Squiggly [] errors = Squiggly.UNKNOWN;
@@ -735,7 +747,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
     @Override
     public void projectModified()
     {
-        logger.info("Calculator is notified by the worker.");
+        logger.fine("Calculator is notified by the worker.");
         activationRecord_.activate();
     }
 
@@ -745,9 +757,12 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         /* i.e., isWorking(), doing the speculative analysis. */
         // if (!isSynched())
         activationRecord_.invalidate();
+        // Very important: never activate the activation record here!
+        // If done, speculative analysis starts again with every key stroke, which is
+        // something we don't want. It is guaranteed that projectModified() method
+        // will be eventually called and we will be re-activated again.
         
-        // invalidate global best proposals.
-//        CompletionProposalPopupCoordinator.getCoordinator().clearBestProposals();
+        // invalidate current calculation.
         QuickFixDialogCoordinator.getCoordinator().clear();
     }
 
@@ -758,6 +773,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         processRemoveList();
         for (SpeculativeAnalysisListener listener: speculativeAnalysisListeners_)
             listener.speculativeAnalysisRoundCompleted();
+//        Thread.yield();
         speculativeAnalysisListenersLock_.unlock();
     }
 
@@ -919,23 +935,31 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
      */
     public Map <Squiggly, AugmentedCompletionProposal []> getSpeculativeProposalsMap()
     {
-        speculativeProposalsLock_.lock();
-        // speculativePropsoalsMap_ is never null. So this construction is okay.
+        if (activationRecord_.isInvalid())
+            return new HashMap <Squiggly, AugmentedCompletionProposal[]>();
+        
+        Map <Squiggly, Squiggly> ceResolutionMap;
+        Map <Squiggly, AugmentedCompletionProposal []> speculativeProposalMap;
+        synchronized(this)
+        {
+            ceResolutionMap = shadowCompilationErrorResolutionMap_;
+            speculativeProposalMap = speculativeProposalsMap_;
+        }
+        
         Map <Squiggly, AugmentedCompletionProposal []> result;
-        if (shadowCompilationErrorResolutionMap_.size() != 0)
+        if (ceResolutionMap.size() != 0)
         {
             result = new HashMap <Squiggly, AugmentedCompletionProposal[]>();
-            for (Squiggly shadowCompilationError: speculativeProposalsMap_.keySet())
+            for (Squiggly shadowCompilationError: speculativeProposalMap.keySet())
             {
-                Squiggly currentShadowCE = shadowCompilationErrorResolutionMap_.get(shadowCompilationError);
-                result.put(currentShadowCE, speculativeProposalsMap_.get(shadowCompilationError));
-                for (AugmentedCompletionProposal speculativeProposal: speculativeProposalsMap_.get(shadowCompilationError))
+                Squiggly currentShadowCE = ceResolutionMap.get(shadowCompilationError);
+                result.put(currentShadowCE, speculativeProposalMap.get(shadowCompilationError));
+                for (AugmentedCompletionProposal speculativeProposal: speculativeProposalMap.get(shadowCompilationError))
                     speculativeProposal.updateCompilationError(currentShadowCE);
             }
         }
         else
-            result = new HashMap <Squiggly, AugmentedCompletionProposal []>(speculativeProposalsMap_);
-        speculativeProposalsLock_.unlock();
+            result = new HashMap <Squiggly, AugmentedCompletionProposal []>(speculativeProposalMap);
         return result;
     }
 
@@ -949,12 +973,10 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
      * @param shadowCompilationError Currently calculated problem location.
      * @param shadowCalculatedProposals Calculated error information related to this problem location.
      */
-    private void addToSpeculationProposalsMap(Squiggly shadowCompilationError,
+    private synchronized void addToSpeculationProposalsMap(Squiggly shadowCompilationError,
             AugmentedCompletionProposal [] shadowCalculatedProposals)
     {
-        speculativeProposalsLock_.lock();
         speculativeProposalsMap_.put(shadowCompilationError, shadowCalculatedProposals);
-        speculativeProposalsLock_.unlock();
     }
 
     /**
@@ -964,11 +986,9 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
      * </p>
      * This method is protected by {@link #speculativeProposalsLock_}. <br>
      */
-    private void clearSpeculativeProposalsMap()
+    private synchronized void clearSpeculativeProposalsMap()
     {
-        speculativeProposalsLock_.lock();
         speculativeProposalsMap_.clear();
-        speculativeProposalsLock_.unlock();
     }
 
     /**
@@ -983,20 +1003,29 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
      */
     public Map <Squiggly, IJavaCompletionProposal []> getProposalsMap()
     {
-        shadowProposalsLock_.lock();
+        if (activationRecord_.isInvalid())
+            return new HashMap <Squiggly, IJavaCompletionProposal[]>();
+            
+        Map <Squiggly, Squiggly> ceResolutionMap;
+        Map <Squiggly, IJavaCompletionProposal []> shadowProposalMap;
+        synchronized(this)
+        {
+            ceResolutionMap = shadowCompilationErrorResolutionMap_;
+            shadowProposalMap = shadowProposalsMap_;
+        }
+        
         Map <Squiggly, IJavaCompletionProposal []> result;
-        if (shadowCompilationErrorResolutionMap_.size() != 0)
+        if (ceResolutionMap.size() != 0)
         {
             result = new HashMap <Squiggly, IJavaCompletionProposal[]>();
-            for (Squiggly shadowCompilationError: shadowProposalsMap_.keySet())
+            for (Squiggly shadowCompilationError: shadowProposalMap.keySet())
             {
-                Squiggly currentShadowCE = shadowCompilationErrorResolutionMap_.get(shadowCompilationError);
-                result.put(currentShadowCE, shadowProposalsMap_.get(shadowCompilationError));
+                Squiggly currentShadowCE = ceResolutionMap.get(shadowCompilationError);
+                result.put(currentShadowCE, shadowProposalMap.get(shadowCompilationError));
             }
         }
         else
-            result = new HashMap <Squiggly, IJavaCompletionProposal []>(shadowProposalsMap_);
-        shadowProposalsLock_.unlock();
+            result = new HashMap <Squiggly, IJavaCompletionProposal []>(shadowProposalMap);
         return result;
     }
 
@@ -1010,11 +1039,9 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
      * @param location The problem location that will be processed.
      * @param proposals The proposals offered by Eclipse for that problem location.
      */
-    private void addToShadowProposalsMap(Squiggly compilationError, IJavaCompletionProposal [] proposals)
+    private synchronized void addToShadowProposalsMap(Squiggly compilationError, IJavaCompletionProposal [] proposals)
     {
-        shadowProposalsLock_.lock();
         shadowProposalsMap_.put(compilationError, proposals);
-        shadowProposalsLock_.unlock();
     }
 
     /**
@@ -1025,11 +1052,9 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
      * This method is protected by {@link #shadowProposalsLock_}. <br>
      * This method should only be called by the calculator thread (this).
      */
-    private void clearProposalsMap()
+    private synchronized void clearProposalsMap()
     {
-        shadowProposalsLock_.lock();
         shadowProposalsMap_.clear();
-        shadowProposalsLock_.unlock();
     }
     
     public void quickFixInvoked()

@@ -18,10 +18,11 @@ import edu.washington.cs.quickfix.observation.log.internal.QFSession;
 import edu.washington.cs.synchronization.ProjectSynchronizer;
 import edu.washington.cs.util.eclipse.QuickFixUtility;
 import edu.washington.cs.util.eclipse.SharedConstants;
+import edu.washington.cs.util.log.CommonLoggers;
 
 public class ObservationGrabber extends Thread
 {
-    private static final int SNAPSHOT_THRESHOLD = 2;
+    private static final int SNAPSHOT_THRESHOLD = ProjectSynchronizer.CONTOLLED_EXPERIMENT ? 0: 2;
     private static final Logger logger = Logger.getLogger(ObservationGrabber.class.getName());
     static
     {
@@ -41,7 +42,7 @@ public class ObservationGrabber extends Thread
     {
         if (!ObservationPreferencePage.getInstance().isActivated())
         {
-            logger.info("Communication: Not getting the proposals offered since the observer is disabled.");
+            CommonLoggers.getCommunicationLogger().info("Not getting the proposals offered since the observer is disabled.");
             return;
         }
         ICompilationUnit unit = context_.getCompilationUnit();
@@ -56,7 +57,7 @@ public class ObservationGrabber extends Thread
             // TODO This should never happen!
             if (ProjectSynchronizer.isShadowProject(project))
             {
-                logger.severe("Communication: Not getting the proposals offered since current project is a shadow.");
+                CommonLoggers.getCommunicationLogger().severe("Not getting the proposals offered since current project is a shadow.");
                 ObservationLogger.getLogger().invalidateCurrentSession();
                 return;
             }
@@ -70,7 +71,7 @@ public class ObservationGrabber extends Thread
         QFSession session = ObservationLogger.getLogger().getCurrentSession();
         session.setLocations(locations_);
         session.setProposals(QuickFixUtility.calculateCompletionProposals(context_, locations_));
-        logger.info("Communication: Setting the proposals offered by Eclipse");
+        CommonLoggers.getCommunicationLogger().info("Setting the proposals offered by Eclipse");
         
         ProjectSynchronizer synchronizer = Observer.getUsageObserver().getCurrentSynchronizer();
         if (synchronizer == null)

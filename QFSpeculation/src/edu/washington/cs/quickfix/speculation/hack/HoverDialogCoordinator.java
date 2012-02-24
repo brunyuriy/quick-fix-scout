@@ -92,8 +92,9 @@ public class HoverDialogCoordinator
                     logger.finest("Adding proposal: " + globalBestProposal.getDisplayString() + " as GBP.");
                     addedProposals.add(globalBestProposal.getDisplayString());
                     int index = gbpSize;
+                    globalBestProposal.makeGBP();
                     proposals[index] = globalBestProposal.getProposal();
-                    displayStrings[index] = globalBestProposal.getFinalDisplayString(true);
+                    displayStrings[index] = globalBestProposal.getFinalDisplayString();
                     gbpSize++;
                 }
             }

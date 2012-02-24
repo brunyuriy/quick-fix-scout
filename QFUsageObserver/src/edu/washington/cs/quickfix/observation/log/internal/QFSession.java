@@ -23,6 +23,7 @@ import edu.washington.cs.quickfix.observation.log.ObservationCompilationErrorLog
 import edu.washington.cs.quickfix.observation.log.ObservationLogger;
 import edu.washington.cs.quickfix.observation.log.ObservationCompilationErrorLogger.Type;
 import edu.washington.cs.synchronization.sync.task.internal.TaskWorker;
+import edu.washington.cs.util.log.CommonLoggers;
 
 /**
  * Data structure abstraction that represents a quick fix session.
@@ -241,14 +242,14 @@ public class QFSession
     {
         if (isInvalid())
         {
-            logger.info("Communication: Session is invalid, close message is discarded.");
+            CommonLoggers.getCommunicationLogger().info("Session is invalid, close message is discarded.");
             return;
         }
         Date currentTime = new Date();
         sessionEndTime_ = currentTime;
         if (sessionStartTime_ == INVALID_TIME)
         {
-            logger.info("Communication: Popup close detected without a popup is created, ignoring event.");
+            CommonLoggers.getCommunicationLogger().info("Popup close detected without a popup is created, ignoring event.");
             return;
         }
         Thread thread = new LogFinalizer();
@@ -397,7 +398,7 @@ public class QFSession
     {
         public void run()
         {
-            logger.info("Communication: Log Finalizer is running.");
+            CommonLoggers.getCommunicationLogger().info("Log Finalizer is running.");
             while (!isLogCompleted())
             {
                 try
@@ -414,7 +415,7 @@ public class QFSession
             }
             createLog();
             ObservationLogger.getLogger().log(QFSession.this);
-            logger.info("Communication: Session logged with success.");
+            CommonLoggers.getCommunicationLogger().info("Session logged with success.");
         }
     }
 
@@ -505,12 +506,17 @@ public class QFSession
         if (availableProposals_ == null || availableProposals_.length == 0)
             return Action.NOT_AVAILABLE;
         
-        // Look at the first offered Eclipse proposal and first offered speculation proposal and see if the selected
-        // proposal is equal to one of them.
-        boolean result = availableProposals_[0].equals(selectedProposalString_)
-                || (speculationProposals_ != null && speculationProposals_.length > 0 && getProposalPart(speculationProposals_[0])
-                        .equals(selectedProposalString_));
-        return Action.FromBoolean(result);
+        // Look whether the speculation analysis is running and/or we have speculation results. If so, look if the
+        // selected proposal is the same as the first speculation proposal.
+        if (speculationProposals_ != null && speculationProposals_.length > 0)
+        {
+            if (selectedProposalString_.equals(speculationProposals_[0]))
+                return Action.TRUE;
+        }
+        
+        // If there is no speculation information, then look whether the first selected proposal is equal to the first
+        // Eclipse proposal or not.
+        return Action.FromBoolean(selectedProposalString_.equals(availableProposals_[0]));
     }
 
     Action isOtherProposalSelected()

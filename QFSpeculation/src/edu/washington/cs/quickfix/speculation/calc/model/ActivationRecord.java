@@ -27,12 +27,6 @@ public class ActivationRecord
         valid_ = false;
     }
     
-    public synchronized void deactivate()
-    {
-        if (valid_)
-            active_ = false;
-    }
-    
     public synchronized boolean isActive()
     {
         return active_;
@@ -62,5 +56,9 @@ public class ActivationRecord
         }
     }
 
-
+    public synchronized void reset()
+    {
+        active_ = false;
+        valid_ = true;
+    }
 }

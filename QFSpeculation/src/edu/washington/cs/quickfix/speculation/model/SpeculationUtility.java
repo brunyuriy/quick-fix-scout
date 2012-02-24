@@ -28,7 +28,6 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 
-import edu.washington.cs.quickfix.speculation.calc.SpeculationCalculator;
 import edu.washington.cs.util.eclipse.ResourceUtility;
 import edu.washington.cs.util.eclipse.model.Squiggly;
 import edu.washington.cs.util.eclipse.model.SquigglyDetails;
@@ -37,6 +36,11 @@ import edu.washington.cs.util.exception.NotInitializedException;
 public class SpeculationUtility
 {
     // Logger.
+    private static final Logger compilationErrorComparisonLogger_ = Logger.getLogger(SpeculationUtility.class.getName() + ".ce.compare");
+    static
+    {
+        compilationErrorComparisonLogger_.setLevel(Level.WARNING);
+    }
     private static final Logger logger = Logger.getLogger(SpeculationUtility.class.getName());
     static
     {
@@ -52,18 +56,6 @@ public class SpeculationUtility
     /**************
      * PUBLIC API *
      *************/
-    
-    public static void printProblemLocation(IProblemLocation location)
-    {
-        logger.info("");
-        logger.info("Problem ID = " + Integer.toHexString(location.getProblemId()));
-        logger.info("Length = " + location.getLength());
-        logger.info("Offset = " + location.getOffset());
-        logger.info("Args: ");
-        for (int a = 0; a < location.getProblemArguments().length; a++)
-            logger.info((a+1) + "-) " + location.getProblemArguments()[a]);
-        logger.info("");
-    }
     
     public static boolean areOnTheSameLine(Squiggly ce1, Squiggly ce2)
     {
@@ -115,17 +107,15 @@ public class SpeculationUtility
 
         String context1 = oldSquiggly.getCachedContext();
         String context2 = newSquiggly.getContext();
-//        System.out.println("Context1 = " + context1 + ", context2 = " + context2);
+        compilationErrorComparisonLogger_.info("Context1 = " + context1 + ", context2 = " + context2);
         String problemType1 = oldSquiggly.getErrorCode();
         String problemType2 = newSquiggly.getErrorCode();
-//        System.out.println("Problem type1 = " + problemType1 + ", problem type2 = " + problemType2);
+        compilationErrorComparisonLogger_.info("Problem type1 = " + problemType1 + ", problem type2 = " + problemType2);
         return context1.equals(context2) && problemType1.equals(problemType2);
     }
     
     public static boolean sameProblemLocationContent(IProblemLocation location1, IProblemLocation location2)
     {
-//        printProblemLocation(location1);
-//        printProblemLocation(location2);
         if (location1.getProblemId() != location2.getProblemId())
             return false;
         if (location1.getLength() != location2.getLength())
@@ -160,54 +150,12 @@ public class SpeculationUtility
                 }
                 if (!valid)
                 {
-                    logger.fine("Problem locations differ on args => arg1 = " + arg1 + ", arg2 = " + arg2);
+                    compilationErrorComparisonLogger_.fine("Problem locations differ on args => arg1 = " + arg1 + ", arg2 = " + arg2);
                     return false;
                 }
             }
         }
         return true;
-    }
-
-    /**
-     * Compares two problem locations and decides if they contain the same information. Returns {@code true} if they
-     * have the same information, {@code false} otherwise. <br>
-     * <br>
-     * Quick fix calculator {@link SpeculationCalculator} caches the problem locations that were calculated in the last
-     * successful calculation so that it does not recalculate the quick fix results every time there is a change in the
-     * project.
-     * 
-     * @param location1 First location to be compared.
-     * @param location2 Second location to be compared.
-     * @return {@code true} if the locations contain the same information, false otherwise.
-     */
-    public static boolean sameProblemLocationContentWeak(IProblemLocation location1, IProblemLocation location2)
-    {
-        if (location1.getProblemId() != location2.getProblemId())
-            return false;
-        if (location1.getLength() != location2.getLength())
-            return false;
-        String [] args1 = location1.getProblemArguments();
-        String [] args2 = location2.getProblemArguments();
-        if (args1.length != args2.length)
-            return false;
-        boolean result = true;
-        /*
-         * I cannot use this because e.g., for WrongClassName.java, the problem argument depends on the project that
-         * generates it. So the argument for the original project and the copy project does not match.
-         */
-        //@formatter:off
-        //        for (int a = 0; a < args1.length; a++)
-        //        {
-        //            if (!args1[a].equals(args2[a]))
-        //            {
-        //                result = false;
-        //                logger.finest("Locations differ for problem arguments:");
-        //                logger.finest(args1[a]);
-        //                logger.finest(args2[a]);
-        //            }
-        //        }
-        //@formatter:on
-        return result;
     }
 
     /**

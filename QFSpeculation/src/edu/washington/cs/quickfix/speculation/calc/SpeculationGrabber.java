@@ -40,7 +40,7 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
     }
     private final SpeculationCalculator calculator_;
     private boolean notInitialized_;
-
+    
     public SpeculationGrabber(IInvocationContext context, IProblemLocation [] locations)
     {
         // The problem locations can be zero if the user invokes quick fix where no compilation errors
@@ -87,6 +87,7 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
                     "Cannot get the corresponding resource for compilation unit = " + unit.getElementName(), e);
         }
         eclipseProposals_ = QuickFixUtility.calculateCompletionProposals(context_, locations_);
+        
         if (!calculator_.isSynched())
             calculator_.addListener(this);
         attemptToRetrieveResults();
@@ -106,7 +107,6 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
         }
         // for (CompilationError compilationError: result)
         // logger.finer(compilationError.toString());
-        logger.fine("result.size = " + result.size() + ", locations.length = " + locations_.length);
         if (result.size() == locations_.length)
         {
             // Caching succeed...
@@ -146,25 +146,29 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
     {
         if (cachedCompilationErrors_ == null)
         {
-            boolean result = preCacheLocations();
-            if (!result)
+            boolean success = preCacheLocations();
+            if (!success)
                 return;
         }
         logger.fine("Attempting quick fix calculation.");
+        ArrayList <AugmentedCompletionProposal> calculatedProposals;
+        calculatedProposals = new ArrayList <AugmentedCompletionProposal>();
         Map <Squiggly, IJavaCompletionProposal []> problemLocationToProposalMap = calculator_.getProposalsMap();
         Map <Squiggly, AugmentedCompletionProposal []> problemLocationToCompilationErrorMap = calculator_
                 .getSpeculativeProposalsMap();
-        ArrayList <AugmentedCompletionProposal> calculatedProposals = new ArrayList <AugmentedCompletionProposal>();
         for (Squiggly compilationError: cachedCompilationErrors_)
         {
             IJavaCompletionProposal [] proposals = problemLocationToProposalMap.get(compilationError);
             AugmentedCompletionProposal [] augmentedProposals = problemLocationToCompilationErrorMap
                     .get(compilationError);
             if (augmentedProposals == null)
+            {
                 /*
                  * If resultMap does not contain the searched location, we should wait for the calculation to advance.
                  */
+                logger.info("Speculative analysis for this location is not completed yet, not updating the UI.");
                 return;
+            }
             /*
              * Add the elements one by one to make sure that the ordering (proposal - # of compilation errors) is not
              * broken.
@@ -199,11 +203,23 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
         }
         return false;
     }
-
+    
+    private void retrieveResultsConcurrently()
+    {
+        new Thread()
+        {
+            public void run()
+            {
+                attemptToRetrieveResults();
+            }
+        }.start();
+    }
+    
     @Override
     public void speculativeAnalysisRoundCompleted()
     {
-        attemptToRetrieveResults();
+        retrieveResultsConcurrently();
+//        attemptToRetrieveResults();
     }
 
     @Override
@@ -215,6 +231,7 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
     @Override
     public void speculativeAnalysisCompleted()
     {
-        attemptToRetrieveResults();
+        retrieveResultsConcurrently();
+//        attemptToRetrieveResults();
     }
 }
