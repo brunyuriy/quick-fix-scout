@@ -457,7 +457,26 @@ public class QFSession
             // user closed the dialog without waiting for the speculation results.
             return Action.FALSE;
         ArrayList <String> globalBestProposals = getGlobalBestProposals();
-        return Action.FromBoolean(globalBestProposals.contains(selectedProposalString_));
+        for (String gbp: globalBestProposals)
+        {
+            if(containsAllWords(gbp, selectedProposalString_))
+                return Action.TRUE;
+        }
+        return Action.FALSE;
+    }
+
+    private boolean containsAllWords(String source, String target)
+    {
+        ArrayList<String> words = new ArrayList<String>(Arrays.asList(target.split(" ")));
+        ArrayList<String> sourceWords = new ArrayList<String>(Arrays.asList(source.split(" ")));
+        for (String word: words)
+        {
+            if (!sourceWords.contains(word))
+                return false;
+            else
+                sourceWords.remove(word);
+        }
+        return true;
     }
 
     Action isBestProposalSelected()
@@ -606,7 +625,10 @@ public class QFSession
     
     private int getCompilationErrorPart(String speculationProposal)
     {
-        return Integer.parseInt(speculationProposal.substring(1,speculationProposal.indexOf(')')).trim());
+        String representation = speculationProposal.substring(1,speculationProposal.indexOf(')')).trim();
+        if (representation.equals("?"))
+            return Integer.MAX_VALUE;
+        return Integer.parseInt(representation);
     }
     
     private ArrayList <String> getGlobalBestProposals()
