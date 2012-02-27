@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
@@ -19,7 +18,6 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.ChangeCorrectionProposal;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.LinkedNamesAssistProposal;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
-import org.eclipse.jdt.ui.text.java.IProblemLocation;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.ltk.core.refactoring.Change;
 
@@ -130,58 +128,58 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         return synchronizer_.getTaskWorker();
     }
 
-    /**
-     * Returns the display string of calculated {@link AugmentedCompletionProposal}s, which are computed by the
-     * speculative analysis, that correspond to the given problem locations. <br>
-     * If the speculative analysis is completed, then best proposals are also added to this list. <br>
-     * The returned list is sorted (as it would be presented in the Eclipse). <br>
-     * If there is no calculated information at the time of query, <code>null</code> is returned.
-     * 
-     * @param locations Problem locations that create the proposals.
-     * @return The display string of proposals that are computed during the speculative analysis. <br>
-     *         The list is sorted.
-     */
-    public String [] getCalculatedProposals(IProblemLocation [] locations)
-    {
-        // Create a local copy of currently calculated proposals.
-        Map <Squiggly, AugmentedCompletionProposal []> speculativeProposalsLocalMap = getSpeculativeProposalsMap();
-        HashSet <AugmentedCompletionProposal> calculatedProposals = new HashSet <AugmentedCompletionProposal>();
-        // The locations passed may have different references (i.e., we cannot compare object equality).
-        for (IProblemLocation loc: locations)
-        {
-            for (Squiggly shadowCompilationError: speculativeProposalsLocalMap.keySet())
-            {
-                if (SpeculationUtility.sameProblemLocationContent(shadowCompilationError.getLocation(), loc))
-                {
-                    AugmentedCompletionProposal [] proposals = speculativeProposalsLocalMap.get(shadowCompilationError);
-                    if (proposals != null)
-                    {
-                        for (AugmentedCompletionProposal proposal: proposals)
-                            calculatedProposals.add(proposal);
-                    }
-                    break;
-                }
-            }
-        }
-        // super.isSynched() ==> !isWorking(), which means the speculative analysis is completed.
-        if (super.isSynched())
-        {
-            for (AugmentedCompletionProposal proposal: bestProposals_)
-                calculatedProposals.add(proposal);
-        }
-        if (calculatedProposals.size() == 0)
-            return null;
-        else
-        {
-            AugmentedCompletionProposal [] calculatedProposalsArray = calculatedProposals
-                    .toArray(new AugmentedCompletionProposal [calculatedProposals.size()]);
-            Arrays.sort(calculatedProposalsArray);
-            String [] result = new String [calculatedProposalsArray.length];
-            for (int a = 0; a < result.length; a++)
-                result[a] = calculatedProposalsArray[a].getFinalDisplayString();
-            return result;
-        }
-    }
+//    /**
+//     * Returns the display string of calculated {@link AugmentedCompletionProposal}s, which are computed by the
+//     * speculative analysis, that correspond to the given problem locations. <br>
+//     * If the speculative analysis is completed, then best proposals are also added to this list. <br>
+//     * The returned list is sorted (as it would be presented in the Eclipse). <br>
+//     * If there is no calculated information at the time of query, <code>null</code> is returned.
+//     * 
+//     * @param locations Problem locations that create the proposals.
+//     * @return The display string of proposals that are computed during the speculative analysis. <br>
+//     *         The list is sorted.
+//     */
+//    public String [] getCalculatedProposals(IProblemLocation [] locations)
+//    {
+//        // Create a local copy of currently calculated proposals.
+//        Map <Squiggly, AugmentedCompletionProposal []> speculativeProposalsLocalMap = getSpeculativeProposalsMap();
+//        HashSet <AugmentedCompletionProposal> calculatedProposals = new HashSet <AugmentedCompletionProposal>();
+//        // The locations passed may have different references (i.e., we cannot compare object equality).
+//        for (IProblemLocation loc: locations)
+//        {
+//            for (Squiggly shadowCompilationError: speculativeProposalsLocalMap.keySet())
+//            {
+//                if (SpeculationUtility.sameProblemLocationContent(shadowCompilationError.getLocation(), loc))
+//                {
+//                    AugmentedCompletionProposal [] proposals = speculativeProposalsLocalMap.get(shadowCompilationError);
+//                    if (proposals != null)
+//                    {
+//                        for (AugmentedCompletionProposal proposal: proposals)
+//                            calculatedProposals.add(proposal);
+//                    }
+//                    break;
+//                }
+//            }
+//        }
+//        // super.isSynched() ==> !isWorking(), which means the speculative analysis is completed.
+//        if (super.isSynched())
+//        {
+//            for (AugmentedCompletionProposal proposal: bestProposals_)
+//                calculatedProposals.add(proposal);
+//        }
+//        if (calculatedProposals.size() == 0)
+//            return null;
+//        else
+//        {
+//            AugmentedCompletionProposal [] calculatedProposalsArray = calculatedProposals
+//                    .toArray(new AugmentedCompletionProposal [calculatedProposals.size()]);
+//            Arrays.sort(calculatedProposalsArray);
+//            String [] result = new String [calculatedProposalsArray.length];
+//            for (int a = 0; a < result.length; a++)
+//                result[a] = calculatedProposalsArray[a].getFinalDisplayString();
+//            return result;
+//        }
+//    }
 
     private boolean updateShadowCompilationErrors(Squiggly [] shadowCompilationErrors)
     {

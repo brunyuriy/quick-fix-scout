@@ -64,3 +64,4 @@
 1.4.2:	The proposals that requires user interaction are no longer computed (issue 42).
 1.5.2:	Overall improvements for speculative analysis and its robustness. Aimed to increase user experience.
 1.5.3:	Minor point update for the release.
+1.5.4:	Fix the way speculation proposals are listed in the log.

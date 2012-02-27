@@ -41,6 +41,8 @@ public class QuickFixDialogCoordinator
     // Local proposals and global best proposals are calculated locally.
     private AugmentedCompletionProposal [] localProposals_ = null;
     private ArrayList <AugmentedCompletionProposal> globalBestProposals_;
+    private AugmentedCompletionProposal [] cachedLocalProposals_ = null;
+    private ArrayList <AugmentedCompletionProposal> cachedGlobalBestProposals_ = null;
 
     // These are global and needs to be protected by lock_.
     private AugmentedCompletionProposal [] calculatedProposals_ = null;
@@ -270,6 +272,8 @@ public class QuickFixDialogCoordinator
         synchronized (lock_)
         {
             localProposals_ = localProposals.toArray(new AugmentedCompletionProposal [localProposals.size()]);
+            cachedLocalProposals_ = localProposals_;
+            cachedGlobalBestProposals_ = globalBestProposals_;
         }
     }
     
@@ -374,6 +378,9 @@ public class QuickFixDialogCoordinator
             localProposals_ = null;
             calculatedProposals_ = null;
             eclipseProposals_ = null;
+            
+            cachedLocalProposals_ = null;
+            cachedGlobalBestProposals_ = null;
         }
     }
 
@@ -383,5 +390,30 @@ public class QuickFixDialogCoordinator
         {
             notifyAll();
         }
+    }
+
+    public String [] getCalculatedProposals()
+    {
+        ArrayList <AugmentedCompletionProposal> gbps;
+        AugmentedCompletionProposal [] lps;
+        synchronized(lock_)
+        {
+            gbps = cachedGlobalBestProposals_;
+            lps = cachedLocalProposals_;
+            cachedGlobalBestProposals_ = null;
+            cachedLocalProposals_ = null;
+        }
+        if (gbps == null || lps == null)
+            return null;
+        
+        ArrayList <String> result = new ArrayList <String>();
+        for (AugmentedCompletionProposal gbp: gbps)
+        {
+            gbp.makeGBP();
+            result.add(gbp.getFinalDisplayString());
+        }
+        for (AugmentedCompletionProposal lp: lps)
+            result.add(lp.getFinalDisplayString());
+        return result.toArray(new String [result.size()]); 
     }
 }

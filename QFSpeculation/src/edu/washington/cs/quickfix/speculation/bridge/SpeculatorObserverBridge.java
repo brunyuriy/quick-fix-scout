@@ -9,6 +9,7 @@ import edu.washington.cs.quickfix.bridge.ISpeculatorObserverBridge;
 import edu.washington.cs.quickfix.speculation.Speculator;
 import edu.washington.cs.quickfix.speculation.calc.SpeculationCalculator;
 import edu.washington.cs.quickfix.speculation.gui.SpeculationPreferencePage;
+import edu.washington.cs.quickfix.speculation.hack.QuickFixDialogCoordinator;
 
 public class SpeculatorObserverBridge extends Hack implements ISpeculatorObserverBridge
 {
@@ -19,7 +20,7 @@ public class SpeculatorObserverBridge extends Hack implements ISpeculatorObserve
         if (currentCalculator == null)
             return null;
         else
-            return currentCalculator.getCalculatedProposals(locations);
+            return QuickFixDialogCoordinator.getCoordinator().getCalculatedProposals();
     }
 
     @Override

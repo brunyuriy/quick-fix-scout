@@ -246,7 +246,7 @@ public class CompletionProposalPopupCoordinator
         }
     }
 
-    public void propsoalTableSet(Table proposalTable, CompletionProposalPopup popup)
+    public void proposalTableSet(Table proposalTable, CompletionProposalPopup popup)
     {
         synchronized(lock_)
         {
