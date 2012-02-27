@@ -551,6 +551,10 @@ public class QFSession
     
     boolean isGlobalBestProposalGenerated()
     {
+        System.out.println("Global Best Proposals: ");
+        for (String gbp: getGlobalBestProposals())
+            System.out.println(gbp);
+        
         return getGlobalBestProposals().size() != 0;
     }
 
@@ -606,7 +610,26 @@ public class QFSession
     
     String [] getSpeculationProposals()
     {
-        return speculationProposals_;
+        if (speculationProposals_ == null)
+            return null;
+        ArrayList<String> result = new ArrayList <String>();
+        for (String speculationProposal: speculationProposals_)
+        {
+            if (speculationProposal.contains(".java:"))
+                result.add(speculationProposal);
+            else
+            {
+                for (String eclipseProposal: availableProposals_)
+                {
+                    if (containsAllWords(speculationProposal, eclipseProposal))
+                    {
+                        result.add(speculationProposal);
+                        break;
+                    }
+                }
+            }
+        }
+        return result.toArray(new String [result.size()]);
     }
     
     boolean isSessionCompleted()
@@ -641,7 +664,7 @@ public class QFSession
         for (String speculationProposal: speculationProposals_)
         {
             String proposalPart = getProposalPart(speculationProposal);
-            if (!eclipseProposals.contains(proposalPart))
+            if (speculationProposal.contains(".java:") && !eclipseProposals.contains(proposalPart))
                 result.add(proposalPart);
         }
         return result;

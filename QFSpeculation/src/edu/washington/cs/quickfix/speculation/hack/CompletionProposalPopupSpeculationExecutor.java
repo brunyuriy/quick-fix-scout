@@ -18,7 +18,7 @@ public class CompletionProposalPopupSpeculationExecutor extends Hack implements 
         // These cannot fail!
         CompletionProposalPopup popup = (CompletionProposalPopup) popupObject;
         Table table = (Table) tableObject;
-        CompletionProposalPopupCoordinator.getCoordinator().propsoalTableSet(table, popup);
+        CompletionProposalPopupCoordinator.getCoordinator().proposalTableSet(table, popup);
     }
 
     @Override

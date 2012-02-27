@@ -23,7 +23,7 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     public static final int NOT_AVAILABLE = -1;
     private final Squiggly [] errorsAfter_;
     
-    private boolean gbp_;
+    private volatile boolean gbp_;
     // Lazily initialized fields.
     private String finalDisplayString_;
     
