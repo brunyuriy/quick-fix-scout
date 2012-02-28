@@ -13,12 +13,14 @@ import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import edu.washington.cs.quickfix.speculation.Speculator;
 import edu.washington.cs.quickfix.speculation.calc.SpeculationCalculator;
 import edu.washington.cs.quickfix.speculation.calc.model.AugmentedCompletionProposal;
+import edu.washington.cs.quickfix.speculation.calc.model.QFPopupListener;
+import edu.washington.cs.quickfix.speculation.calc.model.QFPopupNotifier;
 import edu.washington.cs.quickfix.speculation.model.SpeculationUtility;
 import edu.washington.cs.synchronization.ProjectSynchronizer;
 import edu.washington.cs.util.eclipse.QuickFixUtility;
 import edu.washington.cs.util.eclipse.model.Squiggly;
 
-public class QuickFixDialogCoordinator
+public class QuickFixDialogCoordinator implements QFPopupNotifier
 {
     private static final QuickFixDialogCoordinator instance_ = new QuickFixDialogCoordinator();
 
@@ -59,6 +61,9 @@ public class QuickFixDialogCoordinator
     
     private final CompletionProposalPopupCoordinator completionProposalPopupCoordinator_;
     private final HoverDialogCoordinator hoverDialogCoordinator_;
+    
+    private ArrayList<QFPopupListener> popupUpdaters_;
+    private final Object updaterLock_;
 
     // singleton
     private QuickFixDialogCoordinator()
@@ -67,6 +72,8 @@ public class QuickFixDialogCoordinator
         globalBestProposals_ = new ArrayList <AugmentedCompletionProposal>();
         completionProposalPopupCoordinator_ = CompletionProposalPopupCoordinator.getCoordinator();
         hoverDialogCoordinator_ = HoverDialogCoordinator.getCoordinator();
+        popupUpdaters_ = new ArrayList <QFPopupListener>();
+        updaterLock_ = new Object();
     }
     
     private AugmentedCompletionProposal [] getLocalProposals()
@@ -74,10 +81,30 @@ public class QuickFixDialogCoordinator
         return localProposals_;
     }
     
+    public void addQFPopupListener(QFPopupListener listener)
+    {
+        synchronized(updaterLock_)
+        {
+            popupUpdaters_.add(listener);
+        }
+    }
+    
     public void popupClosed()
     {
+        signalPopupClosed();
+        
         completionProposalPopupCoordinator_.popupClosed();
         hoverDialogCoordinator_.popupClosed();
+    }
+    
+    public void signalPopupClosed()
+    {
+        synchronized(updaterLock_)
+        {
+            for (QFPopupListener updater: popupUpdaters_)
+                updater.popupClosed();
+            popupUpdaters_.clear();
+        }
     }
 
     public void setBestProposals(ArrayList <AugmentedCompletionProposal> bestProposals)
@@ -364,7 +391,7 @@ public class QuickFixDialogCoordinator
         ProjectSynchronizer synchronizer = Speculator.getSpeculator().getCurrentSynchronizer();
         if (synchronizer != null)
             synchronizer.getTaskWorker().bypassTypingSessionCheck();
-        clear();
+//        clear();
         /*
          * TODO Somehow invalidate quick fix calculator at this point. Otherwise if user clicks the quick fix too fast
          * (i.e., before the next calculation starts), grabber reads the old values and thinks that it has the results!
