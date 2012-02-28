@@ -15,6 +15,7 @@ import org.eclipse.jdt.ui.text.java.IProblemLocation;
 
 import edu.washington.cs.quickfix.speculation.Speculator;
 import edu.washington.cs.quickfix.speculation.calc.model.AugmentedCompletionProposal;
+import edu.washington.cs.quickfix.speculation.calc.model.QFPopupListener;
 import edu.washington.cs.quickfix.speculation.calc.model.SpeculativeAnalysisListener;
 import edu.washington.cs.quickfix.speculation.gui.SpeculationPreferencePage;
 import edu.washington.cs.quickfix.speculation.hack.QuickFixDialogCoordinator;
@@ -23,7 +24,7 @@ import edu.washington.cs.synchronization.ProjectSynchronizer;
 import edu.washington.cs.util.eclipse.QuickFixUtility;
 import edu.washington.cs.util.eclipse.model.Squiggly;
 
-public class SpeculationGrabber extends Thread implements SpeculativeAnalysisListener
+public class SpeculationGrabber extends Thread implements SpeculativeAnalysisListener, QFPopupListener
 {
     private final IProblemLocation [] locations_;
     private final IInvocationContext context_;
@@ -89,7 +90,10 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
         eclipseProposals_ = QuickFixUtility.calculateCompletionProposals(context_, locations_);
         
         if (!calculator_.isSynched())
+        {
+            QuickFixDialogCoordinator.getCoordinator().addQFPopupListener(this);
             calculator_.addListener(this);
+        }
         attemptToRetrieveResults();
     }
 
@@ -233,5 +237,10 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
     {
         retrieveResultsConcurrently();
 //        attemptToRetrieveResults();
+    }
+
+    public void popupClosed()
+    {
+        calculator_.removeListener(this);
     }
 }

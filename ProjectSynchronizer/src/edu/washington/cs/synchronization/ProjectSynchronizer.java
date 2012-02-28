@@ -66,7 +66,7 @@ public class ProjectSynchronizer
     private static final long MB = 1024*1024;
     private static final long ZIP_LIMIT = MB * 20;
     
-    public static final boolean CONTOLLED_EXPERIMENT = true;
+    public static final boolean CONTOLLED_EXPERIMENT = false;
     
     private static double toMB(long bytes)
     {
