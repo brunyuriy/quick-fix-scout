@@ -19,6 +19,7 @@ import org.eclipse.jdt.internal.ui.text.correction.proposals.ChangeCorrectionPro
 import org.eclipse.jdt.internal.ui.text.correction.proposals.LinkedNamesAssistProposal;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.templates.TemplateProposal;
 import org.eclipse.ltk.core.refactoring.Change;
 
 import com.kivancmuslu.www.timer.Timer;
@@ -433,7 +434,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             shadowCompilationErrors = getShadowCEs();
             
             // Added for debugging (i.e., better understanding of errors vs. warnings)
-//            Squiggly [] shadowSquigglies = getShadowSquigglies();
+//            Squiggly [] shadowSquigglies = BuilderUtility.calculateSquigglies(shadowProject_);
 //            for (Squiggly squiggly: shadowSquigglies)
 //            {
 //                if (squiggly.isWarning())
@@ -541,6 +542,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             for (int a = 0; a < shadowProposals.length; a++)
             {
                 IJavaCompletionProposal shadowProposal = shadowProposals[a];
+                System.out.println(shadowProposal.getDisplayString() + ": " + shadowProposal.getRelevance());
                 // Note: Transformation does nothing if the original proposal is not null and development test is not
                 // active.
                 String displayString = shadowProposal.getDisplayString();

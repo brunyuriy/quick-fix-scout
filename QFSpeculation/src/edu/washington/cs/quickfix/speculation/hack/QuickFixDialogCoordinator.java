@@ -15,6 +15,7 @@ import edu.washington.cs.quickfix.speculation.calc.SpeculationCalculator;
 import edu.washington.cs.quickfix.speculation.calc.model.AugmentedCompletionProposal;
 import edu.washington.cs.quickfix.speculation.calc.model.QFPopupListener;
 import edu.washington.cs.quickfix.speculation.calc.model.QFPopupNotifier;
+import edu.washington.cs.quickfix.speculation.gui.SpeculationPreferencePage;
 import edu.washington.cs.quickfix.speculation.model.SpeculationUtility;
 import edu.washington.cs.synchronization.ProjectSynchronizer;
 import edu.washington.cs.util.eclipse.QuickFixUtility;
@@ -195,6 +196,9 @@ public class QuickFixDialogCoordinator implements QFPopupNotifier
         logger.fine("Updating dialogs...");
         constructLocalProposalsInternally();
         logger.fine("Proposals are created locally.");
+        Boolean augmented = SpeculationPreferencePage.getInstance().isAugmentationActivated();
+        if (augmented == null || !augmented)
+            return;
         completionProposalPopupCoordinator_.updatePopup(globalBestProposals_, localProposals_);
         logger.fine("Quick Fix Dialog is updated.");
         hoverDialogCoordinator_.updateHover(globalBestProposals_, localProposals_);
@@ -228,6 +232,8 @@ public class QuickFixDialogCoordinator implements QFPopupNotifier
 //                System.out.println("Comparing: " + proposal.getDisplayString());
 //                System.out.println(proposal);
                 boolean fixesAtLeastOne = false;
+                if (compilationErrors.length == 0)
+                    fixesAtLeastOne = true;
                 for (Squiggly compilationError: compilationErrors)
                 {
                     if (proposal.canFix(compilationError))

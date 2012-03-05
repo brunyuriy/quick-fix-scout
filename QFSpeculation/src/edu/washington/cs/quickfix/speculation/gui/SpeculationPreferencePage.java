@@ -68,11 +68,21 @@ public class SpeculationPreferencePage extends FieldEditorPreferencePage impleme
     public boolean isActivated()
     {
         return preferences_.getBoolean(QF_SPECULATION_AUGMENTED) || preferences_.getBoolean(QF_SPECULATION_ENABLED);
+//        if (preferences_.getBoolean(QF_SPECULATION_AUGMENTED))
+//            return true;
+//        if (preferences_.getBoolean(QF_SPECULATION_ENABLED))
+//            return false;
+//        return null;
     }
     
-    public boolean isAugmentationActivated()
+    public Boolean isAugmentationActivated()
     {
-        return preferences_.getBoolean(QF_SPECULATION_AUGMENTED);
+        if (preferences_.getBoolean(QF_SPECULATION_AUGMENTED))
+            return true;
+        if (preferences_.getBoolean(QF_SPECULATION_ENABLED))
+            return false;
+        return null;
+//        return preferences_.getBoolean(QF_SPECULATION_AUGMENTED);
     }
 
     /*

@@ -11,5 +11,5 @@ public interface ISpeculatorObserverBridge extends IHack
     Date getAnalysisCompletionTime();
     Date getLocalSpeculationCompletionTime();
     String [] getCalculatedProposals(IProblemLocation [] location);
-    boolean isSpeculationRunning();
+    Boolean isSpeculationRunning();
 }
