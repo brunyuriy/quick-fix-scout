@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.swt.graphics.Color;
@@ -157,7 +158,13 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
         if (isResultAvaliable())
         {
             if (other.isResultAvaliable())
-                return errorsAfter_.length - other.errorsAfter_.length;
+            {
+                int difference = errorsAfter_.length - other.errorsAfter_.length;
+                if (difference == 0)
+                    return compareEquality(getProposal(), other.getProposal());
+                else
+                    return difference;
+            }
             else
                 /*
                  * Here min value is returned so that comparison never swaps elements (i.e., leaves the proposal that has no
@@ -174,8 +181,20 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
                  */
                 return Integer.MAX_VALUE;
             else
-                return 0;
+                return compareEquality(getProposal(), other.getProposal());
         }
+    }
+
+    private int compareEquality(ICompletionProposal proposal1, ICompletionProposal proposal2)
+    {
+        if (proposal1 instanceof IJavaCompletionProposal && proposal2 instanceof IJavaCompletionProposal)
+        {
+            int difference = ((IJavaCompletionProposal) proposal2).getRelevance() - ((IJavaCompletionProposal) proposal1).getRelevance();
+            if (difference == 0)
+                return proposal1.getDisplayString().compareTo(proposal2.getDisplayString());
+            return difference;
+        }
+        return proposal1.getDisplayString().compareTo(proposal2.getDisplayString());
     }
 
     public String toString()

@@ -37,3 +37,6 @@
 1.1.3:	Added check at the beginning of the plug-in whether snapshot feature is enabled or not. If not, a message is shown that asks if the user wants to enable this feature. (issue 38)
 1.1.4:	Minor point update for the release.
 1.1.5:	Update to match new Zip Utility API.
+1.1.6: 	Now sorting the proposals as Eclipse does before logging.
+1.1.7:	API change for isSpeculationRunning() function.
+1.1.8:	Now, also logging invalidated sessions. We are also marking them so that we can analyze them differently. 

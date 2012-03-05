@@ -24,9 +24,9 @@ public class SpeculatorObserverBridge extends Hack implements ISpeculatorObserve
     }
 
     @Override
-    public boolean isSpeculationRunning()
+    public Boolean isSpeculationRunning()
     {
-        return SpeculationPreferencePage.getInstance().isActivated();
+        return SpeculationPreferencePage.getInstance().isAugmentationActivated();
     }
 
     @Override

@@ -79,10 +79,11 @@ public class ObservationGrabber extends Thread
         boolean internalCheck = synchronizer.testSynchronization();
         if (!internalCheck)
         {
-            session.invalidate();
+//            session.invalidate();
+            session.markInvalidated();
             logger.severe("Projects getting out of sync problem occured. Current quick fix session is invalidated.");
         }
-        else
+//        else
         {
             /*
              * Normally this is already done in a non-UI thread (this), so maybe there is no need to spawn a new thread.
