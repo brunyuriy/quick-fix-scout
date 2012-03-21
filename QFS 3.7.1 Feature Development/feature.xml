@@ -23,7 +23,7 @@ quick fix proposals.
    </license>
 
    <url>
-      <update label="Quick Fix Scout for Eclipse 3.7.1 Development" url="http://code.google.com/p/quick-fix-scout/source/browse/QFS_3.7.1-Dev/"/>
+      <update label="Quick Fix Scout for Eclipse 3.7.1 Development" url="http://quick-fix-scout.googlecode.com/hg/QFS_3.7.1-Dev/"/>
    </url>
 
    <plugin
