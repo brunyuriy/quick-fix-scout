@@ -2,7 +2,7 @@
 <feature
       id="edu.washington.cs.qfs_371_dev"
       label="Quick Fix Scout 3.7.1"
-      version="0.2.4"
+      version="0.2.5"
       provider-name="Kivanc Muslu">
 
    <description url="http://quick-fix-scout.googlecode.com/">
@@ -23,7 +23,7 @@ quick fix proposals.
    </license>
 
    <url>
-      <update label="Quick Fix Scout for Eclipse 3.7.1 Development" url="http://www.kivancmuslu.com/Quick_Fix_Scout/3.7.1_Classic_Dev/"/>
+      <update label="Quick Fix Scout for Eclipse 3.7.1 Development" url="http://code.google.com/p/quick-fix-scout/source/browse/QFS_3.7.1-Dev/"/>
    </url>
 
    <plugin
