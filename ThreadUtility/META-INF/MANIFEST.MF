@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: ThreadUtility
+Bundle-SymbolicName: edu.washington.cs.threading
+Bundle-Version: 1.1.1
+Bundle-Vendor: Kivanc Muslu
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Export-Package: edu.washington.cs.threading

@@ -1,0 +1,14 @@
+syntax: glob
+.DS_Store
+*.class
+QFLogAnalyzer
+QFSpeculation/icons/sample.gif
+QFSpeculation/Export-all.xml
+QFSpeculation/QuickFixSpeculation.target
+QFUsageObserver/sample_logs
+QFDebugAnalyzer
+Analysis
+QFS 3.7.1 Update Site/web/site.css
+syntax: regexp
+.*/doc/.*
+.*/javadoc\.xml

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="edu.washington.cs.qfs_371_dev"
+      label="Quick Fix Scout 3.7.1"
+      version="0.2.5"
+      provider-name="Kivanc Muslu">
+
+   <description url="http://quick-fix-scout.googlecode.com/">
+      Quick Fix Scout Plug-in improves Eclipse’s quick fix dialogs,
+so that they display not just a set of proposals, but also a
+prediction about what will happen if you apply each proposal.
+It also adds better proposals that Eclipse would not have displayed.
+This helps you to make better and faster decisions about the
+quick fix proposals.
+   </description>
+
+   <copyright url="http://quick-fix-scout.googlecode.com/">
+      Copyright details will be added.
+   </copyright>
+
+   <license url="http://quick-fix-scout.googlecode.com/">
+      License details will be added.
+   </license>
+
+   <url>
+      <update label="Quick Fix Scout for Eclipse 3.7.1 Development" url="http://quick-fix-scout.googlecode.com/hg/QFS_3.7.1-Dev/"/>
+   </url>
+
+   <plugin
+         id="edu.washington.cs.email"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="edu.washington.cs.hack"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="edu.washington.cs.logging"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="edu.washington.cs.quickfix.bridge"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="edu.washington.cs.quickfix.observation"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="edu.washington.cs.quickfix.observation.hack"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="edu.washington.cs.quickfix.speculation"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="edu.washington.cs.quickfix.speculation.hack"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="edu.washington.cs.swing"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="edu.washington.cs.synchronization"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="edu.washington.cs.threading"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="edu.washington.cs.util"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="com.kivancmuslu.www.time"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="com.kivancmuslu.www.zip"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.eclipse.jface.text"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="javax.mail"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+</feature>

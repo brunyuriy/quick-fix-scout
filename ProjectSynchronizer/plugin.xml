@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.startup">
+      <startup
+            class="edu.washington.cs.synchronization.SynchronizerStarter">
+      </startup>
+   </extension>
+      <extension
+         point="org.eclipse.jdt.ui.javaElementFilters">
+      <filter
+            class="edu.washington.cs.synchronization.QuickFixScoutFilter"
+            description="Hides the extra projects created by Quick Fix Scout plug-in"
+            enabled="true"
+            id="edu.washington.cs.speculation.quickfix.javaElementFilter"
+            name="Quick Fix Scout Filter">
+      </filter>
+   </extension>
+<extension point="org.eclipse.ui.navigator.navigatorContent">
+    <commonFilter
+          activeByDefault="true"
+          class="edu.washington.cs.synchronization.QuickFixScoutFilter"
+          description="Hides Quick Fix Scout Files"
+          id="edu.washington.cs.speculation.quickfix.navigatorContentFilter"
+          name="Quick Fix Scout Filter"
+          visibleInUI="true">
+    </commonFilter>
+</extension>
+<extension point="org.eclipse.ui.navigator.viewer">
+    <viewerContentBinding
+          viewerId="org.eclipse.ui.navigator.ProjectExplorer">
+       <includes>
+          <contentExtension
+                isRoot="true"
+                pattern="edu.washington.cs.speculation.quickfix.navigatorContentFilter">
+          </contentExtension>
+       </includes>
+    </viewerContentBinding>
+</extension>
+
+</plugin>

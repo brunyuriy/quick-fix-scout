@@ -1,0 +1,1 @@
+1.0.0: Initial release as the common parts of speculation and usage observer hack plug-ins. Complete Javadoc documentation.
