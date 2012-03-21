@@ -23,6 +23,7 @@ import edu.washington.cs.quickfix.observation.log.ObservationCompilationErrorLog
 import edu.washington.cs.quickfix.observation.log.ObservationLogger;
 import edu.washington.cs.quickfix.observation.log.ObservationCompilationErrorLogger.Type;
 import edu.washington.cs.synchronization.sync.task.internal.TaskWorker;
+import edu.washington.cs.util.eclipse.QuickFixUtility;
 import edu.washington.cs.util.log.CommonLoggers;
 
 /**
@@ -35,6 +36,8 @@ public class QFSession
 {
     /** Constant that represents the prefix used for the session type of a Quick Fix session. */
     static final String SESSION_TYPE_STRING = "Logging Quick Fix session of type = ";
+    /** Constant that represents whether the session is marked as invalid (getting out of sync) or not. */
+    static final String SESSION_VALIDITY_STRING = "Session is valid: ";
     /** Constant that represents the prefix used for the start of a quick fix session. */
     static final String SESSION_START_STRING = "Quick Fix session started. Current time = ";
     /** Constant that represents the prefix used for the delay before a quick fix session. */
@@ -115,6 +118,10 @@ public class QFSession
     public static enum QFSessionType { HOVER, DIALOG }
     private QFSessionType sessionType_;
     
+    private boolean markedInvalid_ = false;
+    
+    private boolean undone_ = false;
+    
     public QFSession()
     {
         this(null, INVALID_TIME, INVALID_TIME, null, null, null, INVALID_ERRORS, null, INVALID_ERRORS, INVALID_TIME,
@@ -192,7 +199,7 @@ public class QFSession
         
         // See if speculative analysis is running.
         ISpeculatorObserverBridge bridge = BridgeActionManager.getInstance().getSpeculatorObserverBridge();
-        isSpeculationRunning_ = bridge == null ? false : bridge.isSpeculationRunning();
+        isSpeculationRunning_ = bridge == null ? null : bridge.isSpeculationRunning();
     }
 
     public synchronized void setLocations(IProblemLocation [] locations)
@@ -267,6 +274,7 @@ public class QFSession
             availableProposals_ = new String [0];
         else
         {
+            Arrays.sort(proposals, new QuickFixUtility.EclipseProposalSorter());
             availableProposals_ = new String [proposals.length];
             for (int a = 0; a < availableProposals_.length; a++)
                 availableProposals_[a] = proposals[a].getDisplayString();
@@ -274,7 +282,7 @@ public class QFSession
         logger.fine("Avaible proposals are set.");
         notifyAll();
     }
-
+    
     public String toString()
     {
         if (!logConstructed_)
@@ -323,6 +331,7 @@ public class QFSession
     private synchronized void createLog()
     {
         log(SESSION_TYPE_STRING + sessionType_.toString());
+        log(SESSION_VALIDITY_STRING + !markedInvalid_);
         log(SESSION_START_STRING + makeString(sessionStartTime_));
         log(SESSION_DELAY_STRING + makeString(delayTime_) + SESSION_DELAY_STRING_SEPERATOR
                 + Dates.toReadableString(delayTime_));
@@ -435,6 +444,16 @@ public class QFSession
      ************ GETTERS **********
      *******************************/
     
+    void undone()
+    {
+        undone_ = true;
+    }
+    
+    boolean isUndone()
+    {
+        return undone_;
+    }
+    
     Action isGlobalBestProposalSelected()
     {
         // If the session is not completed, then no meaning to compute this.
@@ -465,7 +484,7 @@ public class QFSession
         return Action.FALSE;
     }
 
-    private boolean containsAllWords(String source, String target)
+    private static boolean containsAllWords(String source, String target)
     {
         ArrayList<String> words = new ArrayList<String>(Arrays.asList(target.split(" ")));
         ArrayList<String> sourceWords = new ArrayList<String>(Arrays.asList(source.split(" ")));
@@ -485,7 +504,7 @@ public class QFSession
         // it is guaranteed that the selected proposal is the best proposal. We also know that
         // if there is no speculation information, and the first proposal is not selected, then
         // there is no way to know.
-        Action result = isGlobalBestProposalSelected().or(isFirstProposalSelected());
+        Action result = isGlobalBestProposalSelected();// .or(isFirstProposalSelected());
         if (result == Action.FALSE && speculationProposals_ != null)
         {
             // However, if there is speculation information, we could still determine whether it is
@@ -495,6 +514,7 @@ public class QFSession
             ArrayList <String> globalBestProposals = getGlobalBestProposals();
             for (String speculationProposal: speculationProposals_)
             {
+//                System.out.println(speculationProposal);
                 int currentCompilationError = getCompilationErrorPart(speculationProposal);
                 String proposalPart = getProposalPart(speculationProposal);
                 if (!globalBestProposals.contains(proposalPart))
@@ -507,6 +527,7 @@ public class QFSession
                 }
             }
             assert compilationError == -1 || bestCompilationError == Integer.MAX_VALUE || compilationError >= bestCompilationError;
+//            System.out.println("Selected proposal = " + selectedProposalString_ + ", compilation error = " + compilationError + ", best compilation error = " + bestCompilationError );
             if (compilationError != -1 && compilationError == bestCompilationError)
                 // If the number of compilation errors for the selected proposal is equal to the number of lowest compilation errors
                 // then, we return true.
@@ -551,9 +572,9 @@ public class QFSession
     
     boolean isGlobalBestProposalGenerated()
     {
-        System.out.println("Global Best Proposals: ");
-        for (String gbp: getGlobalBestProposals())
-            System.out.println(gbp);
+//        System.out.println("Global Best Proposals: ");
+//        for (String gbp: getGlobalBestProposals())
+//            System.out.println(gbp);
         
         return getGlobalBestProposals().size() != 0;
     }
@@ -606,6 +627,31 @@ public class QFSession
     String [] getEclipseProposals()
     {
         return availableProposals_;
+    }
+    
+    static ArrayList<String> getGlobalBestProposals(ArrayList<String> speculationProposals, ArrayList<String> eclipseProposals)
+    {
+        if (speculationProposals == null)
+            return null;
+        
+        ArrayList<String> result = new ArrayList <String>();
+        for (String speculationProposal: speculationProposals)
+        {
+            if (speculationProposal.contains(".java:"))
+                result.add(speculationProposal);
+            else
+            {
+                for (String eclipseProposal: eclipseProposals)
+                {
+                    if (containsAllWords(speculationProposal, eclipseProposal))
+                    {
+                        result.add(speculationProposal);
+                        break;
+                    }
+                }
+            }
+        }
+        return result;
     }
     
     String [] getSpeculationProposals()
@@ -732,6 +778,12 @@ public class QFSession
                 log.append("\t" + proposal + ls);
         }
         System.err.println(log);
+    }
+
+    public void markInvalidated()
+    {
+        markedInvalid_ = true;
+        
     }
     
 }

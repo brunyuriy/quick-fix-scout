@@ -1,5 +1,6 @@
 package edu.washington.cs.util.eclipse;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -42,6 +43,18 @@ public class QuickFixUtility
      */
     private QuickFixUtility()
     {}
+    
+    public static class EclipseProposalSorter implements Comparator<IJavaCompletionProposal>
+    {
+        @Override
+        public int compare(IJavaCompletionProposal proposal1, IJavaCompletionProposal proposal2)
+        {
+            int difference = proposal2.getRelevance() - proposal1.getRelevance();
+            if (difference == 0)
+                return proposal1.getDisplayString().compareTo(proposal2.getDisplayString());
+            return difference;
+        }
+    }
 
     /**************
      * PUBLIC API *

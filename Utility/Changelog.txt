@@ -12,3 +12,4 @@
 1.5.4:	Added support for caching the context of a squiggly (issue 40).
 1.5.5:	Added don't remind me button for update detections (issue 41).
 1.5.6:	Minor point update for the release.
+1.5.7:	Added implementation for Eclipse Proposal sorter.

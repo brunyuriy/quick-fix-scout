@@ -56,6 +56,8 @@ import edu.washington.cs.util.eclipse.ResourceUtility;
  */
 public class ProjectSynchronizer
 {
+    // This is a comment to see the screen recording. 
+    
     public static final String SHADOW_PREFIX = "DO_NOT_DELETE_";
     /** Constant value that represents the working set name to be assigned to the shadow projects. */
     public static final String WORKING_SET_NAME = "QFS";
