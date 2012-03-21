@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Quick Fix Observation Hack
+Bundle-SymbolicName: edu.washington.cs.quickfix.observation.hack;singleton:=true
+Bundle-Version: 1.0.1
+Bundle-Vendor: Kivanc Muslu
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Require-Bundle: edu.washington.cs.logging;bundle-version="1.0.0",
+ edu.washington.cs.hack;bundle-version="1.0.0"
+Export-Package: edu.washington.cs.quickfix.observation.hack

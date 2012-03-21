@@ -1,0 +1,65 @@
+Test 0: Auto completion should work.
+	Test Scenario
+		1. Open a project (not important which one)
+		2. Try many auto completions and make sure that they work as expected
+
+Test 1: Synchronization and a small but normal usage.
+	Test Scenario
+		1. Create a new project called Test
+		2. Create a new class called Test.java
+		3. Write a main method that defines an integer array and sorts that array using bubble sort
+		4. Make a mistake at the end of implementation intentionally
+		5. Execute the quick fix that would fix this mistake
+		6. Select a wrong proposal
+		7. Undo
+		8. Select the correct proposal
+	What to Check
+		1. Make sure that at the end shadow project and the normal project are at sync.
+		2. Make sure that in the log, you have the first quick fix selection, the undo and the second quick fix selection.
+		3. Make sure that there are no exceptions during the run of the program.
+		4. Make sure that number of errors before and after are calculated correctly in the log.
+
+Test 2: Small Project, testing for quick fix calculation priority, premature termination of analysis, speculative analysis correctness.
+	Test Scenario
+		1. Open Crystal
+		2. Go to Contsants.java
+		3. Change the class declaration to Constantz.java
+		4. Click quick fix icon
+		5. For the offered quick fixes, select change type declaration to Constanz.java
+		6. Go to ClientPreferences.java
+		7. Select one of the quick fixes
+		8. Go back to Contantz.java
+		9. Undo
+		10. Change the class declaration to Contantz.java
+		11. Click quick fix icon
+	What to Check
+		1. Make sure that when '3' is completed, the analysis starts from the quick fixes offered in Contants.java (i.e., quick fix calculation priority).
+		2. Make sure that '4' is not blocking (at least not very much).
+		3. Make sure that the proposals offered in '5' are correct (with respect to # of compilation errors they generate).
+		4. Make sure that after '5' is completed, current speculative analysis is invalidated and a new one is started.
+		5. Make sure that after '6' is completed, current speculative analysis starts to calculate the quick fixes offered for that file.
+		6. Make sure that the proposals offered in '7' are correct (i.e., there are not N/As etc.)
+		7. Make sure that after '9', there are no proposal calculation and # of compilation errors in the project is zero.
+		8. Make sure that after '10' speculative analysis calculates the compilation errors in Constants.java. This is tricky since the time we selected the file its name was Constantz.java and we have changed it.
+		9. Make sure that the proposals offered in '11' are correct.
+		
+Test 3: Activation & Deactivation
+	Test Scenario
+		1. Open Crystal
+		2. Deactivate speculation plug-in
+		3. Go to Constants.java
+		4. Change the class declaration to Contantz.java
+		5. Click on quick fix icon
+		5. Activate the speculation plug-in
+		6. Click on quick fix icon (Test 2:4)
+		7. For the offered quick fixes, select change type declaration to Constanz.java (Test 2:5)
+		8. Go to ClientPreferences.java (Test 2:6)
+		9. Select on of the quick fixes (Test 2:7)
+		10. Go back to Contantz.java (Test 2:8)
+		11. Undo (Test 2:9)
+		12. Change the class declaration to Constantz.java (Test 2:10)
+		13. Click the quick fix icon (Test 2:11)
+	What to check
+		1. Make sure that when '2' is completed the current speculative analysis in the background is killed.
+		2. Make sure that '5' does not give any extra information about the proposals or do any calculation.
+		3. Make sure that the expected test results from Test2 are also valid here for the remaining.
