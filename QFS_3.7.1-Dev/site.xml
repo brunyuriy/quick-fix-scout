@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <description name="Quick Fix Scout for Eclipse Classic 3.7.1 Development" url="http://code.google.com/p/quick-fix-scout/source/browse/QFS_3.7.1-Dev/">
+      Quick Fix Scout Plug-in improves Eclipse’s quick fix dialogs, so that they display not just a set of proposals, but also a prediction about what will happen if you apply each proposal. It also adds better proposals that Eclipse would not have displayed. This helps you to make better and faster decisions about the quick fix proposals.
+   </description>
+   <feature url="features/edu.washington.cs.qfs_371_dev_0.2.5.jar" id="edu.washington.cs.qfs_371_dev" version="0.2.5">
+      <category name="edu.washington.cs.qfs_371_d"/>
+   </feature>
+   <category-def name="edu.washington.cs.qfs_371_d" label="Quick Fix Scout">
+      <description>
+         Quick Fix Scout Plug-in improves Eclipse’s quick fix dialogs, so that they display not just a set of proposals, but also a prediction about what will happen if you apply each proposal. It also adds better proposals that Eclipse would not have displayed. This helps you to make better and faster decisions about the quick fix proposals.
+      </description>
+   </category-def>
+</site>
