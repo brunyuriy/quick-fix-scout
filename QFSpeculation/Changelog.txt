@@ -66,3 +66,7 @@
 1.5.3:	Minor point update for the release.
 1.5.4:	Fix the way speculation proposals are listed in the log.
 1.5.5:	Bug fix for updating the QF dialog multiple times if user invokes QF multiple times within the same speculative analysis.
+1.5.6:	Now, proposals are sorter with respect to what Eclipse would have done if they leave the same number of compilation errors.
+1.5.7:	Was not logging speculation proposals when augmentation is closed (i.e., only speculation running). Fixed that.
+1.5.8:	API change for isSpeculationRunning() function. 
+1.5.9:	Bug fix for deciding whether the speculative analysis is running or not. 

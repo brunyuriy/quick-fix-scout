@@ -67,8 +67,8 @@ public class SpeculationGrabber extends Thread implements SpeculativeAnalysisLis
     {
         if (notInitialized_)
             return;
-        if (!SpeculationPreferencePage.getInstance().isAugmentationActivated())
-            return;
+//        if (!SpeculationPreferencePage.getInstance().isAugmentationActivated())
+//            return;
         ICompilationUnit unit = context_.getCompilationUnit();
         try
         {
