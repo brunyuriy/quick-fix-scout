@@ -710,8 +710,12 @@ public class QFSession
         for (String speculationProposal: speculationProposals_)
         {
             String proposalPart = getProposalPart(speculationProposal);
-            if (speculationProposal.contains(".java:") && !eclipseProposals.contains(proposalPart))
-                result.add(proposalPart);
+//            if (speculationProposal.contains(".java:") && !eclipseProposals.contains(proposalPart))
+        	if (!eclipseProposals.contains(proposalPart))
+            {
+            	result.add(proposalPart);
+//            	System.out.println(proposalPart);
+            }
         }
         return result;
     }

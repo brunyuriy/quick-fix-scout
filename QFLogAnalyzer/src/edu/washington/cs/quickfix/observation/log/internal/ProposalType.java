@@ -91,6 +91,8 @@ public enum ProposalType
             return UNKNOWN;
         if (value.startsWith("Remove 'final' modifier of "))
             return UNKNOWN;
+        if (value.equals("Remove 'abstract' modifier"))
+            return UNKNOWN;
         if (value.startsWith("Remove 'static' modifier of "))
             return UNKNOWN;
 
@@ -190,6 +192,10 @@ public enum ProposalType
             return FIELD_AND_VARIABLE;
         if (value.equals("Initialize variable"))
             return FIELD_AND_VARIABLE;
+        if (value.equals("Assign statement to new local variable"))
+        	return FIELD_AND_VARIABLE;
+        if (value.equals("Extract to local variable (replace all occurrences)"))
+        	return FIELD_AND_VARIABLE;
         
         // TODO Auto-generated method stub
         return null;
@@ -201,6 +207,9 @@ public enum ProposalType
             return METHOD;
         if (value.startsWith("Create method "))
             return METHOD;
+        if (value.contains("Create method "))
+            // gbp version
+        	return METHOD;
         if (value.startsWith("Create ") && value.contains(" in super type "))
             return METHOD;
         if (value.startsWith("Change to ") && value.contains("(..)"))
@@ -208,6 +217,13 @@ public enum ProposalType
         if (value.startsWith("Remove argument to match "))
         {
             String remaining = value.substring("Remove argument to match ".length());
+            if (Character.isLowerCase(remaining.charAt(1)))
+                return METHOD;
+        }
+        if (value.contains("Remove argument ") && value.contains(" to match "))
+        {
+        	// gbp version
+            String remaining = value.split(" to match ")[1];
             if (Character.isLowerCase(remaining.charAt(1)))
                 return METHOD;
         }
@@ -323,6 +339,9 @@ public enum ProposalType
         if (value.startsWith("Change constructor ") && value.contains(": Remove parameters "))
             return CONSTRUCTOR;
         if (value.startsWith("Add constructor "))
+            return CONSTRUCTOR;
+        if (value.contains("Add constructor "))
+        	// gbp version
             return CONSTRUCTOR;
         if (value.startsWith("Change constructor ") && value.contains(": Remove parameter "))
             return CONSTRUCTOR;

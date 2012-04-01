@@ -91,10 +91,16 @@ public class Proposal implements Comparable <Proposal>
         if (displayString.startsWith("Remove argument to match ") && displayString.contains("(") && displayString.contains(")"))
             // Constructor and methods.
             return 8;
+        if (displayString.contains("Remove argument ") && displayString.contains(" to match ") && displayString.contains("(") && displayString.contains(")"))
+        	// gbp version
+        	// Constructor and methods.
+            return 8;
         if (displayString.startsWith("Remove arguments to match ") && displayString.contains("(") && displayString.contains(")"))
             // Constructor and methods.
             return 8;
         if (displayString.startsWith("Change constructor ") && displayString.contains("(") && displayString.contains(")") && displayString.contains(" Add parameter "))
+            return 5;
+        if (displayString.startsWith("Change constructor ") && displayString.contains("(") && displayString.contains(")") && displayString.contains(" Add parameters "))
             return 5;
         if (displayString.startsWith("Change constructor ") && displayString.contains("(") && displayString.contains(")") && displayString.contains(" Remove parameter "))
             return 5;
@@ -108,7 +114,13 @@ public class Proposal implements Comparable <Proposal>
             return 5;
         if (displayString.startsWith("Add constructor ") && displayString.contains("(") && displayString.contains(")"))
             return 5;
+        if (displayString.contains("Add constructor ") && displayString.contains("(") && displayString.contains(")"))
+            // gbp version
+        	return 5;
         if (displayString.startsWith("Create method ") && displayString.contains("(") && displayString.contains(")"))
+            return 5;
+        if (displayString.contains("Create method ") && displayString.contains("(") && displayString.contains(")"))
+        	// gbp version
             return 5;
         if (displayString.equals("Replace catch clause with throws"))
             return 4;
@@ -220,6 +232,10 @@ public class Proposal implements Comparable <Proposal>
             return 5;
         if (displayString.equals("Remove unused import"))
             return 5;
+        if (displayString.equals("Change 'extends' to 'implements'"))
+            return 6;
+        if (displayString.startsWith("Change ") && displayString.endsWith(" to interface"))
+            return 3;
         if (displayString.equals("Remove '@Override' annotation"))
             return 6;
         if (displayString.startsWith("Create ") && displayString.contains(" in super type "))
@@ -236,7 +252,17 @@ public class Proposal implements Comparable <Proposal>
             return 7;
         if (displayString.startsWith("Move ") && displayString.contains(" to the default package"))
             return 6;
+        if (displayString.startsWith("Change visibility of ") && displayString.contains(" to 'default'"))
+            return 10;
+        if (displayString.startsWith("Change visibility of ") && displayString.contains(" to 'public'"))
+            return 10;
+        if (displayString.startsWith("Create getter and setter for "))
+            return 9;
+        if (displayString.equals("Extract to local variable (replace all occurrences)"))
+            return UNKNOWN_RELEVANCE;
         if (displayString.equals("Configure build path..."))
+            return UNKNOWN_RELEVANCE;
+        if (displayString.equals("Assign statement to new local variable"))
             return UNKNOWN_RELEVANCE;
         if (displayString.startsWith("Change type to "))
             return UNKNOWN_RELEVANCE;
