@@ -7,6 +7,8 @@ QFSpeculation/QuickFixSpeculation.target
 QFUsageObserver/sample_logs
 QFDebugAnalyzer
 Analysis
+QFLogAnalyzer/results
+QFLogAnalyzer/test
 syntax: regexp
 .*/doc/.*
 .*/javadoc\.xml

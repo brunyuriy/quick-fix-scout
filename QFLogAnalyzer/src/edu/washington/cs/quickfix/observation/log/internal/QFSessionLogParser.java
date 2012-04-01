@@ -225,7 +225,7 @@ public class QFSessionLogParser
         for (Proposal eclipseProp: eclipseProps)
             eclipseProposals.add(eclipseProp.getDisplayString());
         
-        speculationProposals = QFSession.getGlobalBestProposals(speculationProposals, eclipseProposals);
+//        speculationProposals = QFSession.getGlobalBestProposals(speculationProposals, eclipseProposals);
         if (speculationProposals != null)
         {
             // Trick to also sort speculation proposals (as they were ordered)

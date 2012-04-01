@@ -23,11 +23,12 @@ public class ObserverLogAnalyzer
     static final String SPECULATION_OBSERVATION_TRUE = "_speculation_observation_completed";
     static final String SPECULATION_OBSERVATION_FALSE = "_speculation_observation_not_completed";
     
-    static final String [] ALL_TYPES = new String []{OBSERVATION_TRUE, OBSERVATION_FALSE, SPECULATION_TRUE, SPECULATION_FALSE, SPECULATION_OBSERVATION_TRUE, SPECULATION_OBSERVATION_FALSE};
+//    static final String [] ALL_TYPES = new String []{OBSERVATION_TRUE, OBSERVATION_FALSE, SPECULATION_TRUE, SPECULATION_FALSE, SPECULATION_OBSERVATION_TRUE, SPECULATION_OBSERVATION_FALSE};
+    static final String [] ALL_TYPES = new String []{"_all"};
     
     private final static File root = new File("results");
     
-    private final static boolean GENERATE_FOR_SQL = true;
+    private final static boolean GENERATE_FOR_SQL = false;
     private final static String SEPERATION = GENERATE_FOR_SQL ? "!S!" : ",";
     private final static String NOT_AVAILABLE = GENERATE_FOR_SQL ? "" : "N/A";
     
@@ -36,8 +37,8 @@ public class ObserverLogAnalyzer
         System.out.println("Number of arguments = " + args.length);
         for (String arg: args)
             System.out.println(arg);
-//        args = analyzeCaseStudy();
-        args = analyzeExperiment();
+        args = analyzeCaseStudy();
+//        args = analyzeExperiment();
 //        if (args.length != 1)
 //            printUsage();
         if (GENERATE_FOR_SQL)
@@ -85,9 +86,14 @@ public class ObserverLogAnalyzer
         String fs = File.separator;
         String home = System.getProperty("user.home");
         File logDir = new File(home + fs + "Dropbox" + fs + "Cloud" + fs + "Research-Papers" + fs + "Quick_Fix_Scout" + fs + "QuickFixScout" + fs + "log_data");
-        String [] result = new String[2];
+        String [] result = new String[3];
         result[0] = logDir.getAbsolutePath() + fs +  "2012.01.31_QF_Logs_Processed";
         result[1] = logDir.getAbsolutePath() + fs +  "QF_Logs_Old_Processed";
+        result[2] = logDir.getAbsolutePath() + fs +  "2012.03.31_QF_Logs_Processed";
+        
+//        result = new String[1];
+//        result[0] = "test/";
+//        result[0] = "/Users/kivanc/Dropbox/Cloud/Research-Papers/Quick_Fix_Scout/QuickFixScout/log_data/2012.01.31_QF_Logs_Processed/Kivanc"; 
         return result;
     }
 
@@ -139,7 +145,9 @@ public class ObserverLogAnalyzer
                     "Speculation Running" + SEPERATION + 
                     "FP Selected" + SEPERATION + 
                     "BP Selected" + SEPERATION +
-                    "GBP Selected";
+                    "GBP Selected" + SEPERATION +
+                    "GBP Generated" + SEPERATION + 
+                    "Undone";
             //@formatter:on
             int limit = 20;
             int selectionLimit = 5;
@@ -173,7 +181,8 @@ public class ObserverLogAnalyzer
      * # of compilation errors before, of compilation errors after
      * Session Completed
      * Speculation Running
-     * FP Selected, BP Selected, GBP selected
+     * FP Selected, BP Selected, GBP selected, GBP Generated
+     * Undone
      */
     static void writeToCSVFile(QFSession session, String identifier)
     {
@@ -241,7 +250,8 @@ public class ObserverLogAnalyzer
                 fpString + SEPERATION + 
                 bpString + SEPERATION + 
                 gbpString + SEPERATION + 
-                gbpGenerated;
+                gbpGenerated + SEPERATION + 
+                toBit(session.isUndone());
         //@formatter:on
         int limit = GENERATE_FOR_SQL ? 5 : 20;
         int selectionLimit = GENERATE_FOR_SQL ? 5 : 5;
@@ -299,7 +309,6 @@ public class ObserverLogAnalyzer
         }
         
         identifier = GENERATE_FOR_SQL ? "" : identifier;
-        data += SEPERATION + toBit(session.isUndone());
         if (!GENERATE_FOR_SQL)
             write(data, getCurrentWriter(identifier));
         write(data, getAllWriter(identifier));
@@ -347,11 +356,17 @@ public class ObserverLogAnalyzer
 
     private static Formatter getAllWriter(String identifier)
     {
+    	if (ALL_TYPES.length == 1)
+    		identifier = "_all";
+    	
         return writers_.get(identifier);
     }
 
     private static Formatter getCurrentWriter(String identifier)
     {
+    	if (ALL_TYPES.length == 1)
+    		identifier = "_all";
+    	
         Formatter result = userWriters_.get(currentUser_ + identifier);
         assert result != null: identifier;
         return result;
