@@ -24,6 +24,7 @@ public class Observer implements CursorChangedListener
     private static Observer instance_ = new Observer();
 
     private Runner currentRunner_ = null;
+    private IFile currentFile_ = null;
 
     // singleton
     private Observer()
@@ -126,7 +127,8 @@ public class Observer implements CursorChangedListener
     @Override
     public void editorFileChanged(IFile file)
     {
-        IProject project = file.getProject();
+    	currentFile_ = file;
+        IProject project = currentFile_.getProject();
         logger.fine("Active project changed => " + project.getName());
         if (!ProjectSynchronizer.isShadowProject(project))
         {
@@ -140,5 +142,10 @@ public class Observer implements CursorChangedListener
     {
         // Usage observer does not need an implementation based on cursor change.
         // Left empty intentionally. 
+    }
+    
+    public IFile getCurrentFile()
+    {
+    	return currentFile_;
     }
 }
