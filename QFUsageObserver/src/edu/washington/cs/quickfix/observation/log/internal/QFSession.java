@@ -505,7 +505,7 @@ public class QFSession
         // if there is no speculation information, and the first proposal is not selected, then
         // there is no way to know.
         Action result = isGlobalBestProposalSelected();// .or(isFirstProposalSelected());
-        if (result == Action.FALSE && speculationProposals_ != null)
+        if (result != Action.TRUE && speculationProposals_ != null)
         {
             // However, if there is speculation information, we could still determine whether it is
             // the best or not.
@@ -542,10 +542,6 @@ public class QFSession
         if (!isSessionCompleted())
             return Action.NOT_AVAILABLE;
         
-        // If no proposals are offered, there is no way to compute this.
-        if (availableProposals_ == null || availableProposals_.length == 0)
-            return Action.NOT_AVAILABLE;
-        
         // Look whether the speculation analysis is running and/or we have speculation results. If so, look if the
         // selected proposal is the same as the first speculation proposal.
         if (speculationProposals_ != null && speculationProposals_.length > 0)
@@ -553,6 +549,10 @@ public class QFSession
             if (selectedProposalString_.equals(speculationProposals_[0]))
                 return Action.TRUE;
         }
+        
+        // If no proposals are offered, there is no way to compute this.
+        if (availableProposals_ == null || availableProposals_.length == 0)
+            return Action.NOT_AVAILABLE;
         
         // If there is no speculation information, then look whether the first selected proposal is equal to the first
         // Eclipse proposal or not.
