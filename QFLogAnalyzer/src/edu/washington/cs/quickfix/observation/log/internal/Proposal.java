@@ -186,7 +186,12 @@ public class Proposal implements Comparable <Proposal>
             return 6;
         if (displayString.startsWith("Add cast to "))
             return 7;
+        if (displayString.contains("Add cast to "))
+        	// gbp version
+            return 7;
         if (displayString.startsWith("Rename ") && displayString.contains("(Ctrl+2, R)"))
+            return 8;
+        if (displayString.startsWith("Rename ") && displayString.contains("(Ctrl+2 R)"))
             return 8;
         if (displayString.startsWith("Rename ") && displayString.contains("(?2 R)"))
             return 8;
@@ -203,12 +208,21 @@ public class Proposal implements Comparable <Proposal>
             return 5;
         if (displayString.startsWith("Change modifier of ") && displayString.endsWith(" to final"))
             return 5;
+        if (displayString.contains("Change modifier of ") && displayString.endsWith(" to final"))
+            // gbp version
+        	return 5;
         if (displayString.startsWith("Remove 'final' modifier of "))
+            return 9;
+        if (displayString.contains("Remove 'final' modifier of "))
+        	// gbp version
             return 9;
         if (displayString.startsWith("Change package declaration to "))
             return 5;
         if (displayString.startsWith("Let ") && displayString.contains(" implement "))
             return 4;
+        if (displayString.contains("Let ") && displayString.contains(" implement "))
+        	// gbp version
+        	return 4;
         if (displayString.equals("Organize imports"))
             return 5;
         if (displayString.equals("Insert missing quote"))
@@ -220,6 +234,9 @@ public class Proposal implements Comparable <Proposal>
         if (displayString.equals("Add body"))
             return 9;
         if (displayString.equals("Initialize variable"))
+            return 6;
+        if (displayString.contains("Initialize variable"))
+        	// gbp version
             return 6;
         if (displayString.equals("Add 'abstract' modifier"))
             return 8;
@@ -238,6 +255,9 @@ public class Proposal implements Comparable <Proposal>
             return 3;
         if (displayString.equals("Remove '@Override' annotation"))
             return 6;
+        if (displayString.contains("Remove ") && displayString.contains(" '@Override' annotation "))
+        	// gbp version
+        	return 6;
         if (displayString.startsWith("Create ") && displayString.contains(" in super type "))
             return 6;
         if (displayString.startsWith("Remove package declaration "))
@@ -275,6 +295,8 @@ public class Proposal implements Comparable <Proposal>
         if (displayString.startsWith("Remove ") && displayString.contains(", keep side-effect assignments"))
             return UNKNOWN_RELEVANCE;
         if (displayString.startsWith("Remove ") && displayString.contains(" and all assignments"))
+            return UNKNOWN_RELEVANCE;
+        if (displayString.equals("Remove"))
             return UNKNOWN_RELEVANCE;
         if (displayString.equals("Add default serial version ID"))
             return WARNING_RELEVANCE;

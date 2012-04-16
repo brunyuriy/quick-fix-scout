@@ -52,13 +52,22 @@ public enum ProposalType
         if (value.startsWith("("))
             value = value.substring(value.indexOf(")") + 2);
         
+        if (value.equals("Remove"))
+            return UNKNOWN;
         if (value.startsWith("Remove ") && value.contains(" annotation"))
             return UNKNOWN;
+        if (value.contains("Remove ") && value.contains(" annotation"))
+            // gbp version
+        	return UNKNOWN;
         if (value.equals("Remove assignment"))
             return UNKNOWN;
         if (value.startsWith("Rename method ") && value.contains("(?2 R)"))
             return UNKNOWN;
+        if (value.startsWith("Rename method ") && value.contains("(Ctrl+2 R)"))
+            return UNKNOWN;
         if (value.startsWith("Rename field ") && value.contains("(?2 R)"))
+            return UNKNOWN;
+        if (value.startsWith("Rename field ") && value.contains("(Ctrl+2 R)"))
             return UNKNOWN;
         if (value.startsWith("Remove ") && value.contains(" and all assignments"))
             return UNKNOWN;
@@ -87,10 +96,15 @@ public enum ProposalType
             return UNKNOWN;
         if (value.startsWith("Let") && value.contains(" implement "))
             return UNKNOWN;
+        if (value.contains("Let") && value.contains(" implement "))
+            return UNKNOWN;
         if (value.startsWith("Cast argument") && value.contains(" to "))
             return UNKNOWN;
         if (value.startsWith("Remove 'final' modifier of "))
             return UNKNOWN;
+        if (value.contains("Remove 'final' modifier of "))
+            // gbp
+        	return UNKNOWN;
         if (value.equals("Remove 'abstract' modifier"))
             return UNKNOWN;
         if (value.startsWith("Remove 'static' modifier of "))
@@ -114,6 +128,9 @@ public enum ProposalType
         if (value.startsWith("Add @SuppressWarnings ") && value.contains(" to "))
             return OTHER;
         if (value.startsWith("Add cast to "))
+            return OTHER;
+        if (value.contains("Add cast to "))
+        	// gbp version
             return OTHER;
         if (value.startsWith("Add type arguments to "))
             return OTHER;
@@ -191,6 +208,9 @@ public enum ProposalType
         if (value.startsWith("Change modifier of ") && value.contains(" to "))
             return FIELD_AND_VARIABLE;
         if (value.equals("Initialize variable"))
+            return FIELD_AND_VARIABLE;
+        if (value.contains("Initialize variable"))
+        	// gbp version
             return FIELD_AND_VARIABLE;
         if (value.equals("Assign statement to new local variable"))
         	return FIELD_AND_VARIABLE;

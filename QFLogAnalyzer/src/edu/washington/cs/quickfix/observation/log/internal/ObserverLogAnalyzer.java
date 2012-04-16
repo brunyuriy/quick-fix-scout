@@ -37,8 +37,8 @@ public class ObserverLogAnalyzer
         System.out.println("Number of arguments = " + args.length);
         for (String arg: args)
             System.out.println(arg);
-        args = analyzeCaseStudy();
-//        args = analyzeExperiment();
+//        args = analyzeCaseStudy();
+        args = analyzeExperiment();
 //        if (args.length != 1)
 //            printUsage();
         if (GENERATE_FOR_SQL)
@@ -137,6 +137,7 @@ public class ObserverLogAnalyzer
                     "Username" + SEPERATION + 
                     "Delay (MS)" + SEPERATION + 
                     "Session Length (MS)" + SEPERATION + 
+                    "# of Proposals Offered" + SEPERATION + 
                     "Selected Proposal" + SEPERATION + 
                     "Selected Proposal Type" + SEPERATION + 
                     "# of CE Before" + SEPERATION + 
@@ -149,7 +150,7 @@ public class ObserverLogAnalyzer
                     "GBP Generated" + SEPERATION + 
                     "Undone";
             //@formatter:on
-            int limit = 20;
+            int limit = 5;
             int selectionLimit = 5;
             for (int a = 0; a < limit; a++)
                 header += SEPERATION + (a + 1) + "th EP";
@@ -164,6 +165,8 @@ public class ObserverLogAnalyzer
             for (int a = 0; a < selectionLimit; a++)
                 header += SEPERATION + (a+1) + "th SP Selected";
             
+            header += SEPERATION + "Treatment" + SEPERATION + "Task";
+            
             write(header, writer);
         }
     }
@@ -177,6 +180,7 @@ public class ObserverLogAnalyzer
      * Data format:
      * Username
      * Delay (MS), Session Length (MS)
+     * # of proposals offered (by Eclipse)
      * Selected proposal, Selected proposal type
      * # of compilation errors before, of compilation errors after
      * Session Completed
@@ -211,6 +215,7 @@ public class ObserverLogAnalyzer
         }
         String fpString = representBoolean(session.isFirstProposalSelected().toBoolean());
         String [] eclipseProposals = session.getEclipseProposals();
+        int numberOfProposalsOffered = eclipseProposals.length;
         Proposal [] eclipseProps = computeProposal(eclipseProposals);
         String [] speculationProposals = session.getSpeculationProposals();
         SpeculationProposal [] speculationProps = null;
@@ -236,11 +241,13 @@ public class ObserverLogAnalyzer
         if (length.getTime() < 100)
             lengthS = "";
         String completedS = representBoolean(completed);
+        
         //@formatter:off
         String data = 
                 username + SEPERATION + 
                 delayS + SEPERATION + 
                 lengthS + SEPERATION +
+                numberOfProposalsOffered + SEPERATION + 
                 escape(selectedProposal) + SEPERATION +
                 escape(selected.getType().toString()) + SEPERATION + 
                 compilationBefore + SEPERATION + 
@@ -253,7 +260,7 @@ public class ObserverLogAnalyzer
                 gbpGenerated + SEPERATION + 
                 toBit(session.isUndone());
         //@formatter:on
-        int limit = GENERATE_FOR_SQL ? 5 : 20;
+        int limit = GENERATE_FOR_SQL ? 5 : 5;
         int selectionLimit = GENERATE_FOR_SQL ? 5 : 5;
         for (int a = 0; a < limit; a++)
         {
@@ -347,11 +354,11 @@ public class ObserverLogAnalyzer
         return value == null ? NOT_AVAILABLE : (GENERATE_FOR_SQL ? toBit(value) + "" : value + ""); 
     }
 
-    private static int toBit(boolean value)
+    private static String toBit(boolean value)
     {
-        if (value)
-            return 1;
-        return 0;
+    	if (GENERATE_FOR_SQL)
+    		return value ? "1" : "0";
+    	return "" + value;
     }
 
     private static Formatter getAllWriter(String identifier)
