@@ -79,7 +79,7 @@ public class ObservationStarter implements IStartup
         {
             IFile currentFile = EclipseUIUtility.getActiveEditorFileInUIThread();
             if (currentFile != null)
-                Observer.getUsageObserver().observeProject(currentFile.getProject());
+                Observer.getUsageObserver().editorFileChanged(currentFile);
         }
         catch (NotInitializedException e)
         {

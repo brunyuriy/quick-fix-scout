@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.ChangeCorrectionProposal;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
@@ -22,6 +23,7 @@ import edu.washington.cs.quickfix.observation.Observer;
 import edu.washington.cs.quickfix.observation.log.ObservationCompilationErrorLogger;
 import edu.washington.cs.quickfix.observation.log.ObservationLogger;
 import edu.washington.cs.quickfix.observation.log.ObservationCompilationErrorLogger.Type;
+import edu.washington.cs.synchronization.ProjectSynchronizer;
 import edu.washington.cs.synchronization.sync.task.internal.TaskWorker;
 import edu.washington.cs.util.eclipse.QuickFixUtility;
 import edu.washington.cs.util.log.CommonLoggers;
@@ -46,6 +48,8 @@ public class QFSession
     static final String LOCAL_COMPUTATION_DELAY_STRING = "Delay before the local speculation completed = ";
     static final String GLOBAL_COMPUTATION_DELAY_STRING = "Delay before the analysis completion = ";
     static final String SPECULATION_RUNNING_STRING = "Speculative analysis is running: ";
+    static final String QF_PROJECT_STRING = "The project that quick fix is invoked on: ";
+    static final String QF_FILE_STRING = "The file that quick fix is invoked on: ";
     /** Constant that represents the prefix used for the proposals that are offered by Eclipse. */
     static final String ECLIPSE_PROPOSALS_STRING = "The following proposals are offered by the Eclipse:";
     /** Constant that represents the string that will be used in split(...) method to get the proposal information. */
@@ -108,6 +112,9 @@ public class QFSession
     private boolean logConstructed_;
     // Locations are needed so that later on I can retrieve speculation proposals.
     private IProblemLocation [] locations_;
+    
+    private String qfProject_;
+    private String qfFile_;
     
     private Boolean isSpeculationRunning_;
     private Date localSpeculationCompletionTime_;
@@ -280,10 +287,22 @@ public class QFSession
                 availableProposals_[a] = proposals[a].getDisplayString();
         }
         logger.fine("Avaible proposals are set.");
+        
+        updateQFInvocation();
         notifyAll();
     }
     
-    public String toString()
+    private void updateQFInvocation() 
+    {
+    	IFile currentFile = Observer.getUsageObserver().getCurrentFile();
+    	if (currentFile != null)
+    	{
+    		qfFile_ = currentFile.getName();
+    		qfProject_ = currentFile.getProject().getName();
+    	}
+	}
+
+	public String toString()
     {
         if (!logConstructed_)
             createLog();
@@ -351,6 +370,8 @@ public class QFSession
             log(GLOBAL_COMPUTATION_DELAY_STRING + makeString(globalDelay) + SESSION_DELAY_STRING_SEPERATOR + Dates.toReadableString(globalDelay));
         }
         log(SPECULATION_RUNNING_STRING + isSpeculationRunning_);
+        log(QF_PROJECT_STRING + qfProject_);
+        log(QF_FILE_STRING + qfFile_);
         log(ECLIPSE_PROPOSALS_STRING);
         for (int a = 0; a < availableProposals_.length; a++)
         {
@@ -381,7 +402,7 @@ public class QFSession
         logConstructed_ = true;
     }
 
-    private synchronized boolean isLogCompleted()
+	private synchronized boolean isLogCompleted()
     {
         StringBuffer log = new StringBuffer();
         boolean sessionTypeSet = sessionType_ != null;
