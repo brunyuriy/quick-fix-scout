@@ -131,11 +131,12 @@ public class QFSession
     
     public QFSession()
     {
-        this(null, INVALID_TIME, INVALID_TIME, null, null, null, INVALID_ERRORS, null, INVALID_ERRORS, INVALID_TIME,
+        this(null, INVALID_TIME, INVALID_TIME, null, null, null, null, null, INVALID_ERRORS, null, INVALID_ERRORS, INVALID_TIME,
                 INVALID_TIME, INVALID_TIME);
     }
     
     QFSession(QFSessionType sessionType, Date sessionStartTime, Date delayTime, Boolean speculationRunning,
+    		String qfProject, String qfFile,
             String [] availableProposals, String [] speculationProposals, int errorsBefore, String selectedProposal,
             int errorsAfter, Date sessionEndTime, Date localComputationLength, Date analysisLength)
     {
@@ -144,6 +145,8 @@ public class QFSession
         sessionStartTime_ = sessionStartTime;
         delayTime_ = delayTime;
         isSpeculationRunning_ = speculationRunning;
+        qfProject_ = qfProject;
+        qfFile_ = qfFile;
         availableProposals_ = availableProposals;
         speculationProposals_ = speculationProposals;
         errorsBefore_ = errorsBefore;
@@ -598,6 +601,16 @@ public class QFSession
 //            System.out.println(gbp);
         
         return getGlobalBestProposals().size() != 0;
+    }
+    
+    String getQFProject()
+    {
+    	return qfProject_;
+    }
+    
+    String getQFFile()
+    {
+    	return qfFile_;
     }
 
     String getSelectedProposalString()

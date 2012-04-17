@@ -155,6 +155,18 @@ public class QFSessionLogParser
             speculationRunning = Boolean.parseBoolean(currentLine.split(QFSession.SPECULATION_RUNNING_STRING)[1].trim());
             currentLine = reader.nextLine();
         }
+        String qfProject = null;
+        if (checkContains(currentLine, QFSession.QF_PROJECT_STRING))
+        {
+        	qfProject = currentLine.split(QFSession.QF_PROJECT_STRING)[1].trim();
+        	currentLine = reader.nextLine();
+        }
+        String qfFile = null;
+        if (checkContains(currentLine, QFSession.QF_FILE_STRING))
+        {
+        	qfFile = currentLine.split(QFSession.QF_FILE_STRING)[1].trim();
+        	currentLine = reader.nextLine();
+        }
         assertEquality(currentLine, QFSession.ECLIPSE_PROPOSALS_STRING);
         ArrayList <String> eclipseProposals = new ArrayList <String>();
         do
@@ -237,7 +249,7 @@ public class QFSessionLogParser
 //                speculationProposals.add(speculationProp.getDisplayString());
 //        }
         
-        return new QFSession(sessionType, startDate, delayDate, speculationRunning, eclipseProposals.toArray(new String [eclipseProposals.size()]),
+        return new QFSession(sessionType, startDate, delayDate, speculationRunning, qfProject, qfFile, eclipseProposals.toArray(new String [eclipseProposals.size()]),
                 speculationProposals == null ? null : speculationProposals.toArray(new String [speculationProposals
                         .size()]), errorsBefore, selectedProposal, errorsAfter, endDate, localComputationLength, analysisLength);
     }
