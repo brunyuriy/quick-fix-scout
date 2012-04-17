@@ -74,7 +74,7 @@ public class ObserverLogAnalyzer
         String fs = File.separator;
         String home = System.getProperty("user.home");
         // C:\Users\Kivanc\Dropbox\Cloud\Research-Papers\Quick_Fix_Scout\QuickFixScout\Controlled Study\Experiment Data
-        File logDir = new File(home + fs + "Dropbox" + fs + "Cloud" + fs + "Research-Papers" + fs + "Quick_Fix_Scout" + fs + "QuickFixScout" + fs + "Controlled Study" + fs + "Experiment Data");
+        File logDir = new File(home + fs + "Dropbox" + fs + "Cloud" + fs + "Research-Papers" + fs + "Quick_Fix_Scout" + fs + "QuickFixScout" + fs + "Controlled Experiment" + fs + "Experiment Data");
         String [] result = new String[1];
         result[0] = logDir.getAbsolutePath();
 //        result[0] = logDir.getAbsolutePath() + fs + "2012.03.05 - Colin";
@@ -85,7 +85,7 @@ public class ObserverLogAnalyzer
     {
         String fs = File.separator;
         String home = System.getProperty("user.home");
-        File logDir = new File(home + fs + "Dropbox" + fs + "Cloud" + fs + "Research-Papers" + fs + "Quick_Fix_Scout" + fs + "QuickFixScout" + fs + "log_data");
+        File logDir = new File(home + fs + "Dropbox" + fs + "Cloud" + fs + "Research-Papers" + fs + "Quick_Fix_Scout" + fs + "QuickFixScout" + fs + "Case Study");
         String [] result = new String[3];
         result[0] = logDir.getAbsolutePath() + fs +  "2012.01.31_QF_Logs_Processed";
         result[1] = logDir.getAbsolutePath() + fs +  "QF_Logs_Old_Processed";
@@ -137,6 +137,8 @@ public class ObserverLogAnalyzer
                     "Username" + SEPERATION + 
                     "Delay (MS)" + SEPERATION + 
                     "Session Length (MS)" + SEPERATION + 
+                    "QF Project" + SEPERATION + 
+                    "QF File" + SEPERATION + 
                     "# of Proposals Offered" + SEPERATION + 
                     "Selected Proposal" + SEPERATION + 
                     "Selected Proposal Type" + SEPERATION + 
@@ -242,11 +244,18 @@ public class ObserverLogAnalyzer
             lengthS = "";
         String completedS = representBoolean(completed);
         
+        String qfProject = session.getQFProject();
+        String qfFile = session.getQFFile();
+        String qfProjectS = qfProject == null ? "N/A" : qfProject;
+        String qfFileS = qfFile == null ? "N/A" : qfFile;
+        
         //@formatter:off
         String data = 
                 username + SEPERATION + 
                 delayS + SEPERATION + 
                 lengthS + SEPERATION +
+                qfProjectS + SEPERATION + 
+                qfFileS + SEPERATION + 
                 numberOfProposalsOffered + SEPERATION + 
                 escape(selectedProposal) + SEPERATION +
                 escape(selected.getType().toString()) + SEPERATION + 
