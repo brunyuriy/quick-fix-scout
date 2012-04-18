@@ -165,6 +165,9 @@ public class Proposal implements Comparable <Proposal>
             return 5;
         if (displayString.startsWith("Remove 'static' modifier of ") && displayString.contains("(") && displayString.contains(")"))
             return 5;
+        if (displayString.contains("Remove 'static' modifier of ") && displayString.contains("(") && displayString.contains(")"))
+            // gbp version.
+        	return 5;
         if (displayString.equals("Add throws declaration"))
             return 8;
         if (displayString.contains("Add throws declaration"))
@@ -204,6 +207,9 @@ public class Proposal implements Comparable <Proposal>
             return 10;
         if (displayString.equals("Add return statement"))
             return 6;
+        if (displayString.contains("Add return statement"))
+            // gbp version
+        	return 6;
         if (displayString.startsWith("Make type ") && displayString.endsWith(" abstract"))
             return 5;
         if (displayString.startsWith("Change modifier of ") && displayString.endsWith(" to final"))
