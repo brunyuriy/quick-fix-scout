@@ -103,11 +103,14 @@ public enum ProposalType
         if (value.startsWith("Remove 'final' modifier of "))
             return UNKNOWN;
         if (value.contains("Remove 'final' modifier of "))
-            // gbp
+            // gbp version
         	return UNKNOWN;
         if (value.equals("Remove 'abstract' modifier"))
             return UNKNOWN;
         if (value.startsWith("Remove 'static' modifier of "))
+            return UNKNOWN;
+        if (value.contains("Remove 'static' modifier of "))
+        	// gbp version
             return UNKNOWN;
 
         return null;
@@ -288,6 +291,9 @@ public enum ProposalType
         if (value.startsWith("Change method ") && value.contains(": Swap parameters "))
             return METHOD;
         if (value.equals("Add return statement"))
+            return METHOD;
+        if (value.contains("Add return statement"))
+        	// gbp version
             return METHOD;
         if (value.startsWith("Change return type to "))
             return METHOD;
