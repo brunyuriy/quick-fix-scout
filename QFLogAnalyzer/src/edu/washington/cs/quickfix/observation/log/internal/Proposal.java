@@ -137,6 +137,9 @@ public class Proposal implements Comparable <Proposal>
             return 7;
         if (displayString.equals("Change return type to 'void'"))
             return 5;
+        if (displayString.contains("Change return type ") && displayString.contains("to'void'"))
+        	// gbp version
+            return 5;
         if (displayString.equals("Set method return type to 'void'"))
             // TODO Make sure that this is correct.
             return 5;
