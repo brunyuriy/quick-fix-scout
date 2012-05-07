@@ -59,9 +59,17 @@ public class SpeculationUtility
     
     public static boolean areOnTheSameLine(Squiggly ce1, Squiggly ce2)
     {
-        SquigglyDetails d1 = ce1.computeDetails();
-        SquigglyDetails d2 = ce2.computeDetails();
-        return d1.getFile().getName().equals(d2.getFile().getName()) && d1.getLine() == d2.getLine();
+    	try
+    	{
+            SquigglyDetails d1 = ce1.computeDetails();
+            SquigglyDetails d2 = ce2.computeDetails();
+            return d1.getFile().getName().equals(d2.getFile().getName()) && d1.getLine() == d2.getLine();
+    	} 
+    	catch (CoreException e)
+    	{
+    		// Our heuristic failed, return false just to be sure.
+    		return false;
+    	}
     }
     
     // Flagged proposals are the proposals that force getting out of sync (after undo application)

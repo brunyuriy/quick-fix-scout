@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.text.contentassist.CompletionProposalPopup;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.swt.widgets.Display;
@@ -106,6 +107,12 @@ public class CompletionProposalPopupCoordinator
                 logger.log(Level.FINE, "Cannot resolve global best proposal for shadow proposal = "
                         + globalBestProposal.getDisplayString(), e);
             }
+            catch (CoreException e)
+            {
+                // For some reason, we couldn't compute the details of the compilation error. However, since this is related to caching, ignore this warning mostly.
+                logger.log(Level.FINE, "Cannot resolve global best proposal for shadow proposal = "
+                        + globalBestProposal.getDisplayString(), e);
+            }
         }
         // Then, enter the local proposals ordered.
         for (AugmentedCompletionProposal localProposal: lps)
@@ -114,7 +121,14 @@ public class CompletionProposalPopupCoordinator
             if (!addedProposals.contains(localProposal.getDisplayString()))
             {
                 logger.finest("Adding proposal: " + localProposal.getDisplayString() + " as local proposal.");
-                localProposal.cacheDisplayFields();
+                try {
+					localProposal.cacheDisplayFields();
+				} catch (CoreException e) 
+				{
+					// For some reason, we couldn't compute the details of the compilation error. However, since this is related to caching, ignore this warning mostly.
+	                logger.log(Level.FINE, "Cannot resolve global best proposal for shadow proposal = "
+	                        + localProposal.getDisplayString(), e);
+				}
                 tableProposals.add(localProposal.getProposal());
                 addedProposals.add(localProposal.getDisplayString());
                 localProposals.add(localProposal);
@@ -166,10 +180,33 @@ public class CompletionProposalPopupCoordinator
         ICompletionProposal [] nonProcessedProposals = getNonProcessedProposals(items);
         // First enter the global best proposals.
         for (int a = 0; a < globalBestProposals.size(); a++)
-            setTableItem(globalBestProposals.get(a), a, knownStyle);
+        {
+        	AugmentedCompletionProposal globalBestProposal = globalBestProposals.get(a);
+			try 
+			{
+				setTableItem(globalBestProposal, a, knownStyle);
+			} catch (CoreException e) 
+			{
+                // For some reason, we couldn't compute the details of the compilation error.
+                logger.log(Level.WARNING, "Cannot resolve global best proposal for shadow proposal = "
+                        + globalBestProposal.getDisplayString(), e);
+			}
+        }
         // Then, enter the local proposals ordered.
         for (int a = 0; a < localProposals.size(); a++)
-            setTableItem(localProposals.get(a), globalBestProposals.size() + a, knownStyle);
+        {
+        	AugmentedCompletionProposal localProposal = localProposals.get(a);
+			try 
+			{
+				setTableItem(localProposal, globalBestProposals.size() + a, knownStyle);
+			} catch (CoreException e) 
+			{
+                // Okay, this is not good. We don't compute the compilation error details for local proposals, so
+				// normally we should never get this exception. However, something went terribly bad, so log with SEVERE.
+                logger.log(Level.SEVERE, "Cannot resolve local best proposal (and should not!) for shadow proposal = "
+                        + localProposal.getDisplayString(), e);
+			}
+        }
 
         // Then, enter the proposals that we don't have a calculation for.
         int nonProcessedProposalSize = 0;
@@ -195,7 +232,7 @@ public class CompletionProposalPopupCoordinator
         table.redraw();
     }
 
-    private void setTableItem(AugmentedCompletionProposal proposal, int index, int knownStyle)
+    private void setTableItem(AugmentedCompletionProposal proposal, int index, int knownStyle) throws CoreException
     {
         TableItem item = (table_.getItemCount() > index) ? table_.getItem(index) : null;
         // This can happen due to newly added items.

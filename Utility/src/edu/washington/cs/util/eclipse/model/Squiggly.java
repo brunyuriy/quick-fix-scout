@@ -41,7 +41,6 @@ public class Squiggly
     private final IMarker marker_;
     private final IProblemLocation location_;
     private final ICompilationUnit compilationUnit_;
-    private final Integer severity_;
     
     // Lazily computed field.
     private SquigglyDetails details_;
@@ -53,7 +52,6 @@ public class Squiggly
         marker_ = marker;
         compilationUnit_ = getCompilationUnitFromMarker(marker_);
         location_ = convertMarkerToProblemLocation(marker_, compilationUnit_);
-        severity_ = computeSeverity();
         details_ = null;
         compilationUnitNode_ = null;
         
@@ -76,65 +74,64 @@ public class Squiggly
         return cachedContext_ == null ? getContext() : cachedContext_;
     }
     
-    private Integer computeSeverity()
+    private int computeSeverity() throws CoreException
     {
-        Integer severity = null;
-        try
-        {
-            severity = (Integer) marker_.getAttribute(IMarker.SEVERITY);
-        }
-        catch (CoreException e)
-        {
-            // Marker does not exist anymore, so we will probably not compute it.
-        }
+        int severity = (Integer) marker_.getAttribute(IMarker.SEVERITY);
         return severity;
     }
     
-    public SquigglyDetails computeDetails()
+    public SquigglyDetails computeDetails() throws CoreException
     {
         if (details_ != null)
             return details_;
         
         assert location_ != null: "To compute compilation error details, its location must be non-null.";
         
-        int offset = location_.getOffset();
+        // +1 comes from the fact that Eclipse represents the first character to be '1'st offset on a line.
+        // However, internally getOffset() returns the offset as it is an array index (i.e., the first element is
+        // represented by offset 0).
+        int offset = location_.getOffset() + 1;
         int line = -1;
-        int position = -1;
         assert marker_.getResource() instanceof IFile: "Compilation error markers must be owned by an iFile.";
         IFile file = (IFile) marker_.getResource();
-        try 
+        Scanner reader = new Scanner(file.getContents());
+        line = 1;
+        while (reader.hasNext())
         {
-            Scanner reader = new Scanner(file.getContents());
-            line = 1;
-            while (reader.hasNext())
-            {
-                String text = reader.nextLine();
-                offset -= text.length();
-                if (offset < 0)
-                {
-                    position = offset + text.length();
-                    break;
-                }
-                line ++;
-            }
-            reader.close();
-        } 
-        catch (CoreException e) 
-        {
-            e.printStackTrace();
+        	String text = reader.nextLine();
+        	System.out.println(offset);
+        	System.out.println(text);
+        	offset -= text.length();
+        	if (offset <= 0)
+        	{
+        		offset = offset + text.length();
+        		// Convert the tabs in the last line into proper offsets (i.e., add 3 offset for each tab).
+        		// TODO Make this consistent with the actual tab spacing.
+        		int limit = offset;
+        		for (int a = 0; a < limit; a++)
+        		{
+        			if (text.charAt(a) == '\t')
+        				offset += 3;
+        		}
+        		break;
+        	}
+        	// Remove '1' offset for the newline character.
+        	offset --;
+        	line ++;
         }
-        details_ = new SquigglyDetails(file, line, position);
+        reader.close();
+        details_ = new SquigglyDetails(file, line, offset);
         return details_;
     }
 
-    public boolean isCompilationError()
+    public boolean isCompilationError() throws CoreException
     {
-        return severity_ != null && severity_.intValue() == IMarker.SEVERITY_ERROR;
+        return computeSeverity() == IMarker.SEVERITY_ERROR;
     }
 
-    public boolean isWarning()
+    public boolean isWarning() throws CoreException
     {
-        return severity_ != null && severity_.intValue() == IMarker.SEVERITY_WARNING;
+        return computeSeverity() == IMarker.SEVERITY_WARNING;
     }
     
     public IMarker getMarker()
@@ -160,6 +157,12 @@ public class Squiggly
     public String toString()
     {
         return marker_.getResource().getName() + ":" + location_.getOffset();
+    }
+    
+    public String toDetailedString() throws CoreException
+    {
+    	SquigglyDetails details = computeDetails();
+    	return details.toString();
     }
     
     /***************

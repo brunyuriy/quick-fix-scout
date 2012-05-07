@@ -3,6 +3,7 @@ package edu.washington.cs.quickfix.speculation.calc.model;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
@@ -107,7 +108,7 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
      * Table item must be 'nonnull'. The caller thread must be a UI thread (has access to change table item
      * information).
      */
-    public void setYourselfAsTableItem(TableItem item)
+    public void setYourselfAsTableItem(TableItem item) throws CoreException
     {
         String text = finalDisplayString_ != null ? finalDisplayString_ : getFinalDisplayString();
         item.setData(proposal_);
@@ -118,7 +119,7 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
             item.setForeground(foregroundColor);
     }
     
-    public void cacheDisplayFields()
+    public void cacheDisplayFields() throws CoreException
     {
         if (finalDisplayString_ == null)
             finalDisplayString_ = getFinalDisplayString();
@@ -203,7 +204,7 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
                 + (proposal_ == null ? "null" : proposal_.getDisplayString()) + ", number of errors = " + resolveErrorsAfter() + "]";
     }
     
-    public String getFinalDisplayString()
+    public String getFinalDisplayString() throws CoreException
     {
         String gbpInformation = getGBPInformation();
         String prefix = getPrefix();
@@ -212,11 +213,15 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
         return text;
     }
     
-    private String getGBPInformation()
+    private String getGBPInformation() throws CoreException
     {
         Squiggly ce = getRecentCompilationError();
-        SquigglyDetails ced = (ce == null ? null : getCompilationError().computeDetails());
-        String result = gbp_ ? ((ced == null ? "!" : ced.toString()) + ": ") : "";
+        String result = "";
+        if (gbp_)
+        {
+            SquigglyDetails ced = (ce == null ? null : getCompilationError().computeDetails());
+            result = (ced == null ? "!" : ced.toString()) + ": ";
+        }
         return result;
     }
 
@@ -473,7 +478,7 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     {
         if (errorsAfter_ == Squiggly.UNKNOWN)
             return "N/A";
-//            return "1";
+//            return "2";
         else if (errorsAfter_ == Squiggly.NOT_COMPUTED)
 //            return "1";
             return "?";
