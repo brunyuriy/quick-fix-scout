@@ -1,0 +1,9 @@
+INDEX VERSION 1.126+/Users/kivanc/Projects/Java-Projects/junit-workspace/.metadata/.plugins/org.eclipse.jdt.core
+664164020.index
+849707450.index
+4107994883.index
+1043490909.index
+3612462440.index
+1314430162.index
+2126336310.index
+2690055678.index
