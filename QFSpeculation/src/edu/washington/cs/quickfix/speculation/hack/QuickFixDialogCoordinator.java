@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
@@ -427,26 +428,47 @@ public class QuickFixDialogCoordinator implements QFPopupNotifier
 
     public String [] getCalculatedProposals()
     {
-        ArrayList <AugmentedCompletionProposal> gbps;
-        AugmentedCompletionProposal [] lps;
+        ArrayList <AugmentedCompletionProposal> globalBestProposals;
+        AugmentedCompletionProposal [] localProposals;
         synchronized(lock_)
         {
-            gbps = cachedGlobalBestProposals_;
-            lps = cachedLocalProposals_;
+            globalBestProposals = cachedGlobalBestProposals_;
+            localProposals = cachedLocalProposals_;
             cachedGlobalBestProposals_ = null;
             cachedLocalProposals_ = null;
         }
-        if (gbps == null || lps == null)
+        if (globalBestProposals == null || localProposals == null)
             return null;
         
         ArrayList <String> result = new ArrayList <String>();
-        for (AugmentedCompletionProposal gbp: gbps)
+        for (AugmentedCompletionProposal globalBestProposal: globalBestProposals)
         {
-            gbp.makeGBP();
-            result.add(gbp.getFinalDisplayString());
+            globalBestProposal.makeGBP();
+            try 
+            {
+				result.add(globalBestProposal.getFinalDisplayString());
+			} 
+            catch (CoreException e) 
+            {
+                // For some reason, we couldn't compute the details of the compilation error. Since this is just for logging, severity is INFO.
+                logger.log(Level.INFO, "Cannot resolve global best proposal for shadow proposal = "
+                        + globalBestProposal.getDisplayString(), e);
+			}
         }
-        for (AugmentedCompletionProposal lp: lps)
-            result.add(lp.getFinalDisplayString());
+        for (AugmentedCompletionProposal localProposal: localProposals)
+        {
+            try 
+            {
+				result.add(localProposal.getFinalDisplayString());
+			} 
+            catch (CoreException e) 
+            {
+                // Okay, this is not good. We don't compute the compilation error details for local proposals, so
+				// normally we should never get this exception. However, something went terribly bad, so log with SEVERE.
+                logger.log(Level.SEVERE, "Cannot resolve local best proposal (and should not!) for shadow proposal = "
+                        + localProposal.getDisplayString(), e);
+			}
+        }
         return result.toArray(new String [result.size()]); 
     }
 }

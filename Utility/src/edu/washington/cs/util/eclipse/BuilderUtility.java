@@ -60,32 +60,51 @@ public class BuilderUtility
     {
         return calculateCompilationErrorMarkers(project).length;
     }
-
+    
+    public static int getNumberOfWarnings(IProject project)
+    {
+    	return calculateWarnings(project).length;
+    }
+    
     public static Squiggly [] calculateCompilationErrors(IProject project)
     {
+    	Squiggly [] squigglies = calculateSquigglies(project);
         ArrayList <Squiggly> result = new ArrayList <Squiggly>();
-        IMarker [] markers = null;
-        try
+        for (Squiggly squiggly: squigglies)
         {
-            markers = findJavaProblemMarkers(project);
-            for (IMarker marker: markers)
-            {
-                Integer severityType = (Integer) marker.getAttribute(IMarker.SEVERITY);
-                if (severityType.intValue() == IMarker.SEVERITY_ERROR)
-                {
-                    logger.finer("Returning marker = " + marker);
-                    result.add(new Squiggly(marker));
-                }
-            }
+        	try
+        	{
+            	if (squiggly.isCompilationError())
+            		result.add(squiggly);
+        	}
+        	catch (CoreException e)
+        	{
+        		logger.log(Level.SEVERE, "Cannot get the marker attribute for squiggly: " + squiggly + ", not including it in the results.", e);
+        	}
         }
-        catch (CoreException e)
+        return result.toArray(new Squiggly [result.size()]);
+    }
+    
+    public static Squiggly [] calculateWarnings(IProject project)
+    {
+    	Squiggly [] squigglies = calculateSquigglies(project);
+        ArrayList <Squiggly> result = new ArrayList <Squiggly>();
+        for (Squiggly squiggly: squigglies)
         {
-            logger.log(Level.SEVERE, "Cannot get the marker or marker attribute for project: " + project.getName(), e);
+        	try
+        	{
+            	if (squiggly.isWarning())
+            		result.add(squiggly);
+        	}
+        	catch (CoreException e)
+        	{
+        		logger.log(Level.SEVERE, "Cannot get the marker attribute for squiggly: " + squiggly + ", not including it in the results.", e);
+        	}
         }
         return result.toArray(new Squiggly [result.size()]);
     }
 
-    public static Squiggly [] calculateSquigglies(IProject project)
+    private static Squiggly [] calculateSquigglies(IProject project)
     {
         IMarker [] markers = findJavaProblemMarkers(project);
         Squiggly [] result = new Squiggly [markers.length];
@@ -94,6 +113,73 @@ public class BuilderUtility
         return result;
     }
 
+    public static void setAutoBuilding(boolean value)
+    {
+        IWorkspace workspace= ResourcesPlugin.getWorkspace();
+        IWorkspaceDescription desc= workspace.getDescription();
+        boolean current = desc.isAutoBuilding();
+        if (current != value)
+        {
+            desc.setAutoBuilding(value);
+            try
+            {
+                workspace.setDescription(desc);
+            }
+            catch (CoreException e)
+            {
+                logger.log(Level.SEVERE, "Cannot set auto-build value to: " + value + ". e.cause() = " + e.getCause(), e);
+            }
+            if (value == false)
+                joinAutoBuilder();
+        }
+    }
+    
+    public static boolean isAutoBuilding()
+    {
+        IWorkspace workspace= ResourcesPlugin.getWorkspace();
+        IWorkspaceDescription desc= workspace.getDescription();
+        return desc.isAutoBuilding();
+    }
+    
+    /**
+     * Builds the project using the incremental builder of Eclipse. <br>
+     * This process joins to Eclipse auto-builder if auto-build is activated for the project or invokes an incremental
+     * build itself.
+     * 
+     * @param project Project to be built.
+     */
+    public static void build(IProject project)
+    {
+        try
+        {
+        	project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
+        }
+        catch (CoreException e)
+        {
+            logger.log(Level.SEVERE, "Cannot build project: " + project.getName() + ". e.cause() = " + e.getCause(), e);
+        }
+    }
+    
+    /*************************
+     ****** PRIVATE API ******
+     *************************/
+    @SuppressWarnings("deprecation")
+    private static void joinAutoBuilder()
+    {
+        try
+        {
+            Platform.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_BUILD, null);
+        }
+        catch (OperationCanceledException e)
+        {
+            logger.log(Level.SEVERE, "Cannot join with auto-builder. e.cause() = " + e.getCause(), e);
+        }
+        catch (InterruptedException e)
+        {
+            logger.log(Level.SEVERE, "Cannot join with auto-builder. e.cause() = " + e.getCause(), e);
+        }
+    }
+    
     /**
      * Calculates and returns the markers available in the current project. <br>
      * <br>
@@ -148,92 +234,5 @@ public class BuilderUtility
             logger.log(Level.SEVERE, "Cannot find java problem markers for project: " + project.getName(), e);
         }
         return markers;
-    }
-    
-    public static void setAutoBuilding(boolean value)
-    {
-        IWorkspace workspace= ResourcesPlugin.getWorkspace();
-        IWorkspaceDescription desc= workspace.getDescription();
-        boolean current = desc.isAutoBuilding();
-        if (current != value)
-        {
-            desc.setAutoBuilding(value);
-            try
-            {
-                workspace.setDescription(desc);
-            }
-            catch (CoreException e)
-            {
-                logger.log(Level.SEVERE, "Cannot set auto-build value to: " + value + ". e.cause() = " + e.getCause(), e);
-            }
-            if (value == false)
-                joinAutoBuilder();
-        }
-    }
-    
-    public static boolean isAutoBuilding()
-    {
-        IWorkspace workspace= ResourcesPlugin.getWorkspace();
-        IWorkspaceDescription desc= workspace.getDescription();
-        return desc.isAutoBuilding();
-    }
-    
-    @SuppressWarnings("deprecation")
-    private static void joinAutoBuilder()
-    {
-        try
-        {
-            Platform.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_BUILD, null);
-        }
-        catch (OperationCanceledException e)
-        {
-            logger.log(Level.SEVERE, "Cannot join with auto-builder. e.cause() = " + e.getCause(), e);
-        }
-        catch (InterruptedException e)
-        {
-            logger.log(Level.SEVERE, "Cannot join with auto-builder. e.cause() = " + e.getCause(), e);
-        }
-    }
-
-    /**
-     * Builds the project using the incremental builder of Eclipse. <br>
-     * This process joins to Eclipse auto-builder if auto-build is activated for the project or invokes an incremental
-     * build itself.
-     * 
-     * @param project Project to be built.
-     */
-    public static void build(IProject project)
-    {
-//        IWorkspace workspace= ResourcesPlugin.getWorkspace();
-//        IWorkspaceDescription desc= workspace.getDescription();
-//        boolean isAutoBuilding= desc.isAutoBuilding(); 
-        try
-        {
-//            if (isAutoBuilding)
-//            {
-//                desc.setAutoBuilding(false);
-//                workspace.setDescription(desc); 
-//            }
-//                Platform.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_BUILD, null);
-//            else
-                project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
-//           if (isAutoBuilding)
-//           {
-//               desc.setAutoBuilding(true);
-//               workspace.setDescription(desc);
-//           }
-        }
-        catch (CoreException e)
-        {
-            logger.log(Level.SEVERE, "Cannot build project: " + project.getName() + ". e.cause() = " + e.getCause(), e);
-        }
-//        catch (OperationCanceledException e)
-//        {
-//            logger.log(Level.SEVERE, "Cannot build project: " + project.getName() + ". e.cause() = " + e.getCause(), e);
-//        }
-//        catch (InterruptedException e)
-//        {
-//            logger.log(Level.SEVERE, "Cannot build project: " + project.getName() + ". e.cause() = " + e.getCause(), e);
-//        }
     }
 }

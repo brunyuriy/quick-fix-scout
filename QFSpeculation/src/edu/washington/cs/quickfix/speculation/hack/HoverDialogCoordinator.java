@@ -6,6 +6,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 //import org.eclipse.jdt.internal.ui.text.java.hover.AbstractAnnotationHover.AnnotationInformationControl;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.swt.widgets.Display;
 
@@ -102,7 +103,13 @@ public class HoverDialogCoordinator
             {
                 logger.log(Level.INFO, "Cannot resolve global best proposal for shadow proposal = "
                         + globalBestProposal.getDisplayString(), e);
-            }
+            } 
+            catch (CoreException e) 
+            {
+                // For some reason, we couldn't compute the details of the compilation error.
+                logger.log(Level.WARNING, "Cannot resolve global best proposal for shadow proposal = "
+                        + globalBestProposal.getDisplayString(), e);
+			}
         }
         
         int lpSize = 0;
@@ -115,7 +122,17 @@ public class HoverDialogCoordinator
                 addedProposals.add(localProposal.getDisplayString());
                 int index = gbpSize + lpSize;
                 proposals[index] = localProposal.getProposal();
-                displayStrings[index] = localProposal.getFinalDisplayString();
+                try 
+                {
+					displayStrings[index] = localProposal.getFinalDisplayString();
+				} 
+                catch (CoreException e) 
+                {
+                    // Okay, this is not good. We don't compute the compilation error details for local proposals, so
+    				// normally we should never get this exception. However, something went terribly bad, so log with SEVERE.
+                    logger.log(Level.SEVERE, "Cannot resolve local best proposal (and should not!) for shadow proposal = "
+                            + localProposal.getDisplayString(), e);
+				}
                 lpSize ++;
             }
         }
