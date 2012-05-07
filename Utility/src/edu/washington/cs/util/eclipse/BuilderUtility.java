@@ -15,7 +15,6 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jdt.core.IJavaModelMarker;
-import org.eclipse.jdt.ui.text.java.IProblemLocation;
 
 import edu.washington.cs.util.eclipse.model.Squiggly;
 
@@ -25,9 +24,7 @@ import edu.washington.cs.util.eclipse.model.Squiggly;
  * Currently offered functionality is:
  * <ul>
  * <li>Building a given project incrementally.</li>
- * <li>Calculating the number of compilation errors in a given project.</li>
- * <li>Getting the java problem markers in a given project.</li>
- * <li>Getting the {@link IProblemLocation} in a given project.</li>
+ * <li>Retrieving the compilation errors and warnings for a given project.</li>
  * </ul>
  * 
  * @author Kivanc Muslu
@@ -51,72 +48,94 @@ public class BuilderUtility
      * PUBLIC API *
      *************/
     /**
-     * Returns the number of compilation errors in the copy project.
+     * Returns the number of compilation errors in the given project.
      * 
-     * @return The number of compilation errors in the copy project.
-     * @see #calculateCompilationErrorMarkers(IProject)
+     * @param project The target project.
+     * @return The number of compilation errors in the target project.
+     * @see #calculateCompilationErrors(IProject)
      */
     public static int getNumberOfCompilationErrors(IProject project)
     {
-        return calculateCompilationErrorMarkers(project).length;
+        return calculateCompilationErrors(project).length;
     }
-    
+
+    /**
+     * Returns the number of warnings in the given project.
+     * 
+     * @param project The target project.
+     * @return The number of warnings in the target project.
+     * @see #calculateWarnings(IProject)
+     */
     public static int getNumberOfWarnings(IProject project)
     {
-    	return calculateWarnings(project).length;
+        return calculateWarnings(project).length;
     }
-    
+
+    /**
+     * Returns the compilation errors in the given project.
+     * 
+     * @param project The target project.
+     * @return The compilation errors in the target project.
+     * @see #calculateSquigglies(IProject)
+     */
     public static Squiggly [] calculateCompilationErrors(IProject project)
     {
-    	Squiggly [] squigglies = calculateSquigglies(project);
+        Squiggly [] squigglies = calculateSquigglies(project);
         ArrayList <Squiggly> result = new ArrayList <Squiggly>();
         for (Squiggly squiggly: squigglies)
         {
-        	try
-        	{
-            	if (squiggly.isCompilationError())
-            		result.add(squiggly);
-        	}
-        	catch (CoreException e)
-        	{
-        		logger.log(Level.SEVERE, "Cannot get the marker attribute for squiggly: " + squiggly + ", not including it in the results.", e);
-        	}
+            try
+            {
+                if (squiggly.isCompilationError())
+                    result.add(squiggly);
+            }
+            catch (CoreException e)
+            {
+                logger.log(Level.SEVERE, "Cannot get the marker attribute for squiggly: " + squiggly
+                        + ", not including it in the results.", e);
+            }
         }
         return result.toArray(new Squiggly [result.size()]);
     }
-    
+
+    /**
+     * Returns the warnings in the given project.
+     * 
+     * @param project The target project.
+     * @return The warnings in the target project.
+     * @see #calculateSquigglies(IProject)
+     */
     public static Squiggly [] calculateWarnings(IProject project)
     {
-    	Squiggly [] squigglies = calculateSquigglies(project);
+        Squiggly [] squigglies = calculateSquigglies(project);
         ArrayList <Squiggly> result = new ArrayList <Squiggly>();
         for (Squiggly squiggly: squigglies)
         {
-        	try
-        	{
-            	if (squiggly.isWarning())
-            		result.add(squiggly);
-        	}
-        	catch (CoreException e)
-        	{
-        		logger.log(Level.SEVERE, "Cannot get the marker attribute for squiggly: " + squiggly + ", not including it in the results.", e);
-        	}
+            try
+            {
+                if (squiggly.isWarning())
+                    result.add(squiggly);
+            }
+            catch (CoreException e)
+            {
+                logger.log(Level.SEVERE, "Cannot get the marker attribute for squiggly: " + squiggly
+                        + ", not including it in the results.", e);
+            }
         }
         return result.toArray(new Squiggly [result.size()]);
     }
 
-    private static Squiggly [] calculateSquigglies(IProject project)
-    {
-        IMarker [] markers = findJavaProblemMarkers(project);
-        Squiggly [] result = new Squiggly [markers.length];
-        for (int a = 0; a < markers.length; a++)
-            result[a] = new Squiggly(markers[a]);
-        return result;
-    }
-
+    /**
+     * Sets the auto-building property for the 'workspace' with the given value. <br>
+     * This method first checks whether the auto-building value is equal to the given value or not. If it is already
+     * what is requested, the method does nothing.
+     * 
+     * @param value The new value for auto-building property for the 'workspace'.
+     */
     public static void setAutoBuilding(boolean value)
     {
-        IWorkspace workspace= ResourcesPlugin.getWorkspace();
-        IWorkspaceDescription desc= workspace.getDescription();
+        IWorkspace workspace = ResourcesPlugin.getWorkspace();
+        IWorkspaceDescription desc = workspace.getDescription();
         boolean current = desc.isAutoBuilding();
         if (current != value)
         {
@@ -127,24 +146,27 @@ public class BuilderUtility
             }
             catch (CoreException e)
             {
-                logger.log(Level.SEVERE, "Cannot set auto-build value to: " + value + ". e.cause() = " + e.getCause(), e);
+                logger.log(Level.SEVERE, "Cannot set auto-build value to: " + value, e);
             }
             if (value == false)
                 joinAutoBuilder();
         }
     }
-    
+
+    /**
+     * Returns the current value of auto-building for the workspace.
+     * 
+     * @return The current value of auto-building for the workspace.
+     */
     public static boolean isAutoBuilding()
     {
-        IWorkspace workspace= ResourcesPlugin.getWorkspace();
-        IWorkspaceDescription desc= workspace.getDescription();
+        IWorkspace workspace = ResourcesPlugin.getWorkspace();
+        IWorkspaceDescription desc = workspace.getDescription();
         return desc.isAutoBuilding();
     }
-    
+
     /**
-     * Builds the project using the incremental builder of Eclipse. <br>
-     * This process joins to Eclipse auto-builder if auto-build is activated for the project or invokes an incremental
-     * build itself.
+     * Builds the given project using the incremental builder of Eclipse.
      * 
      * @param project Project to be built.
      */
@@ -152,17 +174,23 @@ public class BuilderUtility
     {
         try
         {
-        	project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
+            project.build(IncrementalProjectBuilder.INCREMENTAL_BUILD, null);
         }
         catch (CoreException e)
         {
             logger.log(Level.SEVERE, "Cannot build project: " + project.getName() + ". e.cause() = " + e.getCause(), e);
         }
     }
-    
+
     /*************************
      ****** PRIVATE API ******
      *************************/
+    /**
+     * Suspends the caller thread until the current auto-building is complete. <br>
+     * Probably used best after calling setAutoBuilding(false) first.
+     * 
+     * @see #setAutoBuilding(boolean)
+     */
     @SuppressWarnings("deprecation")
     private static void joinAutoBuilder()
     {
@@ -179,48 +207,29 @@ public class BuilderUtility
             logger.log(Level.SEVERE, "Cannot join with auto-builder. e.cause() = " + e.getCause(), e);
         }
     }
-    
+
     /**
-     * Calculates and returns the markers available in the current project. <br>
-     * <br>
-     * This method assumes that the project is already built and saved (i.e., up to date).
+     * Retrieves the compilation errors and warnings for the given project.
      * 
-     * @param project Project that is being analyzed.
-     * @return The markers that the project generates with severity error (i.e., compilation error markers).
+     * @param project The target project.
+     * @return The compilation errors and warnings for the target project.
+     * @see #findJavaProblemMarkers(IProject)
      */
-    private static IMarker [] calculateCompilationErrorMarkers(IProject project)
+    private static Squiggly [] calculateSquigglies(IProject project)
     {
-        ArrayList <IMarker> result = new ArrayList <IMarker>();
-        IMarker [] markers = null;
-        try
-        {
-            markers = findJavaProblemMarkers(project);
-            for (IMarker marker: markers)
-            {
-                Integer severityType = (Integer) marker.getAttribute(IMarker.SEVERITY);
-                if (severityType.intValue() == IMarker.SEVERITY_ERROR)
-                {
-                    logger.finer("Returning marker = " + marker);
-                    result.add(marker);
-                }
-            }
-        }
-        catch (CoreException e)
-        {
-            logger.log(Level.SEVERE, "Cannot get the marker or marker attribute for project: " + project.getName(), e);
-        }
-        return result.toArray(new IMarker [result.size()]);
+        IMarker [] markers = findJavaProblemMarkers(project);
+        Squiggly [] result = new Squiggly [markers.length];
+        for (int a = 0; a < markers.length; a++)
+            result[a] = new Squiggly(markers[a]);
+        return result;
     }
 
     /**
-     * Returns all java problem markers in the given project. <br>
+     * Returns the compilation errors and warnings for the given project. <br>
      * The project must be built before calling this method. <br>
-     * Returned markers correspond to the all markers generated for the Java files including warning, error and
-     * exception markers.
      * 
-     * @param project The project that the markers will be retrieved from.
-     * @return All java problem markers in the given project.
-     * @see IMarker
+     * @param project The target project.
+     * @return The compilation errors and warnings for the target project.
      */
     private static IMarker [] findJavaProblemMarkers(IProject project)
     {
