@@ -59,6 +59,9 @@ public class BuilderUtilityTest
         Assert.assertEquals(0, errors);
     }
 
+    // TODO This test failed at least once due to the fact that getNumberOfWarnings throw an exception
+    // while trying to get the severity of the marker.
+    
     @Test
     public void testOneWarningProject()
     {
