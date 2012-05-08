@@ -99,8 +99,6 @@ public class Squiggly
         while (reader.hasNext())
         {
         	String text = reader.nextLine();
-        	System.out.println(offset);
-        	System.out.println(text);
         	offset -= text.length();
         	if (offset <= 0)
         	{
