@@ -13,3 +13,9 @@
 1.5.5:	Added don't remind me button for update detections (issue 41).
 1.5.6:	Minor point update for the release.
 1.5.7:	Added implementation for Eclipse Proposal sorter.
+1.5.8:	Wrote tests for BuilderUtility, added missing Javadoc, updated existing documentation.
+1.5.9:	Minor representational bug fixes in the Squiggly implementation for computing the details (especially the line and offset of the squiggly).
+1.6.0: 	Wrote tests for EclipseUIUtility, added missing Javadoc, updated existing documentation.
+1.6.1:	Wrote tests for ResourceUtility, added missing Javadoc, updated existing documentation.
+1.6.2:	Extracted the update and initial logging related functionality from ResourceUtility into UpdaterUtility.
+1.6.3:	Wrote tests for UpdaterUtility, added missing Javadoc, updated existing documentation.

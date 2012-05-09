@@ -6,7 +6,6 @@ import java.util.logging.Logger;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.ui.IStartup;
 
-//import edu.cs.washington.quickfix.speculation.converter.EclipseObjectConverter;
 import edu.washington.cs.hack.HackActionManager;
 import edu.washington.cs.quickfix.bridge.BridgeActionManager;
 import edu.washington.cs.quickfix.speculation.hack.SpeculationHackActionManager;
@@ -16,8 +15,8 @@ import edu.washington.cs.synchronization.SynchronizerStarter;
 import edu.washington.cs.synchronization.sync.SynchronizerCursorListener;
 import edu.washington.cs.threading.MortalThread;
 import edu.washington.cs.util.eclipse.EclipseUIUtility;
-import edu.washington.cs.util.eclipse.ResourceUtility;
 import edu.washington.cs.util.eclipse.SharedConstants;
+import edu.washington.cs.util.eclipse.UpdaterUtility;
 import edu.washington.cs.util.exception.NotInitializedException;
 import edu.washington.cs.util.log.LogHandlers;
 
@@ -31,7 +30,7 @@ public class SpeculationStarter implements IStartup
 {
     public static final String [] DEPENDENT_PLUG_INS = {Speculator.PLUG_IN_ID, SpeculationHackActionManager.PLUG_IN_ID,
         BridgeActionManager.PLUG_IN_ID, HackActionManager.PLUG_IN_ID, ProjectSynchronizer.PLUG_IN_ID,
-        ResourceUtility.PLUG_IN_ID, /*EclipseObjectConverter.PLUG_IN_ID,*/
+        UpdaterUtility.PLUG_IN_ID, /*EclipseObjectConverter.PLUG_IN_ID,*/
         LogHandlers.PLUG_IN_ID, MortalThread.PLUG_IN_ID, SwingUtility.PLUG_IN_ID};
     /** Logger for debugging. */
     private static final Logger logger = Logger.getLogger(SpeculationStarter.class.getName());
@@ -52,8 +51,8 @@ public class SpeculationStarter implements IStartup
     public void earlyStartup()
     {
         logger.info("QFSpeculationStarter is running...");
-        ResourceUtility.logSystemInformation(DEPENDENT_PLUG_INS);
-        ResourceUtility.checkForUpdates("Speculator", false, DEPENDENT_PLUG_INS);
+        UpdaterUtility.logSystemInformation(DEPENDENT_PLUG_INS);
+        UpdaterUtility.checkForUpdates("Speculator", false, DEPENDENT_PLUG_INS);
         SynchronizerStarter.initGlobalListeners();
         SynchronizerCursorListener.getInstance().addCursorChangedListener(Speculator.getSpeculator());
         IFile initialFile = null;

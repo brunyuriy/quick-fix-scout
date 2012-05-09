@@ -70,3 +70,5 @@
 1.5.7:	Was not logging speculation proposals when augmentation is closed (i.e., only speculation running). Fixed that.
 1.5.8:	API change for isSpeculationRunning() function. 
 1.5.9:	Bug fix for deciding whether the speculative analysis is running or not. 
+1.6.0:	Updated the library calls to Eclipse Utility so that the plug-in calls UpdaterUtility rather than ResourceUtility for checking updates.
+
