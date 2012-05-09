@@ -1,0 +1,10 @@
+
+public class ResourceTest01 
+{
+	// This is a comment.
+	private String name_;
+	
+	public void method()
+	{
+	}
+}

@@ -1,14 +1,14 @@
-!SESSION 2012-05-06 23:57:09.257 -----------------------------------------------
+!SESSION 2012-05-08 02:25:29.820 -----------------------------------------------
 eclipse.buildId=M20110909-1335
 java.version=1.6.0_31
 java.vendor=Apple Inc.
 BootLoader constants: OS=macosx, ARCH=x86_64, WS=cocoa, NL=en_US
-Framework arguments:  -version 3 -port 54349 -testLoaderClass org.eclipse.jdt.internal.junit4.runner.JUnit4TestLoader -loaderpluginname org.eclipse.jdt.junit4.runtime -classNames edu.washington.cs.util.eclipse.test.BuilderUtilityTest -application org.eclipse.pde.junit.runtime.uitestapplication -product org.eclipse.sdk.ide -testpluginname edu.washington.cs.util
-Command-line arguments:  -os macosx -ws cocoa -arch x86_64 -consoleLog -version 3 -port 54349 -testLoaderClass org.eclipse.jdt.internal.junit4.runner.JUnit4TestLoader -loaderpluginname org.eclipse.jdt.junit4.runtime -classNames edu.washington.cs.util.eclipse.test.BuilderUtilityTest -application org.eclipse.pde.junit.runtime.uitestapplication -product org.eclipse.sdk.ide -data /Users/kivanc/Projects/Java-Projects/WS-QFS/../junit-workspace -dev file:/Users/kivanc/Projects/Java-Projects/WS-QFS/.metadata/.plugins/org.eclipse.pde.core/pde-junit/dev.properties -os macosx -ws cocoa -arch x86_64 -consoleLog -testpluginname edu.washington.cs.util
+Framework arguments:  -version 3 -port 63997 -testLoaderClass org.eclipse.jdt.internal.junit4.runner.JUnit4TestLoader -loaderpluginname org.eclipse.jdt.junit4.runtime -testNameFile /var/folders/70/vkdp87tx5g7d7rwlvtr4_5m80000gn/T/testNames1958465431521199269.txt -application org.eclipse.pde.junit.runtime.uitestapplication -product org.eclipse.sdk.ide -testpluginname edu.washington.cs.util
+Command-line arguments:  -os macosx -ws cocoa -arch x86_64 -consoleLog -version 3 -port 63997 -testLoaderClass org.eclipse.jdt.internal.junit4.runner.JUnit4TestLoader -loaderpluginname org.eclipse.jdt.junit4.runtime -testNameFile /var/folders/70/vkdp87tx5g7d7rwlvtr4_5m80000gn/T/testNames1958465431521199269.txt -application org.eclipse.pde.junit.runtime.uitestapplication -product org.eclipse.sdk.ide -data /Users/kivanc/Projects/Java-Projects/WS-QFS/../junit-workspace -dev file:/Users/kivanc/Projects/Java-Projects/WS-QFS/.metadata/.plugins/org.eclipse.pde.core/pde-junit/dev.properties -os macosx -ws cocoa -arch x86_64 -consoleLog -testpluginname edu.washington.cs.util
 
-!ENTRY org.eclipse.core.net 1 0 2012-05-06 23:57:17.343
+!ENTRY org.eclipse.core.net 1 0 2012-05-08 02:25:39.410
 !MESSAGE System property http.nonProxyHosts has been set to local|*.local|169.254/16|*.169.254/16 by an external source. This value will be overwritten using the values from the preferences
-!SESSION 2012-05-06 23:57:58.527 -----------------------------------------------
+!SESSION 2012-05-09 11:02:59.076 -----------------------------------------------
 eclipse.buildId=I20110613-1736
 java.version=1.6.0_31
 java.vendor=Apple Inc.
@@ -16,15 +16,5 @@ BootLoader constants: OS=macosx, ARCH=x86_64, WS=cocoa, NL=en_US
 Framework arguments:  -keyring /Users/kivanc/.eclipse_keyring -showlocation
 Command-line arguments:  -os macosx -ws cocoa -arch x86_64 -keyring /Users/kivanc/.eclipse_keyring -showlocation
 
-!ENTRY org.eclipse.core.net 1 0 2012-05-06 23:58:06.195
-!MESSAGE System property http.nonProxyHosts has been set to local|*.local|169.254/16|*.169.254/16 by an external source. This value will be overwritten using the values from the preferences
-!SESSION 2012-05-07 00:00:41.913 -----------------------------------------------
-eclipse.buildId=I20110613-1736
-java.version=1.6.0_31
-java.vendor=Apple Inc.
-BootLoader constants: OS=macosx, ARCH=x86_64, WS=cocoa, NL=en_US
-Framework arguments:  -keyring /Users/kivanc/.eclipse_keyring -showlocation
-Command-line arguments:  -os macosx -ws cocoa -arch x86_64 -keyring /Users/kivanc/.eclipse_keyring -showlocation
-
-!ENTRY org.eclipse.core.net 1 0 2012-05-07 00:00:48.937
+!ENTRY org.eclipse.core.net 1 0 2012-05-09 11:03:11.204
 !MESSAGE System property http.nonProxyHosts has been set to local|*.local|169.254/16|*.169.254/16 by an external source. This value will be overwritten using the values from the preferences
