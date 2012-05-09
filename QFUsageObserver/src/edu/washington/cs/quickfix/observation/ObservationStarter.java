@@ -5,7 +5,6 @@ import java.util.logging.Logger;
 
 import javax.swing.JCheckBox;
 
-
 import org.eclipse.core.commands.operations.OperationHistoryFactory;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.ui.IStartup;
@@ -25,8 +24,8 @@ import edu.washington.cs.synchronization.SynchronizerStarter;
 import edu.washington.cs.synchronization.sync.SynchronizerCursorListener;
 import edu.washington.cs.threading.MortalThread;
 import edu.washington.cs.util.eclipse.EclipseUIUtility;
-import edu.washington.cs.util.eclipse.ResourceUtility;
 import edu.washington.cs.util.eclipse.SharedConstants;
+import edu.washington.cs.util.eclipse.UpdaterUtility;
 import edu.washington.cs.util.exception.NotInitializedException;
 import edu.washington.cs.util.log.LogHandlers;
 
@@ -48,7 +47,7 @@ public class ObservationStarter implements IStartup
     }
     public static final String [] DEPENDENT_PLUG_INS = {Observer.PLUG_IN_ID, ObserverHackActionManager.PLUG_IN_ID,
             BridgeActionManager.PLUG_IN_ID, HackActionManager.PLUG_IN_ID, ProjectSynchronizer.PLUG_IN_ID,
-            ResourceUtility.PLUG_IN_ID, EmailSender.PLUG_IN_ID, LogHandlers.PLUG_IN_ID,
+            UpdaterUtility.PLUG_IN_ID, EmailSender.PLUG_IN_ID, LogHandlers.PLUG_IN_ID,
             MortalThread.PLUG_IN_ID, SwingUtility.PLUG_IN_ID};
 
     /**
@@ -73,8 +72,8 @@ public class ObservationStarter implements IStartup
         checkSnapshot();
         checkSendLogs();
         sendLogs();
-        ResourceUtility.checkForUpdates("Observer", false, DEPENDENT_PLUG_INS);
-        ResourceUtility.logSystemInformation(DEPENDENT_PLUG_INS);
+        UpdaterUtility.checkForUpdates("Observer", false, DEPENDENT_PLUG_INS);
+        UpdaterUtility.logSystemInformation(DEPENDENT_PLUG_INS);
         try
         {
             IFile currentFile = EclipseUIUtility.getActiveEditorFileInUIThread();

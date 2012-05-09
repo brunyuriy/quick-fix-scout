@@ -20,7 +20,7 @@ import edu.washington.cs.quickfix.speculation.Speculator;
 import edu.washington.cs.util.eclipse.EclipseUIUtility;
 import edu.washington.cs.util.eclipse.PreferencePageUtility;
 import edu.washington.cs.util.eclipse.PreferencesUtility;
-import edu.washington.cs.util.eclipse.ResourceUtility;
+import edu.washington.cs.util.eclipse.UpdaterUtility;
 import edu.washington.cs.util.exception.NotInitializedException;
 
 /**
@@ -49,7 +49,7 @@ public class SpeculationPreferencePage extends FieldEditorPreferencePage impleme
 
     public SpeculationPreferencePage()
     {
-        String version = ResourceUtility.getExternalVersion(SpeculationStarter.DEPENDENT_PLUG_INS);
+        String version = UpdaterUtility.getExternalVersion(SpeculationStarter.DEPENDENT_PLUG_INS);
         setDescription("Version = " + version);
         preferences_ = new PreferencesUtility(Speculator.PLUG_IN_ID);
         instance_ = this;
@@ -153,7 +153,7 @@ public class SpeculationPreferencePage extends FieldEditorPreferencePage impleme
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                ResourceUtility.checkForUpdates("Speculator", true, SpeculationStarter.DEPENDENT_PLUG_INS);
+                UpdaterUtility.checkForUpdates("Speculator", true, SpeculationStarter.DEPENDENT_PLUG_INS);
             }
             
             @Override

@@ -25,7 +25,7 @@ import edu.washington.cs.quickfix.observation.log.ObservationLogger;
 import edu.washington.cs.util.eclipse.EclipseUIUtility;
 import edu.washington.cs.util.eclipse.PreferencePageUtility;
 import edu.washington.cs.util.eclipse.PreferencesUtility;
-import edu.washington.cs.util.eclipse.ResourceUtility;
+import edu.washington.cs.util.eclipse.UpdaterUtility;
 import edu.washington.cs.util.exception.NotInitializedException;
 import edu.washington.cs.util.log.LogHandlers;
 
@@ -56,7 +56,7 @@ public class ObservationPreferencePage extends PreferencePage implements IWorkbe
     public ObservationPreferencePage()
     {
         preferences_ = new PreferencesUtility(Observer.PLUG_IN_ID);
-        String version = ResourceUtility.getExternalVersion(ObservationStarter.DEPENDENT_PLUG_INS);
+        String version = UpdaterUtility.getExternalVersion(ObservationStarter.DEPENDENT_PLUG_INS);
         setDescription("Version = " + version);
         instance_ = this;
     }
@@ -141,7 +141,7 @@ public class ObservationPreferencePage extends PreferencePage implements IWorkbe
             @Override
             public void widgetSelected(SelectionEvent e)
             {
-                ResourceUtility.checkForUpdates("Observer", true, ObservationStarter.DEPENDENT_PLUG_INS);
+                UpdaterUtility.checkForUpdates("Observer", true, ObservationStarter.DEPENDENT_PLUG_INS);
             }
             
             @Override

@@ -9,11 +9,13 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.eclipse.core.filesystem.IFileInfo;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IBuffer;
@@ -628,7 +630,7 @@ public class ProjectSynchronizer
             boolean done = false;
             if (bufferLevelSync)
                 done = syncBuffers(original, shadow);
-            if (!done && !ResourceUtility.areFilesIdentical(original, shadow))
+            if (!done && !areFilesIdentical(original, shadow))
             {
                 if (internalCheck_)
                 {
@@ -645,6 +647,36 @@ public class ProjectSynchronizer
             }
             // else, it means that the files are already in sync.
         }
+    }
+    
+    private boolean areFilesIdentical(IFile original, IFile shadow)
+    {
+        // Quickly check through last modification date.
+        try
+        {
+            if (isOriginanlModifiedLater(original, shadow))
+                return false;
+        }
+        catch (CoreException e)
+        {
+            // Since this is a fast check anyways, we don't care if we cannot do it.
+        }
+        return ResourceUtility.areFilesIdentical(original, shadow);
+    }
+    
+    /**
+     * @param original The original file.
+     * @param shadow The shadow file.
+     * @return <code>true</code> if the original file is modified later than the shadow file and <code>false</code>
+     *         otherwise.
+     * @throws CoreException If the last modification date cannot be retrieved for any of the files.
+     */
+    private boolean isOriginanlModifiedLater(IFile original, IFile shadow) throws CoreException
+    {
+        IFileInfo firstFileInfo = ResourceUtility.getFileInfo(original);
+        IFileInfo secondFileInfo = ResourceUtility.getFileInfo(shadow);
+        return firstFileInfo.getLastModified() >= secondFileInfo.getLastModified();
+
     }
 
     /**
