@@ -1,3 +1,4 @@
+
 package edu.washington.cs.quickfix.observation.log.internal;
 
 import java.text.DateFormat;
@@ -9,8 +10,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.jdt.internal.ui.text.correction.proposals.ChangeCorrectionProposal;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
 import org.eclipse.jdt.ui.text.java.IProblemLocation;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
@@ -23,7 +22,6 @@ import edu.washington.cs.quickfix.observation.Observer;
 import edu.washington.cs.quickfix.observation.log.ObservationCompilationErrorLogger;
 import edu.washington.cs.quickfix.observation.log.ObservationLogger;
 import edu.washington.cs.quickfix.observation.log.ObservationCompilationErrorLogger.Type;
-import edu.washington.cs.synchronization.ProjectSynchronizer;
 import edu.washington.cs.synchronization.sync.task.internal.TaskWorker;
 import edu.washington.cs.util.eclipse.QuickFixUtility;
 import edu.washington.cs.util.log.CommonLoggers;
@@ -33,12 +31,14 @@ import edu.washington.cs.util.log.CommonLoggers;
  * 
  * @author Kivanc Muslu
  */
-@SuppressWarnings("restriction")
 public class QFSession
 {
     /** Constant that represents the prefix used for the session type of a Quick Fix session. */
     static final String SESSION_TYPE_STRING = "Logging Quick Fix session of type = ";
-    /** Constant that represents whether the session is marked as invalid (getting out of sync) or not. */
+    /**
+     * Constant that represents whether the session is marked as invalid (getting out of sync) or
+     * not.
+     */
     static final String SESSION_VALIDITY_STRING = "Session is valid: ";
     /** Constant that represents the prefix used for the start of a quick fix session. */
     static final String SESSION_START_STRING = "Quick Fix session started. Current time = ";
@@ -52,23 +52,32 @@ public class QFSession
     static final String QF_FILE_STRING = "The file that quick fix is invoked on: ";
     /** Constant that represents the prefix used for the proposals that are offered by Eclipse. */
     static final String ECLIPSE_PROPOSALS_STRING = "The following proposals are offered by the Eclipse:";
-    /** Constant that represents the string that will be used in split(...) method to get the proposal information. */
+    /**
+     * Constant that represents the string that will be used in split(...) method to get the
+     * proposal information.
+     */
     static final String PROPOSAL_SPLIT_STRING = "-) ";
-    /** Constant that represents the prefix used for the proposals that are offered by the speculative analysis. */
+    /**
+     * Constant that represents the prefix used for the proposals that are offered by the
+     * speculative analysis.
+     */
     static final String SPECULATION_PROPOSALS_STRING = "The following proposals are offered by the speculative analysis:";
     /**
-     * Constant that represents the prefix used for the number of compilation errors in the project at the time quick
-     * fix icon is clicked.
+     * Constant that represents the prefix used for the number of compilation errors in the project
+     * at the time quick fix icon is clicked.
      */
     static final String BEFORE_COMPILATION_ERROR_STRING = "Number of compilation errors before the proposal selected = ";
     /** Constant that represents the prefix used for the proposal that user has selected. */
     static final String USER_SELECTED_STRING = "User selected proposal = ";
     /**
-     * Constant that represents the prefix used for the number of compilation errors in the project at the time after
-     * the proposal that is selected is applied to the project.
+     * Constant that represents the prefix used for the number of compilation errors in the project
+     * at the time after the proposal that is selected is applied to the project.
      */
     static final String AFTER_COMPILATION_ERROR_STRING = "Number of compilation errors after the proposal selected = ";
-    /** Constant that represents the prefix used when the user closes the quick fix popup without selecting a proposal. */
+    /**
+     * Constant that represents the prefix used when the user closes the quick fix popup without
+     * selecting a proposal.
+     */
     static final String TERMINATION_WITHOUT_SELECTION_STRING = "User closed popup window without selecting a proposal.";
     /** Constant that represents the prefix used for the end of a quick fix session. */
     static final String SESSION_END_STRING = "Quick Fix session is completed. Current time = ";
@@ -95,9 +104,12 @@ public class QFSession
     /** Time when the session ended as in {@link System#nanoTime()}. */
     private Date sessionEndTime_;
     /** The proposals that are offered by Eclipse for this session. */
-    private String [] availableProposals_;
-    /** The proposals that are offered by the speculative analysis at the time the quick fix popup is generated. */
-    private String [] speculationProposals_;
+    private String[] availableProposals_;
+    /**
+     * The proposals that are offered by the speculative analysis at the time the quick fix popup is
+     * generated.
+     */
+    private String[] speculationProposals_;
     /** Number of compilation errors in the project at the time the quick fix popup is created. */
     private int errorsBefore_;
     /** Number of compilation errors in the project after the proposal selected by user is applied. */
@@ -111,34 +123,37 @@ public class QFSession
     /** Variable that indicates if the log that represents this session is constructed or not. */
     private boolean logConstructed_;
     // Locations are needed so that later on I can retrieve speculation proposals.
-    private IProblemLocation [] locations_;
-    
+    private IProblemLocation[] locations_;
+
     private String qfProject_;
     private String qfFile_;
-    
+
     private Boolean isSpeculationRunning_;
     private Date localSpeculationCompletionTime_;
     private Date analysisCompletionTime_;
-    
+
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
-    public static enum QFSessionType { HOVER, DIALOG }
+    public static enum QFSessionType
+    {
+        HOVER, DIALOG
+    }
+
     private QFSessionType sessionType_;
-    
     private boolean markedInvalid_ = false;
-    
     private boolean undone_ = false;
-    
+
     public QFSession()
     {
-        this(null, INVALID_TIME, INVALID_TIME, null, null, null, null, null, INVALID_ERRORS, null, INVALID_ERRORS, INVALID_TIME,
-                INVALID_TIME, INVALID_TIME);
+        this(null, INVALID_TIME, INVALID_TIME, null, null, null, null, null, INVALID_ERRORS, null,
+             INVALID_ERRORS, INVALID_TIME, INVALID_TIME, INVALID_TIME);
     }
-    
-    QFSession(QFSessionType sessionType, Date sessionStartTime, Date delayTime, Boolean speculationRunning,
-    		String qfProject, String qfFile,
-            String [] availableProposals, String [] speculationProposals, int errorsBefore, String selectedProposal,
-            int errorsAfter, Date sessionEndTime, Date localComputationLength, Date analysisLength)
+
+    QFSession(QFSessionType sessionType, Date sessionStartTime, Date delayTime,
+              Boolean speculationRunning, String qfProject, String qfFile,
+              String[] availableProposals, String[] speculationProposals, int errorsBefore,
+              String selectedProposal, int errorsAfter, Date sessionEndTime,
+              Date localComputationLength, Date analysisLength)
     {
         sessionType_ = sessionType;
         log_ = new StringBuffer();
@@ -157,21 +172,21 @@ public class QFSession
         logConstructed_ = false;
         selectedProposal_ = null;
         locations_ = null;
-        
+
         long difference = sessionEndTime.getTime() - sessionStartTime_.getTime();
-        long million = (long)Math.pow(10, 6);
-        if (difference > million*100)
+        long million = (long) Math.pow(10, 6);
+        if (difference > million * 100)
         {
             sessionStartTime_ = new Date(sessionStartTime_.getTime() / million);
             sessionEndTime_ = new Date(sessionEndTime_.getTime() / million);
         }
-        if (delayTime.getTime() > million*100)
+        if (delayTime.getTime() > million * 100)
             delayTime_ = new Date(delayTime_.getTime() / million);
-        
+
         localSpeculationCompletionTime_ = localComputationLength;
         analysisCompletionTime_ = analysisLength;
     }
-    
+
     private void log(String log)
     {
         logger.finer("Logging: " + log);
@@ -184,7 +199,7 @@ public class QFSession
         invalid_ = true;
     }
 
-    public synchronized void setSpeculationProposals(String [] proposals)
+    public synchronized void setSpeculationProposals(String[] proposals)
     {
         speculationProposals_ = proposals;
     }
@@ -202,22 +217,22 @@ public class QFSession
         {
             Date lastModificationDate = currentWorker.getLastModificationDate();
             delayTime_ = Dates.subtract(currentTime, lastModificationDate);
-        }
-        else
+        } else
             delayTime_ = INVALID_TIME;
-        sessionStartTime_ = currentTime;    
-        
+        sessionStartTime_ = currentTime;
+
         // See if speculative analysis is running.
-        ISpeculatorObserverBridge bridge = BridgeActionManager.getInstance().getSpeculatorObserverBridge();
+        ISpeculatorObserverBridge bridge = BridgeActionManager.getInstance()
+                                                              .getSpeculatorObserverBridge();
         isSpeculationRunning_ = bridge == null ? null : bridge.isSpeculationRunning();
     }
 
-    public synchronized void setLocations(IProblemLocation [] locations)
+    public synchronized void setLocations(IProblemLocation[] locations)
     {
         locations_ = locations;
     }
 
-    public synchronized IProblemLocation [] getLocations()
+    public synchronized IProblemLocation[] getLocations()
     {
         return locations_;
     }
@@ -240,7 +255,8 @@ public class QFSession
     public synchronized void logProposalSelected(ICompletionProposal proposal)
     {
         selectedProposal_ = proposal;
-        selectedProposalString_ = selectedProposal_ == null ? "" : selectedProposal_.getDisplayString();
+        selectedProposalString_ = selectedProposal_ == null ? ""
+                                                           : selectedProposal_.getDisplayString();
         notifyAll();
     }
 
@@ -254,19 +270,21 @@ public class QFSession
         errorsAfter_ = errors;
         notifyAll();
     }
-    
+
     public synchronized void logPopupClosed()
     {
         if (isInvalid())
         {
-            CommonLoggers.getCommunicationLogger().info("Session is invalid, close message is discarded.");
+            CommonLoggers.getCommunicationLogger()
+                         .info("Session is invalid, close message is discarded.");
             return;
         }
         Date currentTime = new Date();
         sessionEndTime_ = currentTime;
         if (sessionStartTime_ == INVALID_TIME)
         {
-            CommonLoggers.getCommunicationLogger().info("Popup close detected without a popup is created, ignoring event.");
+            CommonLoggers.getCommunicationLogger()
+                         .info("Popup close detected without a popup is created, ignoring event.");
             return;
         }
         Thread thread = new LogFinalizer();
@@ -278,34 +296,34 @@ public class QFSession
      * 
      * @param proposals
      */
-    public synchronized void setProposals(IJavaCompletionProposal [] proposals)
+    public synchronized void setProposals(IJavaCompletionProposal[] proposals)
     {
         if (proposals == null)
-            availableProposals_ = new String [0];
+            availableProposals_ = new String[0];
         else
         {
             Arrays.sort(proposals, new QuickFixUtility.EclipseProposalSorter());
-            availableProposals_ = new String [proposals.length];
+            availableProposals_ = new String[proposals.length];
             for (int a = 0; a < availableProposals_.length; a++)
                 availableProposals_[a] = proposals[a].getDisplayString();
         }
         logger.fine("Avaible proposals are set.");
-        
+
         updateQFInvocation();
         notifyAll();
     }
-    
-    private void updateQFInvocation() 
-    {
-    	IFile currentFile = Observer.getUsageObserver().getCurrentFile();
-    	if (currentFile != null)
-    	{
-    		qfFile_ = currentFile.getName();
-    		qfProject_ = currentFile.getProject().getName();
-    	}
-	}
 
-	public String toString()
+    private void updateQFInvocation()
+    {
+        IFile currentFile = Observer.getUsageObserver().getCurrentFile();
+        if (currentFile != null)
+        {
+            qfFile_ = currentFile.getName();
+            qfProject_ = currentFile.getProject().getName();
+        }
+    }
+
+    public String toString()
     {
         if (!logConstructed_)
             createLog();
@@ -316,30 +334,39 @@ public class QFSession
     {
         if (isInvalid())
             return;
-        boolean proposalsMatch_ = false;
-        if (selectedProposal_ instanceof ChangeCorrectionProposal)
-        {
-            ChangeCorrectionProposal correctionProposal = (ChangeCorrectionProposal) selectedProposal_;
-            try
-            {
-                if (correctionProposal.getChange().getName().equals(changeName))
-                    proposalsMatch_ = true;
-            }
-            catch (CoreException e)
-            {}
-        }
-        if (selectedProposalString_ != null && selectedProposalString_.equals(changeName))
-            proposalsMatch_ = true;
-        if (proposalsMatch_)
-        {
-            Thread compilationErrorLogger = new ObservationCompilationErrorLogger(this, Type.AFTER);
-            compilationErrorLogger.start();
-        }
-        else
-            logger.warning("Selected proposal and change performed does not match! Selected proposal = "
-                    + selectedProposalString_ + ", change performed = " + changeName);
+
+        Thread compilationErrorLogger = new ObservationCompilationErrorLogger(this, Type.AFTER);
+        compilationErrorLogger.start();
     }
-    
+
+    // public synchronized void logChangePerformed(String changeName)
+    // {
+    // if (isInvalid())
+    // return;
+    // boolean proposalsMatch_ = false;
+    // if (selectedProposal_ instanceof ChangeCorrectionProposal)
+    // {
+    // ChangeCorrectionProposal correctionProposal = (ChangeCorrectionProposal) selectedProposal_;
+    // try
+    // {
+    // if (correctionProposal.getChange().getName().equals(changeName))
+    // proposalsMatch_ = true;
+    // }
+    // catch (CoreException e)
+    // {}
+    // }
+    // if (selectedProposalString_ != null && selectedProposalString_.equals(changeName))
+    // proposalsMatch_ = true;
+    // if (proposalsMatch_)
+    // {
+    // Thread compilationErrorLogger = new ObservationCompilationErrorLogger(this, Type.AFTER);
+    // compilationErrorLogger.start();
+    // }
+    // else
+    // logger.warning("Selected proposal and change performed does not match! Selected proposal = "
+    // + selectedProposalString_ + ", change performed = " + changeName);
+    // }
+
     public void setSessionType(QFSessionType sessionType)
     {
         sessionType_ = sessionType;
@@ -355,22 +382,27 @@ public class QFSession
         log(SESSION_TYPE_STRING + sessionType_.toString());
         log(SESSION_VALIDITY_STRING + !markedInvalid_);
         log(SESSION_START_STRING + makeString(sessionStartTime_));
-        log(SESSION_DELAY_STRING + makeString(delayTime_) + SESSION_DELAY_STRING_SEPERATOR
-                + Dates.toReadableString(delayTime_));
+        log(SESSION_DELAY_STRING + makeString(delayTime_)
+            + SESSION_DELAY_STRING_SEPERATOR
+            + Dates.toReadableString(delayTime_));
         Date instant = new Date(0);
         if (localSpeculationCompletionTime_ != null)
         {
             Date localDelay = Dates.subtract(localSpeculationCompletionTime_, sessionStartTime_);
             if (localDelay.before(instant))
                 localDelay = instant;
-            log(LOCAL_COMPUTATION_DELAY_STRING + makeString(localDelay) + SESSION_DELAY_STRING_SEPERATOR + Dates.toReadableString(localDelay));
+            log(LOCAL_COMPUTATION_DELAY_STRING + makeString(localDelay)
+                + SESSION_DELAY_STRING_SEPERATOR
+                + Dates.toReadableString(localDelay));
         }
         if (analysisCompletionTime_ != null)
         {
             Date globalDelay = Dates.subtract(analysisCompletionTime_, sessionStartTime_);
             if (globalDelay.before(instant))
                 globalDelay = instant;
-            log(GLOBAL_COMPUTATION_DELAY_STRING + makeString(globalDelay) + SESSION_DELAY_STRING_SEPERATOR + Dates.toReadableString(globalDelay));
+            log(GLOBAL_COMPUTATION_DELAY_STRING + makeString(globalDelay)
+                + SESSION_DELAY_STRING_SEPERATOR
+                + Dates.toReadableString(globalDelay));
         }
         log(SPECULATION_RUNNING_STRING + isSpeculationRunning_);
         log(QF_PROJECT_STRING + qfProject_);
@@ -397,15 +429,15 @@ public class QFSession
         {
             log(USER_SELECTED_STRING + selectedProposalString_);
             log(AFTER_COMPILATION_ERROR_STRING + errorsAfter_);
-        }
-        else
+        } else
             log(TERMINATION_WITHOUT_SELECTION_STRING);
         log(SESSION_END_STRING + makeString(sessionEndTime_));
-        log(SESSION_LENGTH_STRING + Dates.toReadableString(Dates.subtract(sessionEndTime_, sessionStartTime_)));
+        log(SESSION_LENGTH_STRING + Dates.toReadableString(Dates.subtract(sessionEndTime_,
+                                                                          sessionStartTime_)));
         logConstructed_ = true;
     }
 
-	private synchronized boolean isLogCompleted()
+    private synchronized boolean isLogCompleted()
     {
         StringBuffer log = new StringBuffer();
         boolean sessionTypeSet = sessionType_ != null;
@@ -423,8 +455,11 @@ public class QFSession
         log.append("selectedProposal != null ==> " + selectedProposalSet + LINE_SEPARATOR);
         log.append("errorsAfter != invalidErrors ==> " + errorsAfterSet + LINE_SEPARATOR);
         logger.finer(log.toString());
-        return sessionTypeSet && availableProposalsSet && startTimeSet && endTimeSet && errorsBeforeSet
-                && (selectedProposalString_ == null || errorsAfterSet);
+        return sessionTypeSet && availableProposalsSet
+               && startTimeSet
+               && endTimeSet
+               && errorsBeforeSet
+               && (selectedProposalString_ == null || errorsAfterSet);
     }
 
     private class LogFinalizer extends Thread
@@ -440,8 +475,7 @@ public class QFSession
                     {
                         QFSession.this.wait();
                     }
-                }
-                catch (InterruptedException e)
+                } catch (InterruptedException e)
                 {
                     e.printStackTrace();
                 }
@@ -461,23 +495,23 @@ public class QFSession
     {
         analysisCompletionTime_ = time;
     }
-    
+
     /** JUST ADDED FOR LOG ANALYSES, NOT USED IN THE PLUG-IN */
-    
+
     /*******************************
      ************ GETTERS **********
      *******************************/
-    
+
     void undone()
     {
         undone_ = true;
     }
-    
+
     boolean isUndone()
     {
         return undone_;
     }
-    
+
     Action isGlobalBestProposalSelected()
     {
         // If the session is not completed, then no meaning to compute this.
@@ -489,20 +523,20 @@ public class QFSession
             // are not recorded, then we assume that we could not record this information.
             if (speculationProposals_ == null)
                 return Action.NOT_AVAILABLE;
-        }
-        else if (!isSpeculationRunning_)
+        } else if (!isSpeculationRunning_)
             // if the speculation was not running, then this cannot be computed.
             return Action.NOT_AVAILABLE;
         // At this moment, the speculation is guaranteed to be running (i.e., either the flag is set
         // or speculative proposals are set).
         if (speculationProposals_ == null)
-            // if speculative proposals are not set, it means the speculation was running, however the
+            // if speculative proposals are not set, it means the speculation was running, however
+            // the
             // user closed the dialog without waiting for the speculation results.
             return Action.FALSE;
-        ArrayList <String> globalBestProposals = getGlobalBestProposals();
+        ArrayList<String> globalBestProposals = getGlobalBestProposals();
         for (String gbp: globalBestProposals)
         {
-            if(containsAllWords(gbp, selectedProposalString_))
+            if (containsAllWords(gbp, selectedProposalString_))
                 return Action.TRUE;
         }
         return Action.FALSE;
@@ -535,50 +569,57 @@ public class QFSession
             // the best or not.
             int compilationError = -1;
             int bestCompilationError = Integer.MAX_VALUE;
-            ArrayList <String> globalBestProposals = getGlobalBestProposals();
+            ArrayList<String> globalBestProposals = getGlobalBestProposals();
             for (String speculationProposal: speculationProposals_)
             {
-//                System.out.println(speculationProposal);
+                // System.out.println(speculationProposal);
                 int currentCompilationError = getCompilationErrorPart(speculationProposal);
                 String proposalPart = getProposalPart(speculationProposal);
                 if (!globalBestProposals.contains(proposalPart))
                 {
-                    // We have to make sure that we are not including global best proposal's compilation
+                    // We have to make sure that we are not including global best proposal's
+                    // compilation
                     // error information to our calculation.
                     if (proposalPart.equals(selectedProposalString_))
                         compilationError = currentCompilationError;
                     bestCompilationError = Math.min(bestCompilationError, currentCompilationError);
                 }
             }
-            assert compilationError == -1 || bestCompilationError == Integer.MAX_VALUE || compilationError >= bestCompilationError;
-//            System.out.println("Selected proposal = " + selectedProposalString_ + ", compilation error = " + compilationError + ", best compilation error = " + bestCompilationError );
+            assert compilationError == -1 || bestCompilationError == Integer.MAX_VALUE
+                   || compilationError >= bestCompilationError;
+            // System.out.println("Selected proposal = " + selectedProposalString_ +
+            // ", compilation error = " + compilationError + ", best compilation error = " +
+            // bestCompilationError );
             if (compilationError != -1 && compilationError == bestCompilationError)
-                // If the number of compilation errors for the selected proposal is equal to the number of lowest compilation errors
+                // If the number of compilation errors for the selected proposal is equal to the
+                // number of lowest compilation errors
                 // then, we return true.
                 result = Action.TRUE;
         }
         return result;
     }
-    
+
     Action isFirstProposalSelected()
     {
         // If session is not completed, there is no way to measure this.
         if (!isSessionCompleted())
             return Action.NOT_AVAILABLE;
-        
-        // Look whether the speculation analysis is running and/or we have speculation results. If so, look if the
+
+        // Look whether the speculation analysis is running and/or we have speculation results. If
+        // so, look if the
         // selected proposal is the same as the first speculation proposal.
         if (speculationProposals_ != null && speculationProposals_.length > 0)
         {
             if (selectedProposalString_.equals(speculationProposals_[0]))
                 return Action.TRUE;
         }
-        
+
         // If no proposals are offered, there is no way to compute this.
         if (availableProposals_ == null || availableProposals_.length == 0)
             return Action.NOT_AVAILABLE;
-        
-        // If there is no speculation information, then look whether the first selected proposal is equal to the first
+
+        // If there is no speculation information, then look whether the first selected proposal is
+        // equal to the first
         // Eclipse proposal or not.
         return Action.FromBoolean(selectedProposalString_.equals(availableProposals_[0]));
     }
@@ -591,26 +632,26 @@ public class QFSession
                 return Action.TRUE;
         }
         return Action.FALSE;
-//        return isFirstProposalSelected().negate();
+        // return isFirstProposalSelected().negate();
     }
-    
+
     boolean isGlobalBestProposalGenerated()
     {
-//        System.out.println("Global Best Proposals: ");
-//        for (String gbp: getGlobalBestProposals())
-//            System.out.println(gbp);
-        
+        // System.out.println("Global Best Proposals: ");
+        // for (String gbp: getGlobalBestProposals())
+        // System.out.println(gbp);
+
         return getGlobalBestProposals().size() != 0;
     }
-    
+
     String getQFProject()
     {
-    	return qfProject_;
+        return qfProject_;
     }
-    
+
     String getQFFile()
     {
-    	return qfFile_;
+        return qfFile_;
     }
 
     String getSelectedProposalString()
@@ -637,7 +678,7 @@ public class QFSession
     {
         return Dates.subtract(sessionEndTime_, sessionStartTime_);
     }
-    
+
     int getNumberOfProposalsOfferedByEclipse()
     {
         return availableProposals_.length;
@@ -652,23 +693,24 @@ public class QFSession
     {
         return errorsAfter_;
     }
-    
+
     Boolean isSpeculationRunning()
     {
         return isSpeculationRunning_;
     }
-    
-    String [] getEclipseProposals()
+
+    String[] getEclipseProposals()
     {
         return availableProposals_;
     }
-    
-    static ArrayList<String> getGlobalBestProposals(ArrayList<String> speculationProposals, ArrayList<String> eclipseProposals)
+
+    static ArrayList<String> getGlobalBestProposals(ArrayList<String> speculationProposals,
+                                                    ArrayList<String> eclipseProposals)
     {
         if (speculationProposals == null)
             return null;
-        
-        ArrayList<String> result = new ArrayList <String>();
+
+        ArrayList<String> result = new ArrayList<String>();
         for (String speculationProposal: speculationProposals)
         {
             if (speculationProposal.contains(".java:"))
@@ -687,12 +729,12 @@ public class QFSession
         }
         return result;
     }
-    
-    String [] getSpeculationProposals()
+
+    String[] getSpeculationProposals()
     {
         if (speculationProposals_ == null)
             return null;
-        ArrayList<String> result = new ArrayList <String>();
+        ArrayList<String> result = new ArrayList<String>();
         for (String speculationProposal: speculationProposals_)
         {
             if (speculationProposal.contains(".java:"))
@@ -709,69 +751,69 @@ public class QFSession
                 }
             }
         }
-        return result.toArray(new String [result.size()]);
+        return result.toArray(new String[result.size()]);
     }
-    
+
     boolean isSessionCompleted()
     {
         return selectedProposalString_ != null || selectedProposal_ != null;
     }
-    
+
     /********************************
      ********* INTERNAL API *********
      *******************************/
-    
+
     private String getProposalPart(String speculationProposal)
     {
         return speculationProposal.substring(speculationProposal.indexOf(')') + 1).trim();
     }
-    
+
     private int getCompilationErrorPart(String speculationProposal)
     {
-        String representation = speculationProposal.substring(1,speculationProposal.indexOf(')')).trim();
+        String representation = speculationProposal.substring(1, speculationProposal.indexOf(')'))
+                                                   .trim();
         if (representation.equals("?"))
             return Integer.MAX_VALUE;
         return Integer.parseInt(representation);
     }
-    
-    private ArrayList <String> getGlobalBestProposals()
+
+    private ArrayList<String> getGlobalBestProposals()
     {
         if (speculationProposals_ == null)
-            return new ArrayList <String>();
-        
-        ArrayList <String> result = new ArrayList <String>();
-        HashSet <String> eclipseProposals = new HashSet <String>(Arrays.asList(availableProposals_));
+            return new ArrayList<String>();
+
+        ArrayList<String> result = new ArrayList<String>();
+        HashSet<String> eclipseProposals = new HashSet<String>(Arrays.asList(availableProposals_));
         for (String speculationProposal: speculationProposals_)
         {
             String proposalPart = getProposalPart(speculationProposal);
-//            if (speculationProposal.contains(".java:") && !eclipseProposals.contains(proposalPart))
-        	if (!eclipseProposals.contains(proposalPart))
+            // if (speculationProposal.contains(".java:") &&
+            // !eclipseProposals.contains(proposalPart))
+            if (!eclipseProposals.contains(proposalPart))
             {
-            	result.add(proposalPart);
-//            	System.out.println(proposalPart);
+                result.add(proposalPart);
+                // System.out.println(proposalPart);
             }
         }
         return result;
     }
-    
+
     static enum Action
     {
-        TRUE("TRUE"),
-        FALSE("FALSE"),
-        NOT_AVAILABLE("N/A");
-        
+        TRUE("TRUE"), FALSE("FALSE"), NOT_AVAILABLE("N/A");
+
         private String value_;
-        
+
         private Action(String value)
         {
             value_ = value;
         }
-        
+
         public String toString()
         {
             return value_;
         }
-        
+
         public Action or(Action other)
         {
             if (this == NOT_AVAILABLE || other == NOT_AVAILABLE)
@@ -780,17 +822,18 @@ public class QFSession
                 return TRUE;
             return FALSE;
         }
-        
+
         public Action negate()
         {
-            return this == Action.TRUE ? Action.FALSE : (this == Action.FALSE ? Action.TRUE : Action.NOT_AVAILABLE);
+            return this == Action.TRUE ? Action.FALSE
+                                      : (this == Action.FALSE ? Action.TRUE : Action.NOT_AVAILABLE);
         }
-        
+
         public static Action FromBoolean(boolean value)
         {
             return value ? Action.TRUE : Action.FALSE;
         }
-        
+
         public Boolean toBoolean()
         {
             if (this == Action.FALSE)
@@ -821,7 +864,7 @@ public class QFSession
     public void markInvalidated()
     {
         markedInvalid_ = true;
-        
+
     }
-    
+
 }

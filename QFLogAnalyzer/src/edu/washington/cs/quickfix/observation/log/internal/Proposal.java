@@ -342,12 +342,6 @@ public class Proposal implements Comparable <Proposal>
         return relevance_;
     }
     
-    public static void main(String [] args)
-    {
-        String test = "(1) Add type parameter 'Label' to 'HardDriveArchieverGUI'";
-        System.out.println(new SpeculationProposal(test).getRelevance());
-    }
-
     @Override
     public int compareTo(Proposal other)
     {

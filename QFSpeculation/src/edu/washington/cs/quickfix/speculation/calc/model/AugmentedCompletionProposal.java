@@ -128,6 +128,9 @@ public class AugmentedCompletionProposal implements Comparable <AugmentedComplet
     private Color decideColor(TableItem item)
     {
         Color result = null;
+//        result = new Color(item.getDisplay(), 0, 150, 0);
+//        if (true)
+//        	return result;
         if (errorsAfter_ == Squiggly.NOT_COMPUTED)
             result = null;
         else if (errorsAfter_ == Squiggly.UNKNOWN)
