@@ -229,25 +229,25 @@ public class QFSessionLogParser
         Date endDate = Dates.add(startDate, new Date(sessionLength));
         
         // Make sure that Eclipse proposals are ordered with respect to relevance.
-//        Proposal [] eclipseProps = new Proposal[eclipseProposals.size()];
-//        for (int a = 0; a < eclipseProps.length; a++)
-//            eclipseProps[a] = new Proposal(eclipseProposals.get(a));
-//        Arrays.sort(eclipseProps);
-//        eclipseProposals.clear();
-//        for (Proposal eclipseProp: eclipseProps)
-//            eclipseProposals.add(eclipseProp.getDisplayString());
+        Proposal [] eclipseProps = new Proposal[eclipseProposals.size()];
+        for (int a = 0; a < eclipseProps.length; a++)
+            eclipseProps[a] = new Proposal(eclipseProposals.get(a));
+        Arrays.sort(eclipseProps);
+        eclipseProposals.clear();
+        for (Proposal eclipseProp: eclipseProps)
+            eclipseProposals.add(eclipseProp.getDisplayString());
         
-//      // Trick to also sort speculation proposals (as they were ordered)
-//        if (speculationProposals != null)
-//        {
-//            SpeculationProposal [] speculationProps = new SpeculationProposal[speculationProposals.size()];
-//            for (int a = 0; a < speculationProps.length; a++)
-//                speculationProps[a] = new SpeculationProposal(speculationProposals.get(a));
-//            Arrays.sort(speculationProps);
-//            speculationProposals.clear();
-//            for (Proposal speculationProp: speculationProps)
-//                speculationProposals.add(speculationProp.getDisplayString());
-//        }
+      // Trick to also sort speculation proposals (as they were ordered)
+        if (speculationProposals != null)
+        {
+            SpeculationProposal [] speculationProps = new SpeculationProposal[speculationProposals.size()];
+            for (int a = 0; a < speculationProps.length; a++)
+                speculationProps[a] = new SpeculationProposal(speculationProposals.get(a));
+            Arrays.sort(speculationProps);
+            speculationProposals.clear();
+            for (Proposal speculationProp: speculationProps)
+                speculationProposals.add(speculationProp.getDisplayString());
+        }
         
         return new QFSession(sessionType, startDate, delayDate, speculationRunning, qfProject, qfFile, eclipseProposals.toArray(new String [eclipseProposals.size()]),
                 speculationProposals == null ? null : speculationProposals.toArray(new String [speculationProposals

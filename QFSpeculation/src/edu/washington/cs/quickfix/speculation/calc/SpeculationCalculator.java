@@ -15,11 +15,10 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.internal.ui.text.correction.proposals.ChangeCorrectionProposal;
 import org.eclipse.jdt.internal.ui.text.correction.proposals.LinkedNamesAssistProposal;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposal;
+import org.eclipse.jdt.ui.text.java.correction.ChangeCorrectionProposal;
 import org.eclipse.jface.text.BadLocationException;
-import org.eclipse.jface.text.templates.TemplateProposal;
 import org.eclipse.ltk.core.refactoring.Change;
 
 import com.kivancmuslu.www.timer.Timer;
@@ -82,7 +81,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
          * FINE =>  See information for each proposal (# of compilation errors).
          */
         //@formatter:on
-        logger.setLevel(Level.INFO);
+        logger.setLevel(Level.SEVERE);
     }
     private final ProjectSynchronizer synchronizer_;
     private static final boolean DEVELOPMENT_TEST = false;
@@ -393,7 +392,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             }
             logger.info("");
             Timer.completeSession();
-            logger.info("Completing the speculative analysis took: " + Timer.getTimeAsString());
+            logger.severe("Completing the speculative analysis took: " + Timer.getTimeAsString());
         }
     }
 
@@ -506,7 +505,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
                             + ", there are no proposals!");
                 compilationErrors.remove(shadowCompilationError);
             }
-            logger.info("Speculative analysis completed: Available proposals (" + counter
+            logger.severe("Speculative analysis completed: Available proposals (" + counter
                     + ") and their results calculated in advance...");
         }
         catch (InvalidatedException ie)
@@ -542,7 +541,7 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
             for (int a = 0; a < shadowProposals.length; a++)
             {
                 IJavaCompletionProposal shadowProposal = shadowProposals[a];
-                System.out.println(shadowProposal.getDisplayString() + ": " + shadowProposal.getRelevance());
+//                System.out.println(shadowProposal.getDisplayString() + ": " + shadowProposal.getRelevance());
                 // Note: Transformation does nothing if the original proposal is not null and development test is not
                 // active.
                 String displayString = shadowProposal.getDisplayString();
@@ -625,10 +624,10 @@ public class SpeculationCalculator extends MortalThread implements ProjectModifi
         if (activationRecord_.isInvalid() || isDead())
             throw new InvalidatedException();
         if (SpeculationUtility.isFlaggedProposal(shadowProposal))
-//            return new Squiggly[2];
+//            return new Squiggly[1];
             return Squiggly.NOT_COMPUTED;
         if (SpeculationUtility.isInteractiveProposal(shadowProposal))
-//            return new Squiggly[2];
+//            return new Squiggly[1];
             return Squiggly.NOT_COMPUTED;
         
         Squiggly [] errors = Squiggly.UNKNOWN;

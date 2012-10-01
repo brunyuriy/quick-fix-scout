@@ -73,8 +73,7 @@ public class ObserverLogAnalyzer
     {
         String fs = File.separator;
         String home = System.getProperty("user.home");
-        // C:\Users\Kivanc\Dropbox\Cloud\Research-Papers\Quick_Fix_Scout\QuickFixScout\Controlled Study\Experiment Data
-        File logDir = new File(home + fs + "Dropbox" + fs + "Cloud" + fs + "Research-Papers" + fs + "Quick_Fix_Scout" + fs + "QuickFixScout" + fs + "Controlled Experiment" + fs + "Experiment Data");
+        File logDir = new File(home + fs + "Projects" + fs + "Latex" + fs + "QFS" + fs + "QuickFixScout" + fs + "Controlled Experiment" + fs + "Experiment Data");
         String [] result = new String[1];
         result[0] = logDir.getAbsolutePath();
 //        result[0] = logDir.getAbsolutePath() + fs + "2012.03.05 - Colin";
